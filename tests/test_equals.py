@@ -3,8 +3,8 @@ import unittest
 import torch
 from torchvision import models
 
-from mmlib.deterministic.deterministic import set_deterministic
-from mmlib.equals.models import state_dict_equals, equals, imagenet_input
+from mmlib.deterministic import set_deterministic
+from mmlib.model_equals import state_dict_equals, equals, imagenet_input
 
 
 class TestStateDictEquals(unittest.TestCase):
@@ -148,6 +148,7 @@ class TestModelEquals(unittest.TestCase):
 
         self.assertTrue(equals(alex1, alex2, imagenet_input))
         self.assertTrue(equals(resnet1, resnet2, imagenet_input))
+
 
 def suite():
     suite = unittest.TestSuite()

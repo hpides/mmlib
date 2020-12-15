@@ -2,6 +2,7 @@ import torch
 
 SEED = 42
 
+
 def deterministic(func, f_args, f_kwargs):
     # TODO check for deterministic dataloading:
     # https://discuss.pytorch.org/t/dataloader-is-not-deterministic/19250

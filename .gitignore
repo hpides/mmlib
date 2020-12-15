@@ -139,3 +139,7 @@ cython_debug/
 
 # pycharm
 .idea/
+
+# build lib
+build/
+dist/
