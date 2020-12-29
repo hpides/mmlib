@@ -77,7 +77,7 @@ def probe_reproducibility(model, input, output_info, device="cuda", forward=True
     return summary
 
 
-def _print_layer(layer, summary, output_info, format_string):
+def _print_layer(layer, summary, output_info):
     values = []
     output_info = output_info.copy()
 
@@ -86,23 +86,53 @@ def _print_layer(layer, summary, output_info, format_string):
         values.append(layer)
 
     values += [str(summary[layer][x.value]) for x in output_info]
+    format_string = " ".join(["{:>20}"] * len(values))
     line = format_string.format(*values)
     print(line)
 
+def _print_compare_layer(fields, layer, summary1, summary2):
+    pass
 
-def _print_header(output_info, format_string):
-    names = [x.value for x in output_info]
 
+def _print_header(header_fields):
     print("-----------------------------------------------------------------------------------------------------------")
-    print(format_string.format(*names))
+    header_format_string = " ".join(["{:>20}"] * len(header_fields))
+    print(header_format_string.format(*header_fields))
     print("===========================================================================================================")
 
 
 def print_summary(summary, output_info):
-    format_string = " ".join(["{:>20}"] * len(output_info))
-    _print_header(output_info, format_string)
+    header_fields = [x.value for x in output_info]
+    _print_header(header_fields)
     for layer in summary:
-        _print_layer(layer, summary, output_info, format_string)
+        _print_layer(layer, summary, output_info)
+
+
+
+
+
+def compare_summaries(summary1, summary2, compare, common=None):
+    assert summary1.keys() == summary2.keys(), 'summary keys dont match'
+    assert len(compare) > 0, 'you have to compare at least one attribute'
+
+    if not common:
+        common = [probe_info.LAYER]
+    if probe_info.LAYER not in common:
+        common.insert(0, probe_info.LAYER)
+
+    header_fields = []
+    for com in common:
+        header_fields.append(com.value)
+    for comp in compare:
+        header_fields.append(comp.value + '-1')
+        header_fields.append(comp.value + '-2')
+
+    _print_header(header_fields)
+
+    fields = common + compare
+    for layer in summary1:
+        _print_compare_layer(fields, layer, summary1, summary2)
+
 
 
 # TODO delete main
@@ -118,4 +148,5 @@ if __name__ == '__main__':
                        probe_info.OUTPUT_HASH]
         summary = probe_reproducibility(model, tensor1, output_info)
         print_summary(summary, output_info)
+        # compare_summaries(summary, summary, [probe_info.INPUT_HASH])
         print('\n\n')
