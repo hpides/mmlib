@@ -1,8 +1,9 @@
+from enum import Enum
+
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
 from torchvision import models
-
 
 from collections import OrderedDict
 import numpy as np
@@ -11,13 +12,19 @@ import numpy as np
 from mmlib.model_equals import imagenet_input
 
 
+class probe_info(Enum):
+    LAYER = 'layer'
+    OUTPUT_SHAPE = 'output_shape'
+    INPUT_SHAPE = 'input_shape'
+
+
 def _should_register(model, module):
-    return not isinstance(module, nn.Sequential)\
-           and not isinstance(module, nn.ModuleList)\
+    return not isinstance(module, nn.Sequential) \
+           and not isinstance(module, nn.ModuleList) \
            and not (module == model)
 
-def probe_reproducibility(model, input, device="cuda", forward=True, backward=False):
 
+def probe_reproducibility(model, input, output_info, device="cuda", forward=True, backward=False):
     def register_forward_hook(module, ):
 
         def hook(module, input, output):
@@ -25,8 +32,8 @@ def probe_reproducibility(model, input, device="cuda", forward=True, backward=Fa
 
             summary[module_key] = OrderedDict()
 
-            summary[module_key]["input_shape"] = list(input[0].shape)
-            summary[module_key]["output_shape"] = list(output.shape)
+            summary[module_key][probe_info.INPUT_SHAPE.value] = list(input[0].shape)
+            summary[module_key][probe_info.OUTPUT_SHAPE.value] = list(output.shape)
 
         def _module_key(module):
             class_name = str(module.__class__).split(".")[-1].split("'")[0]
@@ -63,20 +70,31 @@ def probe_reproducibility(model, input, device="cuda", forward=True, backward=Fa
     for h in hooks:
         h.remove()
 
-    print("-----------------------------------------------------------------------------------------------------------")
-    line_new = "{:>20} {:>20} {:>20}".format("Layer (type)", "Input Shape", "Output Shape", "Param #")
-    print(line_new)
-    print("===========================================================================================================")
-    total_output = 0
+    format_string = " ".join(["{:>20}"] * len(output_info))
+    _print_header(output_info, format_string)
     for layer in summary:
-        # input_shape, output_shape, trainable
-        line_new = "{:>20}  {:>25} {:>25}".format(
-            layer,
-            str(summary[layer]["input_shape"]),
-            str(summary[layer]["output_shape"])
-        )
-        total_output += np.prod(summary[layer]["output_shape"])
-        print(line_new)
+        _print_layer(layer, summary, output_info, format_string)
+
+
+def _print_layer(layer, summary, output_info, format_string):
+    values = []
+    output_info = output_info.copy()
+
+    if probe_info.LAYER in output_info:
+        output_info.remove(probe_info.LAYER)
+        values.append(layer)
+
+    values += [str(summary[layer][x.value]) for x in output_info]
+    line = format_string.format(*values)
+    print(line)
+
+
+def _print_header(output_info, format_string):
+    names = [x.value for x in output_info]
+
+    print("-----------------------------------------------------------------------------------------------------------")
+    print(format_string.format(*names))
+    print("===========================================================================================================")
 
 
 # TODO delete main
@@ -88,5 +106,8 @@ if __name__ == '__main__':
     for mod in models:
         model = mod()
         print('Model: {}'.format(mod.__name__))
-        probe_reproducibility(model, tensor1)
+        probe_reproducibility(
+            model,
+            tensor1,
+            [probe_info.LAYER, probe_info.INPUT_SHAPE, probe_info.OUTPUT_SHAPE])
         print('\n\n')
