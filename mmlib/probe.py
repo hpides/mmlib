@@ -14,8 +14,10 @@ from mmlib.model_equals import imagenet_input
 
 class probe_info(Enum):
     LAYER = 'layer'
-    OUTPUT_SHAPE = 'output_shape'
     INPUT_SHAPE = 'input_shape'
+    INPUT_HASH = 'input_hash'
+    OUTPUT_SHAPE = 'output_shape'
+    OUTPUT_HASH = 'output_hash'
 
 
 def _should_register(model, module):
@@ -39,7 +41,9 @@ def probe_reproducibility(model, input, output_info, device="cuda", forward=True
             summary[module_key] = OrderedDict()
 
             summary[module_key][probe_info.INPUT_SHAPE.value] = list(input[0].shape)
+            summary[module_key][probe_info.INPUT_HASH.value] = hash(str(input))
             summary[module_key][probe_info.OUTPUT_SHAPE.value] = list(output.shape)
+            summary[module_key][probe_info.OUTPUT_HASH.value] = hash(str(output))
 
         if _should_register(model, module):
             hooks.append(module.register_forward_hook(hook))
@@ -109,5 +113,5 @@ if __name__ == '__main__':
         probe_reproducibility(
             model,
             tensor1,
-            [probe_info.LAYER, probe_info.INPUT_SHAPE, probe_info.OUTPUT_SHAPE])
+            [probe_info.LAYER, probe_info.INPUT_SHAPE,probe_info.INPUT_HASH, probe_info.OUTPUT_SHAPE, probe_info.OUTPUT_HASH])
         print('\n\n')
