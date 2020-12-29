@@ -74,10 +74,7 @@ def probe_reproducibility(model, input, output_info, device="cuda", forward=True
     for h in hooks:
         h.remove()
 
-    format_string = " ".join(["{:>20}"] * len(output_info))
-    _print_header(output_info, format_string)
-    for layer in summary:
-        _print_layer(layer, summary, output_info, format_string)
+    return summary
 
 
 def _print_layer(layer, summary, output_info, format_string):
@@ -101,6 +98,13 @@ def _print_header(output_info, format_string):
     print("===========================================================================================================")
 
 
+def print_summary(summary, output_info):
+    format_string = " ".join(["{:>20}"] * len(output_info))
+    _print_header(output_info, format_string)
+    for layer in summary:
+        _print_layer(layer, summary, output_info, format_string)
+
+
 # TODO delete main
 if __name__ == '__main__':
     # models = [models.alexnet, models.vgg19, models.resnet18, models.resnet50, models.resnet152]
@@ -110,8 +114,8 @@ if __name__ == '__main__':
     for mod in models:
         model = mod()
         print('Model: {}'.format(mod.__name__))
-        probe_reproducibility(
-            model,
-            tensor1,
-            [probe_info.LAYER, probe_info.INPUT_SHAPE,probe_info.INPUT_HASH, probe_info.OUTPUT_SHAPE, probe_info.OUTPUT_HASH])
+        output_info = [probe_info.LAYER, probe_info.INPUT_SHAPE, probe_info.INPUT_HASH, probe_info.OUTPUT_SHAPE,
+                       probe_info.OUTPUT_HASH]
+        summary = probe_reproducibility(model, tensor1, output_info)
+        print_summary(summary, output_info)
         print('\n\n')
