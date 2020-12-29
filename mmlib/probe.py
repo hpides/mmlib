@@ -90,8 +90,22 @@ def _print_layer(layer, summary, output_info):
     line = format_string.format(*values)
     print(line)
 
+
 def _print_compare_layer(fields, layer, summary1, summary2):
-    pass
+    values = []
+    fields = fields.copy()
+
+    if probe_info.LAYER in fields:
+        fields.remove(probe_info.LAYER)
+        values.append(layer)
+
+    for field in fields:
+        values.append(summary1[layer][field.value])
+        values.append(summary2[layer][field.value])
+
+    format_string = " ".join(["{:>20}"] * len(values))
+    line = format_string.format(*values)
+    print(line)
 
 
 def _print_header(header_fields):
@@ -106,9 +120,6 @@ def print_summary(summary, output_info):
     _print_header(header_fields)
     for layer in summary:
         _print_layer(layer, summary, output_info)
-
-
-
 
 
 def compare_summaries(summary1, summary2, compare, common=None):
@@ -134,7 +145,6 @@ def compare_summaries(summary1, summary2, compare, common=None):
         _print_compare_layer(fields, layer, summary1, summary2)
 
 
-
 # TODO delete main
 if __name__ == '__main__':
     # models = [models.alexnet, models.vgg19, models.resnet18, models.resnet50, models.resnet152]
@@ -147,6 +157,6 @@ if __name__ == '__main__':
         output_info = [probe_info.LAYER, probe_info.INPUT_SHAPE, probe_info.INPUT_HASH, probe_info.OUTPUT_SHAPE,
                        probe_info.OUTPUT_HASH]
         summary = probe_reproducibility(model, tensor1, output_info)
-        print_summary(summary, output_info)
-        # compare_summaries(summary, summary, [probe_info.INPUT_HASH])
+        # print_summary(summary, output_info)
+        compare_summaries(summary, summary, [probe_info.INPUT_HASH])
         print('\n\n')
