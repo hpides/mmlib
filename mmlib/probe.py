@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 from torchvision import models
+from colorama import Fore, Back, Style
 
 from collections import OrderedDict
 import numpy as np
@@ -100,17 +101,24 @@ def _print_compare_layer(fields, layer, summary1, summary2):
         values.append(layer)
 
     for field in fields:
-        values.append(summary1[layer][field.value])
-        values.append(summary2[layer][field.value])
+        v1 = summary1[layer][field.value]
+        v2 = summary2[layer][field.value]
 
-    format_string = " ".join(["{:>20}"] * len(values))
+        color = Fore.GREEN
+        if v1 != v2:
+            color = Fore.RED
+
+        values.append(v1)
+        values.append(v2)
+
+    format_string = " ".join(["{:>30}"] * len(values))
     line = format_string.format(*values)
-    print(line)
+    print(color + line + Style.RESET_ALL)
 
 
 def _print_header(header_fields):
     print("-----------------------------------------------------------------------------------------------------------")
-    header_format_string = " ".join(["{:>20}"] * len(header_fields))
+    header_format_string = " ".join(["{:>30}"] * len(header_fields))
     print(header_format_string.format(*header_fields))
     print("===========================================================================================================")
 
