@@ -24,26 +24,26 @@ def _should_register(model, module):
            and not (module == model)
 
 
+def _module_key(module, summary):
+    class_name = str(module.__class__).split(".")[-1].split("'")[0]
+    module_idx = len(summary)
+    return "%s-%i" % (class_name, module_idx + 1)
+
+
 def probe_reproducibility(model, input, output_info, device="cuda", forward=True, backward=False):
     def register_forward_hook(module, ):
 
         def hook(module, input, output):
-            module_key = _module_key(module)
+            module_key = _module_key(module, summary)
 
             summary[module_key] = OrderedDict()
 
             summary[module_key][probe_info.INPUT_SHAPE.value] = list(input[0].shape)
             summary[module_key][probe_info.OUTPUT_SHAPE.value] = list(output.shape)
 
-        def _module_key(module):
-            class_name = str(module.__class__).split(".")[-1].split("'")[0]
-            module_idx = len(summary)
-            return "%s-%i" % (class_name, module_idx + 1)
-
         if _should_register(model, module):
             hooks.append(module.register_forward_hook(hook))
 
-    # TODO define enum for device
     # TODO clean up code
     device = device.lower()
     assert device in [
