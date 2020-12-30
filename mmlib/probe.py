@@ -4,8 +4,6 @@ from enum import Enum
 import torch.nn as nn
 from colorama import Fore, Style
 
-# The following code is inspired by https://github.com/sksq96/pytorch-summary
-
 PLACE_HOLDER_LEN = 22
 PLACE_HOLDER = "{:>" + str(PLACE_HOLDER_LEN) + "}"
 
@@ -38,12 +36,13 @@ def probe_training(model, inp, optimizer, loss_func, target, device="cuda"):
                                  target=target, device=device)
 
 
-def probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, target=None, device="cuda"):
+def probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, target=None):
     if mode == ProbeMode.TRAINING:
         assert optimizer is not None, 'for training mode a optimizer is needed'
         assert loss_func is not None, 'for training mode a loss_func is needed'
         assert target is not None, 'for training mode a target is needed'
 
+    # The following code is inspired by https://github.com/sksq96/pytorch-summary
     def register_forward_hook(module, ):
 
         def hook(module, input, output):
