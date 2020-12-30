@@ -125,27 +125,6 @@ def compare_summaries(summary1, summary2, compare, common=None):
         _print_compare_layer(common, compare, layer, summary1, summary2)
 
 
-def _shape_list(tensor_tuple):
-    result = []
-    for t in tensor_tuple:
-        if t is None:
-            result.append([])
-        else:
-            result.append(t.shape)
-
-    return result
-
-
-def _replace_hash_by_count(ordered_dict):
-    result = OrderedDict()
-
-    for i, k in enumerate(ordered_dict):
-        new_key = "{}-{}".format(k.split('-')[0], str(i + 1))
-        result[new_key] = ordered_dict[k]
-
-    return result
-
-
 def _should_register(model, module):
     return not isinstance(module, nn.Sequential) \
            and not isinstance(module, nn.ModuleList) \
@@ -219,3 +198,24 @@ def _print_header(header_fields):
     header_format_string = " ".join([PLACE_HOLDER] * len(header_fields))
     print(header_format_string.format(*header_fields))
     print(devider)
+
+
+def _replace_hash_by_count(ordered_dict):
+    result = OrderedDict()
+
+    for i, k in enumerate(ordered_dict):
+        new_key = "{}-{}".format(k.split('-')[0], str(i + 1))
+        result[new_key] = ordered_dict[k]
+
+    return result
+
+
+def _shape_list(tensor_tuple):
+    result = []
+    for t in tensor_tuple:
+        if t is None:
+            result.append([])
+        else:
+            result.append(t.shape)
+
+    return result
