@@ -10,7 +10,7 @@ from mmlib.model_equals import imagenet_input
 
 # The following code is inspired by https://github.com/sksq96/pytorch-summary
 
-PLACE_HOLDER_LEN = 20
+PLACE_HOLDER_LEN = 30
 PLACE_HOLDER = "{:>" + str(PLACE_HOLDER_LEN) + "}"
 
 
@@ -113,12 +113,12 @@ def _print_compare_header(common, compare):
 
 
 def _print_compare_layer(fields, layer, summary1, summary2):
-    values = []
     fields = fields.copy()
+    line = ""
 
     if ProbeInfo.LAYER in fields:
         fields.remove(ProbeInfo.LAYER)
-        values.append(layer)
+        line += PLACE_HOLDER.format(layer)
 
     for field in fields:
         v1 = summary1[layer][field.value]
@@ -128,12 +128,9 @@ def _print_compare_layer(fields, layer, summary1, summary2):
         if v1 != v2:
             color = Fore.RED
 
-        values.append(v1)
-        values.append(v2)
+        line += color + " ".join([PLACE_HOLDER] * 2).format(v1, v2) + Style.RESET_ALL
 
-    format_string = " ".join([PLACE_HOLDER] * len(values))
-    line = format_string.format(*values)
-    print(color + line + Style.RESET_ALL)
+    print(line)
 
 
 def _print_layer(layer, summary, output_info):
