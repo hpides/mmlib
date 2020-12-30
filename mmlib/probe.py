@@ -10,7 +10,8 @@ from mmlib.model_equals import imagenet_input
 
 # The following code is inspired by https://github.com/sksq96/pytorch-summary
 
-PLACE_HOLDER = "{:>20}"
+PLACE_HOLDER_LEN = 20
+PLACE_HOLDER = "{:>" + str(PLACE_HOLDER_LEN) + "}"
 
 
 class ProbeInfo(Enum):
@@ -150,10 +151,14 @@ def _print_layer(layer, summary, output_info):
 
 
 def _print_header(header_fields):
-    print("-----------------------------------------------------------------------------------------------------------")
+    format_string = "=".join([PLACE_HOLDER] * len(header_fields))
+    insert = ["=" * PLACE_HOLDER_LEN] * len(header_fields)
+    devider =format_string.format(*insert)
+
+    print(devider)
     header_format_string = " ".join([PLACE_HOLDER] * len(header_fields))
     print(header_format_string.format(*header_fields))
-    print("===========================================================================================================")
+    print(devider)
 
 
 # TODO delete main
