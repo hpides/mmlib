@@ -10,16 +10,22 @@ from mmlib.model_equals import imagenet_input
 
 # The following code is inspired by https://github.com/sksq96/pytorch-summary
 
-PLACE_HOLDER_LEN = 20
+PLACE_HOLDER_LEN = 22
 PLACE_HOLDER = "{:>" + str(PLACE_HOLDER_LEN) + "}"
 
 
 class ProbeInfo(Enum):
     LAYER = 'layer'
+
     INPUT_SHAPE = 'input_shape'
     INPUT_HASH = 'input_hash'
     OUTPUT_SHAPE = 'output_shape'
     OUTPUT_HASH = 'output_hash'
+
+    GRAD_INPUT_SHAPE = 'grad_input_shape'
+    GRAD_INPUT_HASH = 'grad_input_hash'
+    GRAD_OUTPUT_SHAPE = 'grad_output_shape'
+    GRAD_OUTPUT_HASH = 'grad_output_hash'
 
 
 class ProbeMode(Enum):
@@ -45,7 +51,8 @@ def probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, targ
     def register_forward_hook(module, ):
 
         def hook(module, input, output):
-            module_key = _module_key(module, summary)
+            module_key = _module_key(module, forward_layer_keys)
+            forward_layer_keys.append(module_key)
 
             summary[module_key] = OrderedDict()
 
@@ -57,14 +64,31 @@ def probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, targ
         if _should_register(model, module):
             hooks.append(module.register_forward_hook(hook))
 
+    def register_backward_hook(module, ):
+
+        def hook(module, grad_input, grad_output):
+            module_key = _module_key(module, backward_layer_keys)
+            backward_layer_keys.append(module_key)
+
+            summary[module_key][ProbeInfo.GRAD_INPUT_SHAPE.value] = str(_shape_list(grad_input))
+            summary[module_key][ProbeInfo.GRAD_INPUT_HASH.value] = str(hash(str(grad_input)))
+            summary[module_key][ProbeInfo.GRAD_OUTPUT_SHAPE.value] = str(_shape_list(grad_output))
+            summary[module_key][ProbeInfo.GRAD_OUTPUT_HASH.value] = str(hash(str(grad_output)))
+
+        if _should_register(model, module):
+            hooks.append(module.register_backward_hook(hook))
+
     dtype = _dtype(device)
 
     # create properties
     summary = OrderedDict()
+    forward_layer_keys = []
+    backward_layer_keys = []
     hooks = []
 
-    # register hook
+    # register forward hook
     model.apply(register_forward_hook)
+    model.apply(register_backward_hook)
 
     if mode == ProbeMode.INFERENCE:
         model.eval()
@@ -72,11 +96,7 @@ def probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, targ
     elif mode == ProbeMode.TRAINING:
         model.train()
         output = model(inp)
-
-        # just set dummpy loss and optimizer
         loss = loss_func(output, target)
-
-        # compute gradient and do SGD step
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -85,7 +105,7 @@ def probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, targ
     for h in hooks:
         h.remove()
 
-    return summary
+    return _replace_hash_by_count(summary)
 
 
 def print_summary(summary, output_info):
@@ -111,16 +131,37 @@ def compare_summaries(summary1, summary2, compare, common=None):
         _print_compare_layer(common, compare, layer, summary1, summary2)
 
 
+def _shape_list(tensor_tuple):
+    result = []
+    for t in tensor_tuple:
+        if t is None:
+            result.append([])
+        else:
+            result.append(t.shape)
+
+    return result
+
+
+def _replace_hash_by_count(ordered_dict):
+    result = OrderedDict()
+
+    for i, k in enumerate(ordered_dict):
+        new_key = "{}-{}".format(k.split('-')[0], str(i + 1))
+        result[new_key] = ordered_dict[k]
+
+    return result
+
+
 def _should_register(model, module):
     return not isinstance(module, nn.Sequential) \
            and not isinstance(module, nn.ModuleList) \
            and not (module == model)
 
 
-def _module_key(module, summary):
+def _module_key(module, layer_keys):
     class_name = str(module.__class__).split(".")[-1].split("'")[0]
-    module_idx = len(summary)
-    return "%s-%i" % (class_name, module_idx + 1)
+    h = hash(module)
+    return "{}-{}".format(class_name, hash(module))
 
 
 def _print_compare_header(common, compare):
@@ -146,8 +187,11 @@ def _print_compare_layer(common, compare, layer, summary1, summary2):
         line += PLACE_HOLDER.format(value_) + " "
 
     for field in compare:
-        v1 = summary1[layer][field.value]
-        v2 = summary2[layer][field.value]
+        if field.value in summary1[layer] and field.value in summary2[layer]:
+            v1 = summary1[layer][field.value]
+            v2 = summary2[layer][field.value]
+        else:
+            v1 = v2 = '---'
 
         color = Fore.GREEN
         if v1 != v2:
@@ -207,8 +251,8 @@ if __name__ == '__main__':
         model1 = mod()
         model2 = model1
         print('Model: {}'.format(mod.__name__))
-        output_info = [ProbeInfo.LAYER, ProbeInfo.INPUT_SHAPE, ProbeInfo.INPUT_HASH, ProbeInfo.OUTPUT_SHAPE,
-                       ProbeInfo.OUTPUT_HASH]
+        # output_info = [ProbeInfo.LAYER, ProbeInfo.INPUT_SHAPE, ProbeInfo.INPUT_HASH, ProbeInfo.OUTPUT_SHAPE,
+        #                ProbeInfo.OUTPUT_HASH]
         # summary1 = probe_inference(model1, tensor1)
         # summary2 = probe_inference(model2, tensor1)
         # print_summary(summary1, output_info)
@@ -226,5 +270,6 @@ if __name__ == '__main__':
         model2 = mod(pretrained=True)
         sum_train1 = probe_training(model1, inp=tensor1, optimizer=optimizer, loss_func=loss_func, target=dummy_target)
         sum_train2 = probe_training(model2, inp=tensor1, optimizer=optimizer, loss_func=loss_func, target=dummy_target)
-        compare_summaries(sum_train1, sum_train2, [ProbeInfo.INPUT_HASH, ProbeInfo.OUTPUT_HASH],
+        compare_summaries(sum_train1, sum_train2,
+                          [ProbeInfo.INPUT_HASH, ProbeInfo.OUTPUT_HASH, ProbeInfo.GRAD_INPUT_HASH, ProbeInfo.GRAD_OUTPUT_HASH],
                           common=[ProbeInfo.LAYER, ProbeInfo.INPUT_SHAPE])
