@@ -105,11 +105,11 @@ def probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, targ
     return _replace_hash_by_count(summary)
 
 
-def print_summary(summary, output_info):
-    header_fields = [x.value for x in output_info]
+def print_summary(summary, summary_info):
+    header_fields = [x.value for x in summary_info]
     _print_header(header_fields)
     for layer in summary:
-        _print_layer(layer, summary, output_info)
+        _print_layer(layer, summary, summary_info)
 
 
 def compare_summaries(summary1, summary2, compare, common=None):
