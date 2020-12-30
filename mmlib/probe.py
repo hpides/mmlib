@@ -27,7 +27,21 @@ class ProbeMode(Enum):
     TRAINING = 2
 
 
-def probe_reproducibility(model, input, mode, device="cuda"):
+def probe_inference(model, inp, device="cuda"):
+    return probe_reproducibility(model, inp, ProbeMode.INFERENCE, device=device)
+
+
+def probe_training(model, inp, optimizer, loss_func, target, device="cuda"):
+    return probe_reproducibility(model, inp, ProbeMode.TRAINING, optimizer=optimizer, loss_func=loss_func,
+                                 target=target, device=device)
+
+
+def probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, target=None, device="cuda"):
+    if mode == ProbeMode.TRAINING:
+        assert optimizer, 'for training mode a optimizer is needed'
+        assert loss_func, 'for training mode a loss_func is needed'
+        assert target, 'for training mode a target is needed'
+
     def register_forward_hook(module, ):
 
         def hook(module, input, output):
@@ -43,17 +57,7 @@ def probe_reproducibility(model, input, mode, device="cuda"):
         if _should_register(model, module):
             hooks.append(module.register_forward_hook(hook))
 
-    # TODO clean up code
-    device = device.lower()
-    assert device in [
-        "cuda",
-        "cpu",
-    ], "Input device is not valid, please specify 'cuda' or 'cpu'"
-
-    if device == "cuda" and torch.cuda.is_available():
-        dtype = torch.cuda.FloatTensor
-    else:
-        dtype = torch.FloatTensor
+    dtype = _dtype(device)
 
     # create properties
     summary = OrderedDict()
@@ -62,10 +66,20 @@ def probe_reproducibility(model, input, mode, device="cuda"):
     # register hook
     model.apply(register_forward_hook)
 
-    # make a forward pass
     if mode == ProbeMode.INFERENCE:
         model.eval()
-    model(input)
+        model(inp)
+    elif mode == ProbeMode.TRAINING:
+        model.train()
+        output = model(inp)
+
+        # just set dummpy loss and optimizer
+        loss = loss_func(output, target)
+
+        # compute gradient and do SGD step
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
 
     # remove these hooks
     for h in hooks:
@@ -168,6 +182,20 @@ def _print_header(header_fields):
     print(devider)
 
 
+def _dtype(device):
+    device = device.lower()
+    assert device in [
+        "cuda",
+        "cpu",
+    ], "Input device is not valid, please specify 'cuda' or 'cpu'"
+    if device == "cuda" and torch.cuda.is_available():
+        dtype = torch.cuda.FloatTensor
+    else:
+        dtype = torch.FloatTensor
+
+    return dtype
+
+
 # TODO delete main
 if __name__ == '__main__':
     models = [models.alexnet, models.vgg19, models.resnet18, models.resnet50, models.resnet152]
@@ -180,8 +208,8 @@ if __name__ == '__main__':
         print('Model: {}'.format(mod.__name__))
         output_info = [ProbeInfo.LAYER, ProbeInfo.INPUT_SHAPE, ProbeInfo.INPUT_HASH, ProbeInfo.OUTPUT_SHAPE,
                        ProbeInfo.OUTPUT_HASH]
-        summary1 = probe_reproducibility(model1, tensor1, ProbeMode.INFERENCE)
-        summary2 = probe_reproducibility(model2, tensor1, ProbeMode.INFERENCE)
+        summary1 = probe_inference(model1, tensor1)
+        summary2 = probe_inference(model2, tensor1)
         print_summary(summary1, output_info)
         compare_summaries(summary1, summary2, [ProbeInfo.INPUT_HASH, ProbeInfo.OUTPUT_HASH],
                           common=[ProbeInfo.LAYER, ProbeInfo.INPUT_SHAPE])
