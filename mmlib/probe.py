@@ -30,10 +30,10 @@ def probe_reproducibility(model, input, device="cuda", forward=True, backward=Fa
 
             summary[module_key] = OrderedDict()
 
-            summary[module_key][ProbeInfo.INPUT_SHAPE.value] = list(input[0].shape)
-            summary[module_key][ProbeInfo.INPUT_HASH.value] = hash(str(input))
-            summary[module_key][ProbeInfo.OUTPUT_SHAPE.value] = list(output.shape)
-            summary[module_key][ProbeInfo.OUTPUT_HASH.value] = hash(str(output))
+            summary[module_key][ProbeInfo.INPUT_SHAPE.value] = str(list(input[0].shape))
+            summary[module_key][ProbeInfo.INPUT_HASH.value] = str(hash(str(input)))
+            summary[module_key][ProbeInfo.OUTPUT_SHAPE.value] = str(list(output.shape))
+            summary[module_key][ProbeInfo.OUTPUT_HASH.value] = str(hash(str(output)))
 
         if _should_register(model, module):
             hooks.append(module.register_forward_hook(hook))
@@ -85,9 +85,8 @@ def compare_summaries(summary1, summary2, compare, common=None):
 
     _print_compare_header(common, compare)
 
-    fields = common + compare
     for layer in summary1:
-        _print_compare_layer(fields, layer, summary1, summary2)
+        _print_compare_layer(common, compare, layer, summary1, summary2)
 
 
 def _should_register(model, module):
@@ -112,15 +111,19 @@ def _print_compare_header(common, compare):
     _print_header(header_fields)
 
 
-def _print_compare_layer(fields, layer, summary1, summary2):
-    fields = fields.copy()
+def _print_compare_layer(common, compare, layer, summary1, summary2):
+    common = common.copy()
     line = ""
 
-    if ProbeInfo.LAYER in fields:
-        fields.remove(ProbeInfo.LAYER)
-        line += PLACE_HOLDER.format(layer)
+    if ProbeInfo.LAYER in common:
+        common.remove(ProbeInfo.LAYER)
+        line += PLACE_HOLDER.format(layer) + " "
 
-    for field in fields:
+    for field in common:
+        value_ = summary1[layer][field.value]
+        line += PLACE_HOLDER.format(value_) + " "
+
+    for field in compare:
         v1 = summary1[layer][field.value]
         v2 = summary2[layer][field.value]
 
@@ -128,7 +131,7 @@ def _print_compare_layer(fields, layer, summary1, summary2):
         if v1 != v2:
             color = Fore.RED
 
-        line += color + " ".join([PLACE_HOLDER] * 2).format(v1, v2) + Style.RESET_ALL
+        line += color + " ".join([PLACE_HOLDER] * 2).format(v1, v2) + Style.RESET_ALL + " "
 
     print(line)
 
@@ -141,7 +144,7 @@ def _print_layer(layer, summary, output_info):
         output_info.remove(ProbeInfo.LAYER)
         values.append(layer)
 
-    values += [str(summary[layer][x.value]) for x in output_info]
+    values += [summary[layer][x.value] for x in output_info]
     format_string = " ".join([PLACE_HOLDER] * len(values))
     line = format_string.format(*values)
     print(line)
@@ -166,12 +169,12 @@ if __name__ == '__main__':
 
     for mod in models:
         model1 = mod()
-        model2 = mod()
+        model2 = model1
         print('Model: {}'.format(mod.__name__))
         output_info = [ProbeInfo.LAYER, ProbeInfo.INPUT_SHAPE, ProbeInfo.INPUT_HASH, ProbeInfo.OUTPUT_SHAPE,
                        ProbeInfo.OUTPUT_HASH]
         summary1 = probe_reproducibility(model1, tensor1)
         summary2 = probe_reproducibility(model2, tensor1)
-        # print_summary(summary, output_info)
-        compare_summaries(summary1, summary2, [ProbeInfo.INPUT_HASH, ProbeInfo.OUTPUT_HASH])
+        print_summary(summary1, output_info)
+        compare_summaries(summary1, summary2, [ProbeInfo.INPUT_HASH, ProbeInfo.OUTPUT_HASH], common=[ProbeInfo.LAYER, ProbeInfo.INPUT_SHAPE])
         print('\n\n')
