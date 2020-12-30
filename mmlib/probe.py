@@ -22,7 +22,12 @@ class ProbeInfo(Enum):
     OUTPUT_HASH = 'output_hash'
 
 
-def probe_reproducibility(model, input, device="cuda", forward=True, backward=False):
+class ProbeMode(Enum):
+    INFERENCE = 1
+    TRAINING = 2
+
+
+def probe_reproducibility(model, input, mode, device="cuda"):
     def register_forward_hook(module, ):
 
         def hook(module, input, output):
@@ -58,6 +63,8 @@ def probe_reproducibility(model, input, device="cuda", forward=True, backward=Fa
     model.apply(register_forward_hook)
 
     # make a forward pass
+    if mode == ProbeMode.INFERENCE:
+        model.eval()
     model(input)
 
     # remove these hooks
@@ -153,7 +160,7 @@ def _print_layer(layer, summary, output_info):
 def _print_header(header_fields):
     format_string = "=".join([PLACE_HOLDER] * len(header_fields))
     insert = ["=" * PLACE_HOLDER_LEN] * len(header_fields)
-    devider =format_string.format(*insert)
+    devider = format_string.format(*insert)
 
     print(devider)
     header_format_string = " ".join([PLACE_HOLDER] * len(header_fields))
@@ -173,8 +180,9 @@ if __name__ == '__main__':
         print('Model: {}'.format(mod.__name__))
         output_info = [ProbeInfo.LAYER, ProbeInfo.INPUT_SHAPE, ProbeInfo.INPUT_HASH, ProbeInfo.OUTPUT_SHAPE,
                        ProbeInfo.OUTPUT_HASH]
-        summary1 = probe_reproducibility(model1, tensor1)
-        summary2 = probe_reproducibility(model2, tensor1)
+        summary1 = probe_reproducibility(model1, tensor1, ProbeMode.INFERENCE)
+        summary2 = probe_reproducibility(model2, tensor1, ProbeMode.INFERENCE)
         print_summary(summary1, output_info)
-        compare_summaries(summary1, summary2, [ProbeInfo.INPUT_HASH, ProbeInfo.OUTPUT_HASH], common=[ProbeInfo.LAYER, ProbeInfo.INPUT_SHAPE])
+        compare_summaries(summary1, summary2, [ProbeInfo.INPUT_HASH, ProbeInfo.OUTPUT_HASH],
+                          common=[ProbeInfo.LAYER, ProbeInfo.INPUT_SHAPE])
         print('\n\n')
