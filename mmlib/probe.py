@@ -28,12 +28,12 @@ class ProbeMode(Enum):
 
 
 def probe_inference(model, inp, device="cuda"):
-    return probe_reproducibility(model, inp, ProbeMode.INFERENCE, device=device)
+    return probe_reproducibility(model, inp, ProbeMode.INFERENCE)
 
 
-def probe_training(model, inp, optimizer, loss_func, target, device="cuda"):
+def probe_training(model, inp, optimizer, loss_func, target):
     return probe_reproducibility(model, inp, ProbeMode.TRAINING, optimizer=optimizer, loss_func=loss_func,
-                                 target=target, device=device)
+                                 target=target)
 
 
 def probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, target=None):
