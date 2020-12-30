@@ -1,7 +1,6 @@
 from collections import OrderedDict
 from enum import Enum
 
-import torch
 import torch.nn as nn
 from colorama import Fore, Style
 
@@ -74,8 +73,6 @@ def probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, targ
 
         if _should_register(model, module):
             hooks.append(module.register_backward_hook(hook))
-
-    dtype = _dtype(device)
 
     # create properties
     summary = OrderedDict()
@@ -222,17 +219,3 @@ def _print_header(header_fields):
     header_format_string = " ".join([PLACE_HOLDER] * len(header_fields))
     print(header_format_string.format(*header_fields))
     print(devider)
-
-
-def _dtype(device):
-    device = device.lower()
-    assert device in [
-        "cuda",
-        "cpu",
-    ], "Input device is not valid, please specify 'cuda' or 'cpu'"
-    if device == "cuda" and torch.cuda.is_available():
-        dtype = torch.cuda.FloatTensor
-    else:
-        dtype = torch.FloatTensor
-
-    return dtype
