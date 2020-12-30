@@ -10,7 +10,7 @@ from mmlib.model_equals import imagenet_input
 
 # The following code is inspired by https://github.com/sksq96/pytorch-summary
 
-PLACE_HOLDER_LEN = 30
+PLACE_HOLDER_LEN = 20
 PLACE_HOLDER = "{:>" + str(PLACE_HOLDER_LEN) + "}"
 
 
@@ -163,8 +163,8 @@ def _print_header(header_fields):
 
 # TODO delete main
 if __name__ == '__main__':
-    # models = [models.alexnet, models.vgg19, models.resnet18, models.resnet50, models.resnet152]
-    models = [models.resnet18]
+    models = [models.alexnet, models.vgg19, models.resnet18, models.resnet50, models.resnet152]
+    # models = [models.resnet18]
     tensor1 = imagenet_input()
 
     for mod in models:
