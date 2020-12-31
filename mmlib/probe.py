@@ -42,7 +42,7 @@ class ProbeSummary:
         self.summary[module_key][attribute] = value
 
     def print_summary(self, info: [ProbeInfo]):
-        self._print_header(info)
+        self._print_header([x.value for x in info])
         for layer_key, layer_info in self.summary.items():
             self._print_summary_layer(layer_info, info)
 
@@ -54,34 +54,68 @@ class ProbeSummary:
     #         torch.set_printoptions(profile='default')
     #     pass
 
-    def _print_header(self, info):
-        header_fields = [x.value for x in info]
-
-        format_string = "=".join([self.PLACE_HOLDER] * len(header_fields))
-        insert = ["=" * self.PLACE_HOLDER_LEN] * len(header_fields)
+    def _print_header(self, fields):
+        format_string = "=".join([self.PLACE_HOLDER] * len(fields))
+        insert = ["=" * self.PLACE_HOLDER_LEN] * len(fields)
         devider = format_string.format(*insert)
 
         print(devider)
-        header_format_string = " ".join([self.PLACE_HOLDER] * len(header_fields))
-        print(header_format_string.format(*header_fields))
+        header_format_string = " ".join([self.PLACE_HOLDER] * len(fields))
+        print(header_format_string.format(*fields))
         print(devider)
 
     def _print_summary_layer(self, layer_info, info):
         values = []
         for i in info:
-            lay_inf = layer_info[i]
-            if torch.is_tensor(lay_inf) or isinstance(lay_inf, tuple) and torch.is_tensor(lay_inf[0]):
-                # TODO fix hashing here
-                values.append(str(hash(str(lay_inf))))
-            else:
-                values.append(str(lay_inf))
+            values.append(self._layer_info_str(layer_info[i]))
 
+        self._print_layer(values)
+
+    def _print_layer(self, values):
         format_string = " ".join([self.PLACE_HOLDER] * len(values))
         line = format_string.format(*values)
         print(line)
 
+    def _layer_info_str(self, layer_info):
+        if torch.is_tensor(layer_info) or isinstance(layer_info, tuple) and torch.is_tensor(layer_info[0]):
+            # TODO fix hashing here
+            return str(hash(str(layer_info)))
+        else:
+            return str(layer_info)
 
-def probe_inference(model, inp, device="cuda"):
+    def compare_to(self, other_summary, common: [ProbeInfo], compare: [ProbeInfo]):
+        self._print_compare_header(common, compare)
+        for layer_key, layer_info in self.summary.items():
+            self._print_compare_layer(common, compare, layer_info, other_summary)
+
+    def _print_compare_layer(self, common, compare, layer_info, other_summary):
+        layer_info = layer_info
+        other_layer_info = self._find_forward_index(layer_info[ProbeInfo.FORWARD_INDEX], other_summary.summary)
+        values = []
+        for com in common:
+            values.append(self._layer_info_str(layer_info[com]))
+        for comp in compare:
+            values.append(self._layer_info_str(layer_info[comp]))
+            values.append(self._layer_info_str(other_layer_info[comp]))
+
+        self._print_layer(values)
+
+    def _print_compare_header(self, common, compare):
+        header_fields = []
+        for com in common:
+            header_fields.append(com.value)
+        for comp in compare:
+            header_fields.append(comp.value + '-1')
+            header_fields.append(comp.value + '-2')
+        self._print_header(header_fields)
+
+    def _find_forward_index(self, index, other_summary):
+        for _, info in other_summary.items():
+            if info[ProbeInfo.FORWARD_INDEX] == index:
+                return info
+
+
+def probe_inference(model, inp):
     return probe_reproducibility(model, inp, ProbeMode.INFERENCE)
 
 
@@ -182,14 +216,6 @@ def _should_register(model, module):
            and not (module == model)
 
 
-# def _print_compare_header(common, compare):
-#     header_fields = []
-#     for com in common:
-#         header_fields.append(com.value)
-#     for comp in compare:
-#         header_fields.append(comp.value + '-1')
-#         header_fields.append(comp.value + '-2')
-#     _print_header(header_fields)
 #
 #
 # def _print_compare_layer(common, compare, layer, summary1, summary2):

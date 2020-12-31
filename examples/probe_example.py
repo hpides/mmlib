@@ -6,7 +6,8 @@ from mmlib.probe import ProbeInfo, probe_inference
 
 def summary():
     model = models.vgg19(pretrained=True)
-    summary_info = [ProbeInfo.LAYER_NAME, ProbeInfo.INPUT_SHAPE, ProbeInfo.INPUT_TENSOR, ProbeInfo.OUTPUT_SHAPE,
+    summary_info = [ProbeInfo.LAYER_NAME, ProbeInfo.FORWARD_INDEX, ProbeInfo.INPUT_SHAPE, ProbeInfo.INPUT_TENSOR,
+                    ProbeInfo.OUTPUT_SHAPE,
                     ProbeInfo.OUTPUT_TENSOR]
     dummy_input = imagenet_input()
 
@@ -16,23 +17,23 @@ def summary():
     summary.print_summary(summary_info)
 
 
-# def forward_compare():
-#     model1 = models.vgg19(pretrained=True)
-#     model2 = models.vgg19(pretrained=True)
-#
-#     dummy_input = imagenet_input()
-#
-#     summary1 = probe_inference(model1, dummy_input)
-#     summary2 = probe_inference(model2, dummy_input)
-#
-#     # fields that should for sure be the same
-#     common = [ProbeInfo.LAYER]
-#
-#     # fields where we might expect different values
-#     compare = [ProbeInfo.INPUT_HASH, ProbeInfo.OUTPUT_HASH]
-#
-#     # print the comparison of summary1 and summary2
-#     compare_summaries(summary1, summary2, compare, common=common)
+def forward_compare():
+    model1 = models.vgg19(pretrained=True)
+    model2 = models.vgg19(pretrained=True)
+
+    dummy_input = imagenet_input()
+
+    summary1 = probe_inference(model1, dummy_input)
+    summary2 = probe_inference(model2, dummy_input)
+
+    # fields that should for sure be the same
+    common = [ProbeInfo.LAYER_NAME, ProbeInfo.FORWARD_INDEX]
+
+    # fields where we might expect different values
+    compare = [ProbeInfo.INPUT_TENSOR, ProbeInfo.OUTPUT_TENSOR]
+
+    # print the comparison of summary1 and summary2
+    summary1.compare_to(summary2, common, compare)
 
 
 # def backward_compare():
@@ -90,9 +91,9 @@ def summary():
 
 
 if __name__ == '__main__':
-    summary()
-    print('\n\n\n')
-    # forward_compare()
+    # summary()
+    # print('\n\n\n')
+    forward_compare()
     # print('\n\n\n')
     # backward_compare()
     # print('\n\n\n')
