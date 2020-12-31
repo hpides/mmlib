@@ -2,6 +2,7 @@ from enum import Enum
 
 import torch
 import torch.nn as nn
+from colorama import Fore, Style
 
 
 class ProbeInfo(Enum):
@@ -26,6 +27,8 @@ class ProbeInfo(Enum):
 class ProbeMode(Enum):
     INFERENCE = 1
     TRAINING = 2
+
+
 
 
 class ProbeSummary:
@@ -77,11 +80,14 @@ class ProbeSummary:
         print(line)
 
     def _layer_info_str(self, layer_info):
-        if torch.is_tensor(layer_info) or isinstance(layer_info, tuple) and torch.is_tensor(layer_info[0]):
+        if self._tensor_or_tensor_tuple(layer_info):
             # TODO fix hashing here
             return str(hash(str(layer_info)))
         else:
             return str(layer_info)
+
+    def _tensor_or_tensor_tuple(self, value):
+        return torch.is_tensor(value) or isinstance(value, tuple) and torch.is_tensor(value[0])
 
     def compare_to(self, other_summary, common: [ProbeInfo], compare: [ProbeInfo]):
         self._print_compare_header(common, compare)
@@ -91,28 +97,56 @@ class ProbeSummary:
     def _print_compare_layer(self, common, compare, layer_info, other_summary):
         layer_info = layer_info
         other_layer_info = self._find_forward_index(layer_info[ProbeInfo.FORWARD_INDEX], other_summary.summary)
-        values = []
-        for com in common:
-            values.append(self._layer_info_str(layer_info[com]))
-        for comp in compare:
-            values.append(self._layer_info_str(layer_info[comp]))
-            values.append(self._layer_info_str(other_layer_info[comp]))
 
-        self._print_layer(values)
+        line = ''
+        for com in common:
+            value_ = self._layer_info_str(layer_info[com])
+            line += self.PLACE_HOLDER.format(value_) + " "
+
+        for comp in compare:
+            v1 = layer_info[comp]
+            v2 = other_layer_info[comp]
+
+            message = 'same'
+            color = Fore.GREEN
+            if not self._compare_values(v1, v2):
+                color = Fore.RED
+                message = 'diff'
+
+            line += color + self.PLACE_HOLDER.format(message) + Style.RESET_ALL + " "
+
+        print(line)
 
     def _print_compare_header(self, common, compare):
         header_fields = []
         for com in common:
             header_fields.append(com.value)
         for comp in compare:
-            header_fields.append(comp.value + '-1')
-            header_fields.append(comp.value + '-2')
+            header_fields.append(comp.value + '-comp')
         self._print_header(header_fields)
 
     def _find_forward_index(self, index, other_summary):
         for _, info in other_summary.items():
             if info[ProbeInfo.FORWARD_INDEX] == index:
                 return info
+
+    def _compare_values(self, v1, v2):
+        # TODO make recursive function
+        if not (self._tensor_or_tensor_tuple(v1) and self._tensor_or_tensor_tuple(v2)):
+            return v1 == v2
+        else:
+            if torch.is_tensor(v1) and torch.is_tensor(v2):
+                return torch.equal(v1, v2)
+            else:
+                # in this case we have tuples of tensors
+                for i in range(len(v1)):
+                    t1 = v1[i]
+                    t2 = v2[i]
+                    if not torch.equal(t1, t2):
+                        return False
+                return True
+
+
 
 
 def probe_inference(model, inp):
