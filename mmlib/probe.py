@@ -95,6 +95,7 @@ def probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, targ
             backward_layer_keys.append(layer_key)
 
             summary.add_attribute(layer_key, ProbeInfo.BACKWARD_INDEX, len(backward_layer_keys))
+            summary.add_attribute(layer_key, ProbeInfo.LAYER_NAME, layer_name)
             summary.add_attribute(layer_key, ProbeInfo.GRAD_INPUT_SHAPE, _shape_list(grad_input))
             summary.add_attribute(layer_key, ProbeInfo.GRAD_INPUT_HASH, grad_input)
             summary.add_attribute(layer_key, ProbeInfo.GRAD_OUTPUT_SHAPE, _shape_list(grad_output))
@@ -128,7 +129,7 @@ def probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, targ
     for h in hooks:
         h.remove()
 
-    return _replace_hash_by_count(summary)
+    return summary
 
 
 def print_summary(summary, summary_info):
@@ -221,16 +222,6 @@ def _print_header(header_fields):
     header_format_string = " ".join([PLACE_HOLDER] * len(header_fields))
     print(header_format_string.format(*header_fields))
     print(devider)
-
-
-def _replace_hash_by_count(ordered_dict):
-    result = OrderedDict()
-
-    for i, k in enumerate(ordered_dict):
-        new_key = "{}-{}".format(k.split('-')[0], str(i + 1))
-        result[new_key] = ordered_dict[k]
-
-    return result
 
 
 def _layer_name(module):
