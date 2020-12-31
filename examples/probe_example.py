@@ -1,10 +1,7 @@
-import torch
-from torch import nn
 from torchvision import models
 
-from mmlib.deterministic import set_deterministic
 from mmlib.model_equals import imagenet_input
-from mmlib.probe import ProbeInfo, probe_inference, probe_training
+from mmlib.probe import ProbeInfo, probe_inference
 
 
 def summary():
@@ -17,6 +14,7 @@ def summary():
     summary = probe_inference(model, dummy_input)
 
     summary.print_summary(summary_info)
+
 
 # def forward_compare():
 #     model1 = models.vgg19(pretrained=True)

@@ -2,9 +2,6 @@ from enum import Enum
 
 import torch
 import torch.nn as nn
-from colorama import Fore, Style
-
-
 
 
 class ProbeInfo(Enum):
@@ -32,7 +29,6 @@ class ProbeMode(Enum):
 
 
 class ProbeSummary:
-
     PLACE_HOLDER_LEN = 22
     PLACE_HOLDER = "{:>" + str(PLACE_HOLDER_LEN) + "}"
 
@@ -222,12 +218,6 @@ def _should_register(model, module):
 #         line += color + " ".join([PLACE_HOLDER] * 2).format(v1, v2) + Style.RESET_ALL + " "
 #
 #     print(line)
-
-
-
-
-
-
 
 
 def _layer_name(module):
