@@ -1,12 +1,10 @@
-from collections import OrderedDict
 from enum import Enum
 
 import torch
 import torch.nn as nn
 from colorama import Fore, Style
 
-PLACE_HOLDER_LEN = 22
-PLACE_HOLDER = "{:>" + str(PLACE_HOLDER_LEN) + "}"
+
 
 
 class ProbeInfo(Enum):
@@ -18,14 +16,14 @@ class ProbeInfo(Enum):
     LAYER_NAME = 'layer_name'
 
     INPUT_SHAPE = 'input_shape'
-    INPUT_HASH = 'input_hash'
+    INPUT_TENSOR = 'input_hash'
     OUTPUT_SHAPE = 'output_shape'
-    OUTPUT_HASH = 'output_hash'
+    OUTPUT_TENSOR = 'output_hash'
 
     GRAD_INPUT_SHAPE = 'grad_input_shape'
-    GRAD_INPUT_HASH = 'grad_input_hash'
+    GRAD_INPUT_TENSOR = 'grad_input_hash'
     GRAD_OUTPUT_SHAPE = 'grad_output_shape'
-    GRAD_OUTPUT_HASH = 'grad_output_hash'
+    GRAD_OUTPUT_TENSOR = 'grad_output_hash'
 
 
 class ProbeMode(Enum):
@@ -34,6 +32,9 @@ class ProbeMode(Enum):
 
 
 class ProbeSummary:
+
+    PLACE_HOLDER_LEN = 22
+    PLACE_HOLDER = "{:>" + str(PLACE_HOLDER_LEN) + "}"
 
     def __init__(self):
         self.summary = {}
@@ -44,13 +45,44 @@ class ProbeSummary:
 
         self.summary[module_key][attribute] = value
 
-    def print_sum(self):
-        # TODO mvove
-        if True:
-            torch.set_printoptions(profile='full')
-        else:
-            torch.set_printoptions(profile='default')
-        pass
+    def print_summary(self, info: [ProbeInfo]):
+        self._print_header(info)
+        for layer_key, layer_info in self.summary.items():
+            self._print_summary_layer(layer_info, info)
+
+    # def print_sum(self):
+    #     # TODO move
+    #     if True:
+    #         torch.set_printoptions(profile='full')
+    #     else:
+    #         torch.set_printoptions(profile='default')
+    #     pass
+
+    def _print_header(self, info):
+        header_fields = [x.value for x in info]
+
+        format_string = "=".join([self.PLACE_HOLDER] * len(header_fields))
+        insert = ["=" * self.PLACE_HOLDER_LEN] * len(header_fields)
+        devider = format_string.format(*insert)
+
+        print(devider)
+        header_format_string = " ".join([self.PLACE_HOLDER] * len(header_fields))
+        print(header_format_string.format(*header_fields))
+        print(devider)
+
+    def _print_summary_layer(self, layer_info, info):
+        values = []
+        for i in info:
+            lay_inf = layer_info[i]
+            if torch.is_tensor(lay_inf) or isinstance(lay_inf, tuple) and torch.is_tensor(lay_inf[0]):
+                # TODO fix hashing here
+                values.append(str(hash(str(lay_inf))))
+            else:
+                values.append(str(lay_inf))
+
+        format_string = " ".join([self.PLACE_HOLDER] * len(values))
+        line = format_string.format(*values)
+        print(line)
 
 
 def probe_inference(model, inp, device="cuda"):
@@ -79,9 +111,9 @@ def probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, targ
             summary.add_attribute(layer_key, ProbeInfo.FORWARD_INDEX, len(forward_layer_keys))
             summary.add_attribute(layer_key, ProbeInfo.LAYER_NAME, layer_name)
             summary.add_attribute(layer_key, ProbeInfo.INPUT_SHAPE, _shape_list(input))
-            summary.add_attribute(layer_key, ProbeInfo.INPUT_HASH, input)
-            summary.add_attribute(layer_key, ProbeInfo.OUTPUT_SHAPE, _shape_list(output.shape))
-            summary.add_attribute(layer_key, ProbeInfo.OUTPUT_HASH, output)
+            summary.add_attribute(layer_key, ProbeInfo.INPUT_TENSOR, input)
+            summary.add_attribute(layer_key, ProbeInfo.OUTPUT_SHAPE, _shape_list(output))
+            summary.add_attribute(layer_key, ProbeInfo.OUTPUT_TENSOR, output)
 
         if _should_register(model, module):
             hooks.append(module.register_forward_hook(hook))
@@ -97,9 +129,9 @@ def probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, targ
             summary.add_attribute(layer_key, ProbeInfo.BACKWARD_INDEX, len(backward_layer_keys))
             summary.add_attribute(layer_key, ProbeInfo.LAYER_NAME, layer_name)
             summary.add_attribute(layer_key, ProbeInfo.GRAD_INPUT_SHAPE, _shape_list(grad_input))
-            summary.add_attribute(layer_key, ProbeInfo.GRAD_INPUT_HASH, grad_input)
+            summary.add_attribute(layer_key, ProbeInfo.GRAD_INPUT_TENSOR, grad_input)
             summary.add_attribute(layer_key, ProbeInfo.GRAD_OUTPUT_SHAPE, _shape_list(grad_output))
-            summary.add_attribute(layer_key, ProbeInfo.GRAD_OUTPUT_HASH, grad_output)
+            summary.add_attribute(layer_key, ProbeInfo.GRAD_OUTPUT_TENSOR, grad_output)
 
         if _should_register(model, module):
             hooks.append(module.register_backward_hook(hook))
@@ -132,27 +164,20 @@ def probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, targ
     return summary
 
 
-def print_summary(summary, summary_info):
-    header_fields = [x.value for x in summary_info]
-    _print_header(header_fields)
-    for layer in summary:
-        _print_layer(layer, summary, summary_info)
-
-
-def compare_summaries(summary1, summary2, compare, common=None):
-    assert summary1.keys() == summary2.keys(), 'summary keys do not match'
-    assert len(compare) > 0, 'you have to compare at least one attribute'
-
-    # make sure Layer info is included
-    if not common:
-        common = [ProbeInfo.LAYER]
-    if ProbeInfo.LAYER not in common:
-        common.insert(0, ProbeInfo.LAYER)
-
-    _print_compare_header(common, compare)
-
-    for layer in summary1:
-        _print_compare_layer(common, compare, layer, summary1, summary2)
+# def compare_summaries(summary1, summary2, compare, common=None):
+#     assert summary1.keys() == summary2.keys(), 'summary keys do not match'
+#     assert len(compare) > 0, 'you have to compare at least one attribute'
+#
+#     # make sure Layer info is included
+#     if not common:
+#         common = [ProbeInfo.LAYER]
+#     if ProbeInfo.LAYER not in common:
+#         common.insert(0, ProbeInfo.LAYER)
+#
+#     _print_compare_header(common, compare)
+#
+#     for layer in summary1:
+#         _print_compare_layer(common, compare, layer, summary1, summary2)
 
 
 def _should_register(model, module):
@@ -161,67 +186,48 @@ def _should_register(model, module):
            and not (module == model)
 
 
-def _print_compare_header(common, compare):
-    header_fields = []
-    for com in common:
-        header_fields.append(com.value)
-    for comp in compare:
-        header_fields.append(comp.value + '-1')
-        header_fields.append(comp.value + '-2')
-    _print_header(header_fields)
+# def _print_compare_header(common, compare):
+#     header_fields = []
+#     for com in common:
+#         header_fields.append(com.value)
+#     for comp in compare:
+#         header_fields.append(comp.value + '-1')
+#         header_fields.append(comp.value + '-2')
+#     _print_header(header_fields)
+#
+#
+# def _print_compare_layer(common, compare, layer, summary1, summary2):
+#     common = common.copy()
+#     line = ""
+#
+#     if ProbeInfo.LAYER in common:
+#         common.remove(ProbeInfo.LAYER)
+#         line += PLACE_HOLDER.format(layer) + " "
+#
+#     for field in common:
+#         value_ = summary1[layer][field.value]
+#         line += PLACE_HOLDER.format(value_) + " "
+#
+#     for field in compare:
+#         if field.value in summary1[layer] and field.value in summary2[layer]:
+#             v1 = summary1[layer][field.value]
+#             v2 = summary2[layer][field.value]
+#         else:
+#             v1 = v2 = '---'
+#
+#         color = Fore.GREEN
+#         if v1 != v2:
+#             color = Fore.RED
+#
+#         line += color + " ".join([PLACE_HOLDER] * 2).format(v1, v2) + Style.RESET_ALL + " "
+#
+#     print(line)
 
 
-def _print_compare_layer(common, compare, layer, summary1, summary2):
-    common = common.copy()
-    line = ""
-
-    if ProbeInfo.LAYER in common:
-        common.remove(ProbeInfo.LAYER)
-        line += PLACE_HOLDER.format(layer) + " "
-
-    for field in common:
-        value_ = summary1[layer][field.value]
-        line += PLACE_HOLDER.format(value_) + " "
-
-    for field in compare:
-        if field.value in summary1[layer] and field.value in summary2[layer]:
-            v1 = summary1[layer][field.value]
-            v2 = summary2[layer][field.value]
-        else:
-            v1 = v2 = '---'
-
-        color = Fore.GREEN
-        if v1 != v2:
-            color = Fore.RED
-
-        line += color + " ".join([PLACE_HOLDER] * 2).format(v1, v2) + Style.RESET_ALL + " "
-
-    print(line)
 
 
-def _print_layer(layer, summary, output_info):
-    values = []
-    output_info = output_info.copy()
-
-    if ProbeInfo.LAYER in output_info:
-        output_info.remove(ProbeInfo.LAYER)
-        values.append(layer)
-
-    values += [summary[layer][x.value] for x in output_info]
-    format_string = " ".join([PLACE_HOLDER] * len(values))
-    line = format_string.format(*values)
-    print(line)
 
 
-def _print_header(header_fields):
-    format_string = "=".join([PLACE_HOLDER] * len(header_fields))
-    insert = ["=" * PLACE_HOLDER_LEN] * len(header_fields)
-    devider = format_string.format(*insert)
-
-    print(devider)
-    header_format_string = " ".join([PLACE_HOLDER] * len(header_fields))
-    print(header_format_string.format(*header_fields))
-    print(devider)
 
 
 def _layer_name(module):
@@ -238,6 +244,6 @@ def _shape_list(tensor_tuple):
         if t is None:
             result.append([])
         else:
-            result.append(t.shape)
+            result.append(list(t.shape))
 
     return result
