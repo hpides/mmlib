@@ -29,8 +29,6 @@ class ProbeMode(Enum):
     TRAINING = 2
 
 
-
-
 class ProbeSummary:
     PLACE_HOLDER_LEN = 22
     PLACE_HOLDER = "{:>" + str(PLACE_HOLDER_LEN) + "}"
@@ -131,22 +129,15 @@ class ProbeSummary:
                 return info
 
     def _compare_values(self, v1, v2):
-        # TODO make recursive function
-        if not (self._tensor_or_tensor_tuple(v1) and self._tensor_or_tensor_tuple(v2)):
-            return v1 == v2
+        if isinstance(v1, tuple) and isinstance(v2, tuple):
+            result = True
+            for i in range(len(v1)):
+                result = result and self._compare_values(v1[i], v2[i])
+            return result
+        elif torch.is_tensor(v1) and torch.is_tensor(v2):
+            return torch.equal(v1, v2)
         else:
-            if torch.is_tensor(v1) and torch.is_tensor(v2):
-                return torch.equal(v1, v2)
-            else:
-                # in this case we have tuples of tensors
-                for i in range(len(v1)):
-                    t1 = v1[i]
-                    t2 = v2[i]
-                    if not torch.equal(t1, t2):
-                        return False
-                return True
-
-
+            return v1 == v2
 
 
 def probe_inference(model, inp):
