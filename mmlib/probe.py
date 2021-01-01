@@ -14,14 +14,14 @@ class ProbeInfo(Enum):
     LAYER_NAME = 'layer_name'
 
     INPUT_SHAPE = 'input_shape'
-    INPUT_TENSOR = 'input_hash'
+    INPUT_TENSOR = 'input_tensor'
     OUTPUT_SHAPE = 'output_shape'
-    OUTPUT_TENSOR = 'output_hash'
+    OUTPUT_TENSOR = 'output_tensor'
 
     GRAD_INPUT_SHAPE = 'grad_input_shape'
-    GRAD_INPUT_TENSOR = 'grad_input_hash'
+    GRAD_INPUT_TENSOR = 'grad_input_tensor'
     GRAD_OUTPUT_SHAPE = 'grad_output_shape'
-    GRAD_OUTPUT_TENSOR = 'grad_output_hash'
+    GRAD_OUTPUT_TENSOR = 'grad_output_tensor'
 
 
 class ProbeMode(Enum):
@@ -46,14 +46,6 @@ class ProbeSummary:
         self._print_header([x.value for x in info])
         for layer_key, layer_info in self.summary.items():
             self._print_summary_layer(layer_info, info)
-
-    # def print_sum(self):
-    #     # TODO move
-    #     if True:
-    #         torch.set_printoptions(profile='full')
-    #     else:
-    #         torch.set_printoptions(profile='default')
-    #     pass
 
     def _print_header(self, fields):
         format_string = "=".join([self.PLACE_HOLDER] * len(fields))
@@ -219,56 +211,13 @@ def probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, targ
     return summary
 
 
-# def compare_summaries(summary1, summary2, compare, common=None):
-#     assert summary1.keys() == summary2.keys(), 'summary keys do not match'
-#     assert len(compare) > 0, 'you have to compare at least one attribute'
-#
-#     # make sure Layer info is included
-#     if not common:
-#         common = [ProbeInfo.LAYER]
-#     if ProbeInfo.LAYER not in common:
-#         common.insert(0, ProbeInfo.LAYER)
-#
-#     _print_compare_header(common, compare)
-#
-#     for layer in summary1:
-#         _print_compare_layer(common, compare, layer, summary1, summary2)
-
-
 def _should_register(model, module):
     return not isinstance(module, nn.Sequential) \
            and not isinstance(module, nn.ModuleList) \
            and not (module == model)
 
 
-#
-#
-# def _print_compare_layer(common, compare, layer, summary1, summary2):
-#     common = common.copy()
-#     line = ""
-#
-#     if ProbeInfo.LAYER in common:
-#         common.remove(ProbeInfo.LAYER)
-#         line += PLACE_HOLDER.format(layer) + " "
-#
-#     for field in common:
-#         value_ = summary1[layer][field.value]
-#         line += PLACE_HOLDER.format(value_) + " "
-#
-#     for field in compare:
-#         if field.value in summary1[layer] and field.value in summary2[layer]:
-#             v1 = summary1[layer][field.value]
-#             v2 = summary2[layer][field.value]
-#         else:
-#             v1 = v2 = '---'
-#
-#         color = Fore.GREEN
-#         if v1 != v2:
-#             color = Fore.RED
-#
-#         line += color + " ".join([PLACE_HOLDER] * 2).format(v1, v2) + Style.RESET_ALL + " "
-#
-#     print(line)
+
 
 
 def _layer_name(module):
