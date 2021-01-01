@@ -30,7 +30,7 @@ class ProbeMode(Enum):
 
 
 class ProbeSummary:
-    PLACE_HOLDER_LEN = 22
+    PLACE_HOLDER_LEN = 25
     PLACE_HOLDER = "{:>" + str(PLACE_HOLDER_LEN) + "}"
 
     def __init__(self):
@@ -101,6 +101,7 @@ class ProbeSummary:
             color = Fore.GREEN
             if not self._compare_values(v1, v2):
                 color = Fore.RED
+                test_again = self._compare_values(v1, v2)
                 message = 'diff'
 
             line += color + self.PLACE_HOLDER.format(message) + Style.RESET_ALL + " "
@@ -127,6 +128,15 @@ class ProbeSummary:
                 result = result and self._compare_values(v1[i], v2[i])
             return result
         elif torch.is_tensor(v1) and torch.is_tensor(v2):
+            # if not torch.equal(v1, v2):
+                # print('compare Tensors -> False')
+                # torch.set_printoptions(precision='full')
+                # print(v1)
+                # print(v2)
+                # abs_v1 = torch.abs(v1)
+                # abs_v2 = torch.abs(v2)
+                # abs_eq = torch.equal(abs_v1, abs_v2)
+                # print('abs_eq: {}'.format(abs_eq))
             return torch.equal(v1, v2)
         else:
             return v1 == v2
@@ -215,9 +225,6 @@ def _should_register(model, module):
     return not isinstance(module, nn.Sequential) \
            and not isinstance(module, nn.ModuleList) \
            and not (module == model)
-
-
-
 
 
 def _layer_name(module):
