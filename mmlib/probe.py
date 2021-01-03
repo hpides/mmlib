@@ -150,17 +150,22 @@ class ProbeSummary:
 
     def _print_compare_layer(self, common, compare, layer_info, other_summary):
         layer_info = layer_info
+        # have to match via the forward index because the dictionary keys will differ between to summaries
         other_layer_info = self._find_forward_index(layer_info[ProbeInfo.FORWARD_INDEX], other_summary.summary)
 
         line = ''
+
+        # first add the fields both summaries have in common
         for com in common:
             value_ = self._layer_info_str(layer_info[com])
             line += self.PLACE_HOLDER.format(value_) + " "
 
+        # print the fiels that should be compared
         for comp in compare:
             v1 = layer_info[comp]
             v2 = other_layer_info[comp]
 
+            # use RED color to print 'diff' in case they differ, otherwise print 'same' in green
             message = self.SAME
             color = Fore.GREEN
             if not self._compare_values(v1, v2):
@@ -175,6 +180,7 @@ class ProbeSummary:
         header_fields = []
         for com in common:
             header_fields.append(com.value)
+        # add suffix '-comp' to indicate that the values will be compared
         for comp in compare:
             header_fields.append(comp.value + '-comp')
         self._print_header(header_fields)
@@ -185,20 +191,24 @@ class ProbeSummary:
                 return info
 
     def _compare_values(self, v1, v2):
+        # if both values given are tuples, compare recursively
         if isinstance(v1, tuple) and isinstance(v2, tuple):
             result = True
             for i in range(len(v1)):
                 result = result and self._compare_values(v1[i], v2[i])
             return result
+        # if values are tensors use PyTorch method
         elif torch.is_tensor(v1) and torch.is_tensor(v2):
             return torch.equal(v1, v2)
         else:
             return v1 == v2
 
     def _print_hashwarning(self, fields: [ProbeInfo]):
+        # if we print tensors or a shapes it is likely that thy are to long and we print a hash instead.
+        # Warn the user that for example for long tensors same hash values do not guarantee guarantee same values.
         if any('shape' in x.value or 'tensor' in x.value for x in fields):
-            print(Fore.YELLOW, 'Warning: Same hashes don\'t have to mean that values are exactly the same. They '
-                               'should be seen as an indicator.', Style.RESET_ALL)
+            print(Fore.YELLOW, 'Warning: Same hashes don\'t have to mean that values are exactly the same (especially '
+                               'for tensors). They should be seen as an indicator.', Style.RESET_ALL)
 
 
 def probe_inference(model, inp):
@@ -296,6 +306,11 @@ def _probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, tar
 
 
 def imagenet_target(dummy_input):
+    """
+    Creates a batch of random labels for imagenet data based on a given input data.
+    :param dummy_input: The input to a potential model for the the target values should be produced.
+    :return: The batch of random targets.
+    """
     batch_size = dummy_input.shape[0]
     batch = []
     for i in range(batch_size):
