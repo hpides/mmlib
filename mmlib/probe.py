@@ -41,6 +41,15 @@ class ProbeSummary:
         else:
             self.summary = {}
 
+    def __eq__(self, other):
+        for layer_key, layer_info in self.summary.items():
+            other_info = self._find_forward_index(layer_info[ProbeInfo.FORWARD_INDEX], other.summary)
+            for info_key, info_value in layer_info.items():
+                other_info_value = other_info[info_key]
+                if not self._compare_values(info_value, other_info_value):
+                    return False
+        return True
+
     def add_attribute(self, module_key: str, attribute: ProbeInfo, value):
         if module_key not in self.summary:
             self.summary[module_key] = {}
@@ -48,6 +57,7 @@ class ProbeSummary:
         self.summary[module_key][attribute] = value
 
     def print_summary(self, info: [ProbeInfo]):
+        self._print_hashwarning(info)
         self._print_header([x.value for x in info])
         for layer_key, layer_info in self.summary.items():
             self._print_summary_layer(layer_info, info)
@@ -94,7 +104,6 @@ class ProbeSummary:
 
     def _layer_info_str(self, layer_info):
         if isinstance(layer_info, list) or self._tensor_or_tensor_tuple(layer_info):
-            # TODO fix hashing here
             return str(hash(str(layer_info)))
         else:
             return str(layer_info)
@@ -149,14 +158,10 @@ class ProbeSummary:
         else:
             return v1 == v2
 
-    def __eq__(self, other):
-        for layer_key, layer_info in self.summary.items():
-            other_info = self._find_forward_index(layer_info[ProbeInfo.FORWARD_INDEX], other.summary)
-            for info_key, info_value in layer_info.items():
-                other_info_value = other_info[info_key]
-                if not self._compare_values(info_value, other_info_value):
-                    return False
-        return True
+    def _print_hashwarning(self, fields:[ProbeInfo]):
+        if any('shape' in x.value or 'tensor' in x.value for x in fields):
+            print(Fore.YELLOW, 'Warning: Same hashes don\'t have to mean that values are exactly the same. They should be '
+                               'seen as an indicator.', Style.RESET_ALL)
 
 
 def probe_inference(model, inp):
