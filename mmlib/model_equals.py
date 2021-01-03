@@ -19,8 +19,7 @@ def blackbox_equals(m1, m2, produce_input):
     outputs.
     :param m1: The first model to compare.
     :param m2: The second model to compare.
-    :param m1: The first model to compare.
-    :param m2: The second model to compare.
+    :param produce_input: Method to produce input accepted by models processing imagenet data.
     :return: Returns if the two given models are equal.
     """
     inp = produce_input()
@@ -68,9 +67,8 @@ def equals(m1, m2, produce_input):
     An equals method to compare two given models by making use of whitebox and blackbox equals.
     :param m1: The first model to compare.
     :param m2: The second model to compare.
-    :param m1: The first model to compare.
-    :param m2: The second model to compare.
-    :return: Returns if the two given models are equal.
+    :param produce_input: Method to produce input accepted by models processing imagenet data.
+    :return:
     """
     # whitebox and blackbox check should be redundant,
     # but this way we have an extra safety net in case we forgot a special case
