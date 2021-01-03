@@ -160,8 +160,8 @@ class ProbeSummary:
 
     def _print_hashwarning(self, fields:[ProbeInfo]):
         if any('shape' in x.value or 'tensor' in x.value for x in fields):
-            print(Fore.YELLOW, 'Warning: Same hashes don\'t have to mean that values are exactly the same. They should be '
-                               'seen as an indicator.', Style.RESET_ALL)
+            print(Fore.YELLOW, 'Warning: Same hashes don\'t have to mean that values are exactly the same. They '
+                               'should be seen as an indicator.', Style.RESET_ALL)
 
 
 def probe_inference(model, inp):
