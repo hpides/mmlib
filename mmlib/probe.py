@@ -160,7 +160,7 @@ class ProbeSummary:
             value_ = self._layer_info_str(layer_info[com])
             line += self.PLACE_HOLDER.format(value_) + " "
 
-        # print the fiels that should be compared
+        # print the fields that should be compared
         for comp in compare:
             v1 = layer_info[comp]
             v2 = other_layer_info[comp]
