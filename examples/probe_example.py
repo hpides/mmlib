@@ -3,7 +3,7 @@ from torch import nn
 from torchvision import models
 
 from mmlib.deterministic import set_deterministic
-from mmlib.model_equals import imagenet_input
+from mmlib.model_equals import imagenet_input, equals, whitebox_equals, blackbox_equals
 from mmlib.probe import ProbeInfo, probe_inference, probe_training, ProbeSummary
 
 MODEL = models.alexnet
@@ -69,18 +69,18 @@ def backward_compare():
 
 def deterministic_backward_compare():
     dummy_target = torch.tensor([1])
-    dummy_input = imagenet_input()
     loss_func = nn.CrossEntropyLoss()
+    dummy_input = imagenet_input()
 
     set_deterministic()
     model1 = MODEL(pretrained=True)
     optimizer1 = torch.optim.SGD(model1.parameters(), 1e-4, momentum=0.9, weight_decay=1e-4)
     summary1 = probe_training(model1, dummy_input, optimizer1, loss_func, dummy_target)
 
-    sum_path = '/Users/nils/Desktop/tmp/summ/sum1'
-    summary1.save(sum_path)
-
-    loaded_sum = ProbeSummary(summary_path=sum_path)
+    set_deterministic()
+    model2 = MODEL(pretrained=True)
+    optimizer2 = torch.optim.SGD(model2.parameters(), 1e-4, momentum=0.9, weight_decay=1e-4)
+    summary2 = probe_training(model2, dummy_input, optimizer2, loss_func, dummy_target)
 
     # fields that should for sure be the same
     common = [ProbeInfo.LAYER_NAME]
@@ -88,26 +88,16 @@ def deterministic_backward_compare():
     # fields where we might expect different values
     compare = [ProbeInfo.INPUT_TENSOR, ProbeInfo.OUTPUT_TENSOR, ProbeInfo.GRAD_INPUT_TENSOR,
                ProbeInfo.GRAD_OUTPUT_TENSOR]
-    summary1.compare_to(loaded_sum, common, compare)
-
-    set_deterministic()
-    model2 = MODEL(pretrained=True)
-    optimizer2 = torch.optim.SGD(model1.parameters(), 1e-4, momentum=0.9, weight_decay=1e-4)
-    summary2 = probe_training(model2, dummy_input, optimizer2, loss_func, dummy_target)
 
     summary1.compare_to(summary2, common, compare)
-    summary1.compare_to(loaded_sum, common, compare)
 
-    #
-    # # fields that should for sure be the same
-    # common = [ProbeInfo.LAYER_NAME]
-    #
-    # # fields where we might expect different values
-    # compare = [ProbeInfo.INPUT_TENSOR, ProbeInfo.OUTPUT_TENSOR, ProbeInfo.GRAD_INPUT_TENSOR,
-    #            ProbeInfo.GRAD_OUTPUT_TENSOR]
-    #
-    # # print the comparison of summary1 and summary2
-    # summary1.compare_to(summary2, common, compare)
+    # also the models should be eqaul
+    blackbox_equal = blackbox_equals(model1, model2, imagenet_input)
+    whitebox_equal = whitebox_equals(model1, model2)
+    models_are_equal = equals(model1, model2, imagenet_input)
+    print('models_are_equal (balckbox): {}'.format(blackbox_equal))
+    print('models_are_equal (whitebox): {}'.format(whitebox_equal))
+    print('models_are_equal: {}'.format(models_are_equal))
 
 
 if __name__ == '__main__':
