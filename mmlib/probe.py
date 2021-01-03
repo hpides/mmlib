@@ -33,8 +33,11 @@ class ProbeSummary:
     PLACE_HOLDER_LEN = 25
     PLACE_HOLDER = "{:>" + str(PLACE_HOLDER_LEN) + "}"
 
-    def __init__(self):
-        self.summary = {}
+    def __init__(self, summary_path=None):
+        if summary_path:
+            self.load(summary_path)
+        else:
+            self.summary = {}
 
     def add_attribute(self, module_key: str, attribute: ProbeInfo, value):
         if module_key not in self.summary:
@@ -46,6 +49,17 @@ class ProbeSummary:
         self._print_header([x.value for x in info])
         for layer_key, layer_info in self.summary.items():
             self._print_summary_layer(layer_info, info)
+
+    def compare_to(self, other_summary, common: [ProbeInfo], compare: [ProbeInfo]):
+        self._print_compare_header(common, compare)
+        for layer_key, layer_info in self.summary.items():
+            self._print_compare_layer(common, compare, layer_info, other_summary)
+
+    def save(self, path):
+        torch.save(self.summary, path)
+
+    def load(self, path):
+        self.summary = torch.load(path)
 
     def _print_header(self, fields):
         format_string = "=".join([self.PLACE_HOLDER] * len(fields))
@@ -78,11 +92,6 @@ class ProbeSummary:
 
     def _tensor_or_tensor_tuple(self, value):
         return torch.is_tensor(value) or isinstance(value, tuple) and torch.is_tensor(value[0])
-
-    def compare_to(self, other_summary, common: [ProbeInfo], compare: [ProbeInfo]):
-        self._print_compare_header(common, compare)
-        for layer_key, layer_info in self.summary.items():
-            self._print_compare_layer(common, compare, layer_info, other_summary)
 
     def _print_compare_layer(self, common, compare, layer_info, other_summary):
         layer_info = layer_info
@@ -128,15 +137,18 @@ class ProbeSummary:
                 result = result and self._compare_values(v1[i], v2[i])
             return result
         elif torch.is_tensor(v1) and torch.is_tensor(v2):
-            # if not torch.equal(v1, v2):
-                # print('compare Tensors -> False')
-                # torch.set_printoptions(precision='full')
-                # print(v1)
-                # print(v2)
-                # abs_v1 = torch.abs(v1)
-                # abs_v2 = torch.abs(v2)
-                # abs_eq = torch.equal(abs_v1, abs_v2)
-                # print('abs_eq: {}'.format(abs_eq))
+            if not torch.equal(v1, v2):
+                print('compare Tensors -> False')
+                torch.set_printoptions(precision='full')
+                print(v1)
+                print(v2)
+                abs_v1 = torch.abs(v1)
+                abs_v2 = torch.abs(v2)
+                abs_eq = torch.equal(abs_v1, abs_v2)
+                zero_vec = torch.zeros_like(v1)
+                zero_eq1 = torch.equal(zero_vec, v1)
+                zero_eq2 = torch.equal(zero_vec, v2)
+                print('abs_eq: {}'.format(abs_eq))
             return torch.equal(v1, v2)
         else:
             return v1 == v2
