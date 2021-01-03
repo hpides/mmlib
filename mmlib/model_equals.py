@@ -1,10 +1,11 @@
 import torch
 
 
-def imagenet_input():
-    inp = torch.rand(3, 300, 400)
-    input_batch = inp.unsqueeze(0)
-    return input_batch
+def imagenet_input(batch_size=10):
+    batch = []
+    for i in range(batch_size):
+        batch.append(torch.rand(3, 300, 400))
+    return torch.stack(batch)
 
 
 def blackbox_equals(m1, m2, produce_input):
