@@ -117,12 +117,12 @@ class ProbeSummary:
     def _print_header(self, fields):
         format_string = "=".join([self.PLACE_HOLDER] * len(fields))
         insert = ["=" * self.PLACE_HOLDER_LEN] * len(fields)
-        devider = format_string.format(*insert)
+        divider = format_string.format(*insert)
 
-        print(devider)
+        print(divider)
         header_format_string = " ".join([self.PLACE_HOLDER] * len(fields))
         print(header_format_string.format(*fields))
-        print(devider)
+        print(divider)
 
     def _print_summary_layer(self, layer_info, info):
         values = []

@@ -97,7 +97,7 @@ def deterministic_backward_compare():
     models_are_equal = equals(model1, model2, imagenet_input)
     print()
     print('Also the models should be the same - compare the models')
-    print('models_are_equal (balckbox): {}'.format(blackbox_equal))
+    print('models_are_equal (blackbox): {}'.format(blackbox_equal))
     print('models_are_equal (whitebox): {}'.format(whitebox_equal))
     print('models_are_equal: {}'.format(models_are_equal))
 

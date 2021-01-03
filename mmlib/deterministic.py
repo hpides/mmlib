@@ -12,7 +12,7 @@ def deterministic(func, f_args=None, f_kwargs=None):
     # https://discuss.pytorch.org/t/dataloader-is-not-deterministic/19250
     # WARNING, setting shuffle to False, drastically decreased model performance
 
-    # TODO check if data loaders are determinitsic
+    # TODO check if data loaders are deterministic
     # TODO maybe print warning for multiGPU
 
     set_deterministic()
