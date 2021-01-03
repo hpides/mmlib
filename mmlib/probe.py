@@ -205,7 +205,7 @@ def probe_inference(model, inp):
     :param inp: The model input to use.
     :return: A ProbeSummary object.
     """
-    return probe_reproducibility(model, inp, ProbeMode.INFERENCE)
+    return _probe_reproducibility(model, inp, ProbeMode.INFERENCE)
 
 
 def probe_training(model, inp, optimizer, loss_func, target):
@@ -218,11 +218,11 @@ def probe_training(model, inp, optimizer, loss_func, target):
     :param target: The target data to use.
     :return: A ProbeSummary object.
     """
-    return probe_reproducibility(model, inp, ProbeMode.TRAINING, optimizer=optimizer, loss_func=loss_func,
-                                 target=target)
+    return _probe_reproducibility(model, inp, ProbeMode.TRAINING, optimizer=optimizer, loss_func=loss_func,
+                                  target=target)
 
 
-def probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, target=None):
+def _probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, target=None):
     if mode == ProbeMode.TRAINING:
         assert optimizer is not None, 'for training mode a optimizer is needed'
         assert loss_func is not None, 'for training mode a loss_func is needed'
