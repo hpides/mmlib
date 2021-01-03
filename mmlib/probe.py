@@ -139,7 +139,8 @@ class ProbeSummary:
         print(line)
 
     def _layer_info_str(self, layer_info):
-        if isinstance(layer_info, list) or self._tensor_or_tensor_tuple(layer_info):
+        if self._tensor_or_tensor_tuple(layer_info) or len(str(layer_info)) > self.PLACE_HOLDER_LEN:
+            # if the representation of the info is to long, print a has value
             return str(hash(str(layer_info)))
         else:
             return str(layer_info)
