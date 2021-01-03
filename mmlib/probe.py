@@ -56,6 +56,8 @@ class ProbeSummary:
             return True
 
         except TypeError:
+            # If there is a Type Error most likely the summaries do not have the same fields and are thus not equal.
+            # Even if this is not the case if there is a TypeError they can't be equal.
             return False
 
     def add_attribute(self, module_key: str, attribute: ProbeInfo, value):
