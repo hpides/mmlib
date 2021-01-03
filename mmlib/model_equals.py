@@ -19,7 +19,7 @@ def blackbox_equals(m1, m2, produce_input):
     outputs.
     :param m1: The first model to compare.
     :param m2: The second model to compare.
-    :param produce_input: Method to produce input accepted by models processing imagenet data.
+    :param produce_input: Method to produce input accepted by the given models.
     :return: Returns if the two given models are equal.
     """
     inp = produce_input()

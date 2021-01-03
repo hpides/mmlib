@@ -31,6 +31,9 @@ class ProbeMode(Enum):
 
 
 class ProbeSummary:
+    """
+    Object of this class represent the results of a probing run
+    """
     PLACE_HOLDER_LEN = 25
     PLACE_HOLDER = "{:>" + str(PLACE_HOLDER_LEN) + "}"
     DIFF = 'diff'
@@ -56,18 +59,36 @@ class ProbeSummary:
             return False
 
     def add_attribute(self, module_key: str, attribute: ProbeInfo, value):
+        """
+        Adds an attribute the the summary.
+        :param module_key: The key identifying the module that produced the input.
+        :param attribute: The attribute that should be stored.
+        :param value: The value of the given attribute that should be stored.
+        """
         if module_key not in self.summary:
             self.summary[module_key] = {}
 
         self.summary[module_key][attribute] = value
 
     def print_summary(self, info: [ProbeInfo]):
+        """
+        Prints the summary object.
+        :param info: The fields that should be included in the summary, given as a list of ProbeInfo Enums.
+        """
         self._print_hashwarning(info)
         self._print_header([x.value for x in info])
         for layer_key, layer_info in self.summary.items():
             self._print_summary_layer(layer_info, info)
 
     def compare_to(self, other_summary, common: [ProbeInfo], compare: [ProbeInfo]):
+        """
+        Compares a given ProbeSummary object to the self object and prints color coded per layer comparison.
+        The parameters common and compare can be used to customize the output but do not influence the first line saying
+        if the summaries differ or are the same.
+        :param other_summary: The summary to compare to.
+        :param common: The fields that should be printed for readability but shouldn't be compared.
+        :param compare: The fields that should be compared.
+        """
         output = 'Other summary is: '
         if self == other_summary:
             output += Fore.GREEN + self.SAME + Style.RESET_ALL
@@ -80,9 +101,17 @@ class ProbeSummary:
             self._print_compare_layer(common, compare, layer_info, other_summary)
 
     def save(self, path):
+        """
+        Saves an object to a disk file.
+        :param path: The path to store to.
+        """
         torch.save(self.summary, path)
 
     def load(self, path):
+        """
+        Loads an object saved with :func:`mmlib.probe.save` from a file.
+        :param path: The path to load from.
+        """
         self.summary = torch.load(path)
 
     def _print_header(self, fields):
@@ -170,10 +199,25 @@ class ProbeSummary:
 
 
 def probe_inference(model, inp):
+    """
+    Probes the inference of a given model.
+    :param model: The model to probe.
+    :param inp: The model input to use.
+    :return: A ProbeSummary object.
+    """
     return probe_reproducibility(model, inp, ProbeMode.INFERENCE)
 
 
 def probe_training(model, inp, optimizer, loss_func, target):
+    """
+    Probes the training of a given model.
+    :param model: The model to probe.
+    :param inp: The model input to use.
+    :param optimizer: The optimizer to use.
+    :param loss_func: The loss function to use.
+    :param target: The target data to use.
+    :return: A ProbeSummary object.
+    """
     return probe_reproducibility(model, inp, ProbeMode.TRAINING, optimizer=optimizer, loss_func=loss_func,
                                  target=target)
 
