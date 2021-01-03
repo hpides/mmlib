@@ -1,3 +1,4 @@
+import random
 from enum import Enum
 
 import torch
@@ -42,13 +43,17 @@ class ProbeSummary:
             self.summary = {}
 
     def __eq__(self, other):
-        for layer_key, layer_info in self.summary.items():
-            other_info = self._find_forward_index(layer_info[ProbeInfo.FORWARD_INDEX], other.summary)
-            for info_key, info_value in layer_info.items():
-                other_info_value = other_info[info_key]
-                if not self._compare_values(info_value, other_info_value):
-                    return False
-        return True
+        try:
+            for layer_key, layer_info in self.summary.items():
+                other_info = self._find_forward_index(layer_info[ProbeInfo.FORWARD_INDEX], other.summary)
+                for info_key, info_value in layer_info.items():
+                    other_info_value = other_info[info_key]
+                    if not self._compare_values(info_value, other_info_value):
+                        return False
+            return True
+
+        except TypeError:
+            return False
 
     def add_attribute(self, module_key: str, attribute: ProbeInfo, value):
         if module_key not in self.summary:
@@ -158,7 +163,7 @@ class ProbeSummary:
         else:
             return v1 == v2
 
-    def _print_hashwarning(self, fields:[ProbeInfo]):
+    def _print_hashwarning(self, fields: [ProbeInfo]):
         if any('shape' in x.value or 'tensor' in x.value for x in fields):
             print(Fore.YELLOW, 'Warning: Same hashes don\'t have to mean that values are exactly the same. They '
                                'should be seen as an indicator.', Style.RESET_ALL)
@@ -241,6 +246,14 @@ def probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, targ
         h.remove()
 
     return summary
+
+
+def imagenet_target(dummy_input):
+    batch_size = dummy_input.shape[0]
+    batch = []
+    for i in range(batch_size):
+        batch.append(random.randint(1, 999))
+    return torch.tensor(batch)
 
 
 def _should_register(model, module):

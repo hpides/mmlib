@@ -148,15 +148,3 @@ class TestModelEquals(unittest.TestCase):
 
         self.assertTrue(equals(alex1, alex2, imagenet_input))
         self.assertTrue(equals(resnet1, resnet2, imagenet_input))
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(TestStateDictEquals())
-    suite.addTest(TestModelEquals())
-    return suite
-
-
-if __name__ == '__main__':
-    runner = unittest.TextTestRunner()
-    runner.run(suite())
