@@ -84,7 +84,7 @@ class ProbeSummary:
         print(line)
 
     def _layer_info_str(self, layer_info):
-        if self._tensor_or_tensor_tuple(layer_info):
+        if isinstance(layer_info, list) or self._tensor_or_tensor_tuple(layer_info):
             # TODO fix hashing here
             return str(hash(str(layer_info)))
         else:
@@ -137,18 +137,6 @@ class ProbeSummary:
                 result = result and self._compare_values(v1[i], v2[i])
             return result
         elif torch.is_tensor(v1) and torch.is_tensor(v2):
-            # if not torch.equal(v1, v2):
-            #     print('compare Tensors -> False')
-            #     torch.set_printoptions(precision='full')
-            #     print(v1)
-            #     print(v2)
-            #     abs_v1 = torch.abs(v1)
-            #     abs_v2 = torch.abs(v2)
-            #     abs_eq = torch.equal(abs_v1, abs_v2)
-            #     zero_vec = torch.zeros_like(v1)
-            #     zero_eq1 = torch.equal(zero_vec, v1)
-            #     zero_eq2 = torch.equal(zero_vec, v2)
-            #     print('abs_eq: {}'.format(abs_eq))
             return torch.equal(v1, v2)
         else:
             return v1 == v2
