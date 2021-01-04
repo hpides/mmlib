@@ -93,6 +93,7 @@ class TestProbe(unittest.TestCase):
         self.assertEqual(computed_summary, loaded_summary)
 
     def tearDown(self) -> None:
-        os.remove(TMP_SUMMARY_PATH)
+        if os.path.exists(TMP_SUMMARY_PATH):
+            os.remove(TMP_SUMMARY_PATH)
 
 
