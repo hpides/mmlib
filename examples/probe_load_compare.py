@@ -1,14 +1,7 @@
 import argparse
-import os
-
-import torch
-from torch import nn
-from torchvision import models
 
 from examples.probe_store import _generate_probe_training_summary
-from mmlib.deterministic import set_deterministic
-from mmlib.model_equals import imagenet_input
-from mmlib.probe import probe_inference, ProbeSummary, ProbeInfo, imagenet_target, probe_training
+from mmlib.probe import ProbeSummary, ProbeInfo
 
 
 def main(args):

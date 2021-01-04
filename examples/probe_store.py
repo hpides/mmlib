@@ -7,7 +7,7 @@ from torchvision import models
 
 from mmlib.deterministic import set_deterministic
 from mmlib.model_equals import imagenet_input
-from mmlib.probe import probe_inference, probe_training, imagenet_target
+from mmlib.probe import probe_training, imagenet_target
 
 
 def main(args):
@@ -40,5 +40,3 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     main(args)
-
-
