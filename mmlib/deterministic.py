@@ -1,3 +1,5 @@
+import random
+
 import torch
 
 SEED = 42
@@ -20,6 +22,7 @@ def deterministic(func, f_args=None, f_kwargs=None):
 
 
 def set_deterministic():
+    random.seed(SEED)
     # TODO maybe in the future we also have to set seed for used libraries, e.g. numpy
     torch.manual_seed(SEED)
     torch.cuda.manual_seed(SEED)
