@@ -1,3 +1,4 @@
+import os
 import unittest
 
 import torch
@@ -7,6 +8,8 @@ from torchvision import models
 from mmlib.deterministic import set_deterministic
 from mmlib.model_equals import imagenet_input
 from mmlib.probe import ProbeSummary, probe_inference, imagenet_target, probe_training
+
+TMP_SUMMARY_PATH = './tmp-summary'
 
 
 class TestProbe(unittest.TestCase):
@@ -79,3 +82,17 @@ class TestProbe(unittest.TestCase):
         summary2 = probe_training(model2, dummy_input, optimizer2, loss_func, dummy_target)
 
         self.assertEqual(summary1, summary2)
+
+    def test_safe_and_load(self):
+        model1 = models.alexnet(pretrained=True)
+        dummy_input = imagenet_input()
+        computed_summary = probe_inference(model1, dummy_input)
+        computed_summary.save(TMP_SUMMARY_PATH)
+        loaded_summary = ProbeSummary(TMP_SUMMARY_PATH)
+
+        self.assertEqual(computed_summary, loaded_summary)
+
+    def tearDown(self) -> None:
+        os.remove(TMP_SUMMARY_PATH)
+
+
