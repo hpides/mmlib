@@ -193,24 +193,24 @@ class ProbeSummary:
                 return info
 
     def _compare_values(self, v1, v2):
-        # if both values given are tuples, compare recursively
         if isinstance(v1, tuple) and isinstance(v2, tuple):
+            # if both values given are tuples, compare recursively
             result = True
             for i in range(len(v1)):
                 result = result and self._compare_values(v1[i], v2[i])
             return result
-        # if values are tensors use PyTorch method
         elif torch.is_tensor(v1) and torch.is_tensor(v2):
+            # if values are tensors use PyTorch method
             return torch.equal(v1, v2)
         else:
             return v1 == v2
 
     def _print_hashwarning(self, fields: [ProbeInfo]):
-        # if we print tensors or a shapes it is likely that thy are to long and we print a hash instead.
-        # Warn the user that for example for long tensors same hash values do not guarantee guarantee same values.
+        # If we print tensors or shapes it is likely that they are to long. iN this case we print a hash instead.
+        # Warn the user that for example for long tensors same hash values do not guarantee the same values.
         if any('shape' in x.value or 'tensor' in x.value for x in fields):
             print(Fore.YELLOW, 'Warning: Same hashes don\'t have to mean that values are exactly the same (especially '
-                               'for tensors). They should be seen as an indicator.', Style.RESET_ALL)
+                               'for tensors). Hashes should be seen as an indicator.', Style.RESET_ALL)
 
 
 def probe_inference(model, inp):
