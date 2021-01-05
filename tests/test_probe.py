@@ -95,5 +95,3 @@ class TestProbe(unittest.TestCase):
     def tearDown(self) -> None:
         if os.path.exists(TMP_SUMMARY_PATH):
             os.remove(TMP_SUMMARY_PATH)
-
-

@@ -12,8 +12,7 @@ MODEL = models.alexnet
 def summary():
     model = MODEL(pretrained=True)
     summary_info = [ProbeInfo.LAYER_NAME, ProbeInfo.FORWARD_INDEX, ProbeInfo.INPUT_SHAPE, ProbeInfo.INPUT_TENSOR,
-                    ProbeInfo.OUTPUT_SHAPE,
-                    ProbeInfo.OUTPUT_TENSOR]
+                    ProbeInfo.OUTPUT_SHAPE, ProbeInfo.OUTPUT_TENSOR]
     dummy_input = imagenet_input()
 
     # generate the summary using a dummy input
