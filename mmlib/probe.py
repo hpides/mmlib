@@ -239,7 +239,7 @@ def probe_training(model, inp, optimizer, loss_func, target):
 
 def _probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, target=None):
     if mode == ProbeMode.TRAINING:
-        assert optimizer is not None, 'for training mode a optimizer is needed'
+        assert optimizer is not None, 'for training mode an optimizer is needed'
         assert loss_func is not None, 'for training mode a loss_func is needed'
         assert target is not None, 'for training mode a target is needed'
 
