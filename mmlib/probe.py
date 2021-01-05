@@ -48,7 +48,7 @@ class ProbeSummary:
     def __eq__(self, other):
         try:
             for layer_key, layer_info in self.summary.items():
-                # have to match via the forward index because the dictionary keys will differ between to summaries
+                # have to match via the forward index because the dictionary keys will differ between the summaries
                 other_info = self._find_forward_index(layer_info[ProbeInfo.FORWARD_INDEX], other.summary)
                 for info_key, info_value in layer_info.items():
                     other_info_value = other_info[info_key]
@@ -151,7 +151,7 @@ class ProbeSummary:
 
     def _print_compare_layer(self, common, compare, layer_info, other_summary):
         layer_info = layer_info
-        # have to match via the forward index because the dictionary keys will differ between to summaries
+        # have to match via the forward index because the dictionary keys will differ between the summaries
         other_layer_info = self._find_forward_index(layer_info[ProbeInfo.FORWARD_INDEX], other_summary.summary)
 
         line = ''
