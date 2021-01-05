@@ -285,7 +285,7 @@ def _probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, tar
     backward_layer_keys = []
     hooks = []
 
-    # register forward hook
+    # register hooks
     model.apply(register_forward_hook)
     model.apply(register_backward_hook)
 
