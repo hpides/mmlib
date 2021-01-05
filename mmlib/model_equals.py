@@ -68,7 +68,7 @@ def equals(m1, m2, produce_input):
     :param m1: The first model to compare.
     :param m2: The second model to compare.
     :param produce_input: Method to produce input accepted by models processing imagenet data.
-    :return:
+    :return: Returns if the two given models are equal.
     """
     # whitebox and blackbox check should be redundant,
     # but this way we have an extra safety net in case we forgot a special case
