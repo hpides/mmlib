@@ -147,7 +147,7 @@ class ProbeSummary:
             return str(layer_info)
 
     def _tensor_or_tensor_tuple(self, value):
-        return torch.is_tensor(value) or isinstance(value, tuple) and torch.is_tensor(value[0])
+        return torch.is_tensor(value) or isinstance(value, tuple) and any(torch.is_tensor(x) for x in value)
 
     def _print_compare_layer(self, common, compare, layer_info, other_summary):
         layer_info = layer_info
