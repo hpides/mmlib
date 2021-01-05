@@ -32,7 +32,7 @@ class ProbeMode(Enum):
 
 class ProbeSummary:
     """
-    Object of this class represent the results of a probing run
+    An object of this class represents the result of a probing run
     """
     PLACE_HOLDER_LEN = 25
     PLACE_HOLDER = "{:>" + str(PLACE_HOLDER_LEN) + "}"
