@@ -63,7 +63,7 @@ class ProbeSummary:
 
     def add_attribute(self, module_key: str, attribute: ProbeInfo, value):
         """
-        Adds an attribute the the summary.
+        Adds an attribute to the summary.
         :param module_key: The key identifying the module that produced the input.
         :param attribute: The attribute that should be stored.
         :param value: The value of the given attribute that should be stored.
