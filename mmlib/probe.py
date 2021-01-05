@@ -167,9 +167,10 @@ class ProbeSummary:
             v2 = other_layer_info[comp]
 
             # use RED color to print 'diff' in case they differ, otherwise print 'same' in green
-            message = self.SAME
-            color = Fore.GREEN
-            if not self._compare_values(v1, v2):
+            if self._compare_values(v1, v2):
+                color = Fore.GREEN
+                message = self.SAME
+            else:
                 color = Fore.RED
                 message = self.DIFF
 
