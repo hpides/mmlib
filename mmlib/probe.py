@@ -48,6 +48,7 @@ class ProbeSummary:
     def __eq__(self, other):
         try:
             for layer_key, layer_info in self.summary.items():
+                # have to match via the forward index because the dictionary keys will differ between to summaries
                 other_info = self._find_forward_index(layer_info[ProbeInfo.FORWARD_INDEX], other.summary)
                 for info_key, info_value in layer_info.items():
                     other_info_value = other_info[info_key]
@@ -329,6 +330,7 @@ def _layer_name(module):
 
 
 def _layer_key(layer_name, module):
+    # The layer key needs to be dependent on the current module, so that is is the same for foward and backward path
     return "{}-{}".format(layer_name, hash(module))
 
 
