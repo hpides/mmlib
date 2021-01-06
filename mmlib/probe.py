@@ -213,17 +213,18 @@ class ProbeSummary:
                                'for tensors). Hashes should be seen as an indicator.', Style.RESET_ALL)
 
 
-def probe_inference(model, inp):
+def probe_inference(model, inp, device: torch.device):
     """
     Probes the inference of a given model.
     :param model: The model to probe.
     :param inp: The model input to use.
+    :param device: The device to execute on
     :return: A ProbeSummary object.
     """
-    return _probe_reproducibility(model, inp, ProbeMode.INFERENCE)
+    return _probe_reproducibility(model, inp, ProbeMode.INFERENCE, device)
 
 
-def probe_training(model, inp, optimizer, loss_func, target):
+def probe_training(model, inp, optimizer, loss_func, target, device: torch.device):
     """
     Probes the training of a given model.
     :param model: The model to probe.
@@ -231,13 +232,14 @@ def probe_training(model, inp, optimizer, loss_func, target):
     :param optimizer: The optimizer to use.
     :param loss_func: The loss function to use.
     :param target: The target data to use.
+    :param device: The device to execute on.
     :return: A ProbeSummary object.
     """
-    return _probe_reproducibility(model, inp, ProbeMode.TRAINING, optimizer=optimizer, loss_func=loss_func,
+    return _probe_reproducibility(model, inp, ProbeMode.TRAINING, device, optimizer=optimizer, loss_func=loss_func,
                                   target=target)
 
 
-def _probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, target=None):
+def _probe_reproducibility(model, inp, mode, device, optimizer=None, loss_func=None, target=None):
     if mode == ProbeMode.TRAINING:
         assert optimizer is not None, 'for training mode an optimizer is needed'
         assert loss_func is not None, 'for training mode a loss_func is needed'
@@ -288,6 +290,12 @@ def _probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, tar
     # register hooks
     model.apply(register_forward_hook)
     model.apply(register_backward_hook)
+
+    if 'cuda' in str(device):
+        model.to(device)
+        inp = inp.cuda()
+        if target is not None:
+            target = target.cuda()
 
     if mode == ProbeMode.INFERENCE:
         model.eval()
