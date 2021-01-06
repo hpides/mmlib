@@ -9,26 +9,26 @@ from mmlib.probe import ProbeInfo, probe_inference, probe_training, imagenet_tar
 MODEL = models.alexnet
 
 
-def summary(device):
+def summary(device, forward_indices=None):
     model = MODEL(pretrained=True)
     summary_info = [ProbeInfo.LAYER_NAME, ProbeInfo.FORWARD_INDEX, ProbeInfo.INPUT_SHAPE, ProbeInfo.INPUT_TENSOR,
                     ProbeInfo.OUTPUT_SHAPE, ProbeInfo.OUTPUT_TENSOR]
     dummy_input = imagenet_input()
 
     # generate the summary using a dummy input
-    summary = probe_inference(model, dummy_input, device)
+    summary = probe_inference(model, dummy_input, device, forward_indices=forward_indices)
 
     summary.print_summary(summary_info)
 
 
-def forward_compare(device):
+def forward_compare(device, forward_indices=None):
     model1 = MODEL(pretrained=True)
     model2 = MODEL(pretrained=True)
 
     dummy_input = imagenet_input()
 
-    summary1 = probe_inference(model1, dummy_input, device)
-    summary2 = probe_inference(model2, dummy_input, device)
+    summary1 = probe_inference(model1, dummy_input, device, forward_indices=forward_indices)
+    summary2 = probe_inference(model2, dummy_input, device, forward_indices=forward_indices)
 
     # fields that should for sure be the same
     common = [ProbeInfo.LAYER_NAME, ProbeInfo.FORWARD_INDEX]
@@ -40,7 +40,7 @@ def forward_compare(device):
     summary1.compare_to(summary2, common, compare)
 
 
-def backward_compare(device):
+def backward_compare(device, forward_indices=None):
     model1 = MODEL(pretrained=True)
     model2 = MODEL(pretrained=True)
 
@@ -52,8 +52,10 @@ def backward_compare(device):
     optimizer1 = torch.optim.SGD(model1.parameters(), 1e-4, momentum=0.9, weight_decay=1e-4)
     optimizer2 = torch.optim.SGD(model2.parameters(), 1e-4, momentum=0.9, weight_decay=1e-4)
 
-    summary1 = probe_training(model1, dummy_input, optimizer1, loss_func, dummy_target, device)
-    summary2 = probe_training(model2, dummy_input, optimizer2, loss_func, dummy_target, device)
+    summary1 = probe_training(model1, dummy_input, optimizer1, loss_func, dummy_target, device,
+                              forward_indices=forward_indices)
+    summary2 = probe_training(model2, dummy_input, optimizer2, loss_func, dummy_target, device,
+                              forward_indices=forward_indices)
 
     # fields that should for sure be the same
     common = [ProbeInfo.LAYER_NAME]
@@ -66,7 +68,7 @@ def backward_compare(device):
     summary1.compare_to(summary2, common, compare)
 
 
-def deterministic_backward_compare(device):
+def deterministic_backward_compare(device, forward_indices=None):
     dummy_input = imagenet_input()
     dummy_target = imagenet_target(dummy_input)
     loss_func = nn.CrossEntropyLoss()
@@ -74,12 +76,14 @@ def deterministic_backward_compare(device):
     set_deterministic()
     model1 = MODEL(pretrained=True)
     optimizer1 = torch.optim.SGD(model1.parameters(), 1e-3)
-    summary1 = probe_training(model1, dummy_input, optimizer1, loss_func, dummy_target, device)
+    summary1 = probe_training(model1, dummy_input, optimizer1, loss_func, dummy_target, device,
+                              forward_indices=forward_indices)
 
     set_deterministic()
     model2 = MODEL(pretrained=True)
     optimizer2 = torch.optim.SGD(model2.parameters(), 1e-3)
-    summary2 = probe_training(model2, dummy_input, optimizer2, loss_func, dummy_target, device)
+    summary2 = probe_training(model2, dummy_input, optimizer2, loss_func, dummy_target, device,
+                              forward_indices=forward_indices)
 
     # fields that should for sure be the same
     common = [ProbeInfo.LAYER_NAME]
@@ -105,10 +109,13 @@ if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print('device used: {}'.format(device))
 
-    summary(device)
+    # show only the first 25 layers
+    forward_indices = list(range(1, 25))
+
+    summary(device, forward_indices)
     print('\n\n\n')
-    forward_compare(device)
+    forward_compare(device, forward_indices)
     print('\n\n\n')
-    backward_compare(device)
+    backward_compare(device, forward_indices)
     print('\n\n\n')
-    deterministic_backward_compare(device)
+    deterministic_backward_compare(device, forward_indices)

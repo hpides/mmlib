@@ -67,6 +67,7 @@ def state_dict_equals(d1, d2, device: torch.device = None):
         layer_name1, weight_tensor1 = item1
         layer_name2, weight_tensor2 = item2
 
+        # TODO USE GENERIC DEVICE
         if 'cuda' in str(device):
             weight_tensor1 = weight_tensor1.cuda()
             weight_tensor2 = weight_tensor2.cuda()
