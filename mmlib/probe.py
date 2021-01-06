@@ -1,9 +1,10 @@
-import random
 from enum import Enum
 
 import torch
 import torch.nn as nn
 from colorama import Fore, Style
+
+from mmlib.helper import _get_device
 
 
 class ProbeInfo(Enum):
@@ -117,6 +118,14 @@ class ProbeSummary:
         """
         self.summary = torch.load(path)
 
+    def has_layer_key(self, key):
+        """
+        Checks if a given layer key is in the summary.
+        :param key: The key to check for.
+        :return: Returns True if key has been found.
+        """
+        return key in self.summary
+
     def _print_header(self, fields):
         format_string = "=".join([self.PLACE_HOLDER] * len(fields))
         insert = ["=" * self.PLACE_HOLDER_LEN] * len(fields)
@@ -213,17 +222,21 @@ class ProbeSummary:
                                'for tensors). Hashes should be seen as an indicator.', Style.RESET_ALL)
 
 
-def probe_inference(model, inp):
+def probe_inference(model, inp, device: torch.device = None, forward_indices=None):
     """
     Probes the inference of a given model.
     :param model: The model to probe.
     :param inp: The model input to use.
+    :param device: The device to execute on
+    :param forward_indices: A list of integers that represents the forward_indices that will be included in the
+    generated summary. This Method is especially helpful if the model has many layers and the memory of e.g. the GPU is
+    not big enough.
     :return: A ProbeSummary object.
     """
-    return _probe_reproducibility(model, inp, ProbeMode.INFERENCE)
+    return _probe_reproducibility(model, inp, ProbeMode.INFERENCE, device, forward_indices=forward_indices)
 
 
-def probe_training(model, inp, optimizer, loss_func, target):
+def probe_training(model, inp, optimizer, loss_func, target, device: torch.device = None, forward_indices=None):
     """
     Probes the training of a given model.
     :param model: The model to probe.
@@ -231,17 +244,23 @@ def probe_training(model, inp, optimizer, loss_func, target):
     :param optimizer: The optimizer to use.
     :param loss_func: The loss function to use.
     :param target: The target data to use.
+    :param device: The device to execute on.
+    :param forward_indices: A list of integers that represents the forward_indices that will be included in the
+    generated summary. This Method is especially helpful if the model has many layers and the memory of e.g. the GPU is
+    not big enough.
     :return: A ProbeSummary object.
     """
-    return _probe_reproducibility(model, inp, ProbeMode.TRAINING, optimizer=optimizer, loss_func=loss_func,
-                                  target=target)
+    return _probe_reproducibility(model, inp, ProbeMode.TRAINING, device, optimizer=optimizer, loss_func=loss_func,
+                                  target=target, forward_indices=forward_indices)
 
 
-def _probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, target=None):
+def _probe_reproducibility(model, inp, mode, device, optimizer=None, loss_func=None, target=None, forward_indices=None):
     if mode == ProbeMode.TRAINING:
         assert optimizer is not None, 'for training mode an optimizer is needed'
         assert loss_func is not None, 'for training mode a loss_func is needed'
         assert target is not None, 'for training mode a target is needed'
+
+    device = _get_device(device)
 
     def register_forward_hook(module, ):
 
@@ -250,13 +269,15 @@ def _probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, tar
             layer_key = _layer_key(layer_name, module)
 
             forward_layer_keys.append(layer_key)
+            forward_index = len(forward_layer_keys)
 
-            summary.add_attribute(layer_key, ProbeInfo.FORWARD_INDEX, len(forward_layer_keys))
-            summary.add_attribute(layer_key, ProbeInfo.LAYER_NAME, layer_name)
-            summary.add_attribute(layer_key, ProbeInfo.INPUT_SHAPE, _shape_list(input))
-            summary.add_attribute(layer_key, ProbeInfo.INPUT_TENSOR, input)
-            summary.add_attribute(layer_key, ProbeInfo.OUTPUT_SHAPE, _shape_list(output))
-            summary.add_attribute(layer_key, ProbeInfo.OUTPUT_TENSOR, output)
+            if forward_indices is None or forward_index in forward_indices:
+                summary.add_attribute(layer_key, ProbeInfo.FORWARD_INDEX, forward_index)
+                summary.add_attribute(layer_key, ProbeInfo.LAYER_NAME, layer_name)
+                summary.add_attribute(layer_key, ProbeInfo.INPUT_SHAPE, _shape_list(input))
+                summary.add_attribute(layer_key, ProbeInfo.INPUT_TENSOR, input)
+                summary.add_attribute(layer_key, ProbeInfo.OUTPUT_SHAPE, _shape_list(output))
+                summary.add_attribute(layer_key, ProbeInfo.OUTPUT_TENSOR, output)
 
         if _should_register(model, module):
             hooks.append(module.register_forward_hook(hook))
@@ -269,12 +290,14 @@ def _probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, tar
 
             backward_layer_keys.append(layer_key)
 
-            summary.add_attribute(layer_key, ProbeInfo.BACKWARD_INDEX, len(backward_layer_keys))
-            summary.add_attribute(layer_key, ProbeInfo.LAYER_NAME, layer_name)
-            summary.add_attribute(layer_key, ProbeInfo.GRAD_INPUT_SHAPE, _shape_list(grad_input))
-            summary.add_attribute(layer_key, ProbeInfo.GRAD_INPUT_TENSOR, grad_input)
-            summary.add_attribute(layer_key, ProbeInfo.GRAD_OUTPUT_SHAPE, _shape_list(grad_output))
-            summary.add_attribute(layer_key, ProbeInfo.GRAD_OUTPUT_TENSOR, grad_output)
+            # only add information if layer was included in forwards path
+            if summary.has_layer_key(layer_key):
+                summary.add_attribute(layer_key, ProbeInfo.BACKWARD_INDEX, len(backward_layer_keys))
+                summary.add_attribute(layer_key, ProbeInfo.LAYER_NAME, layer_name)
+                summary.add_attribute(layer_key, ProbeInfo.GRAD_INPUT_SHAPE, _shape_list(grad_input))
+                summary.add_attribute(layer_key, ProbeInfo.GRAD_INPUT_TENSOR, grad_input)
+                summary.add_attribute(layer_key, ProbeInfo.GRAD_OUTPUT_SHAPE, _shape_list(grad_output))
+                summary.add_attribute(layer_key, ProbeInfo.GRAD_OUTPUT_TENSOR, grad_output)
 
         if _should_register(model, module):
             hooks.append(module.register_backward_hook(hook))
@@ -288,6 +311,11 @@ def _probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, tar
     # register hooks
     model.apply(register_forward_hook)
     model.apply(register_backward_hook)
+
+    model.to(device)
+    inp = inp.to(device)
+    if target is not None:
+        target = target.to(device)
 
     if mode == ProbeMode.INFERENCE:
         model.eval()
@@ -305,19 +333,6 @@ def _probe_reproducibility(model, inp, mode, optimizer=None, loss_func=None, tar
         h.remove()
 
     return summary
-
-
-def imagenet_target(dummy_input):
-    """
-    Creates a batch of random labels for imagenet data based on a given input data.
-    :param dummy_input: The input to a potential model for the the target values should be produced.
-    :return: The batch of random targets.
-    """
-    batch_size = dummy_input.shape[0]
-    batch = []
-    for i in range(batch_size):
-        batch.append(random.randint(1, 999))
-    return torch.tensor(batch)
 
 
 def _should_register(model, module):
