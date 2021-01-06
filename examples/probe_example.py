@@ -3,8 +3,9 @@ from torch import nn
 from torchvision import models
 
 from mmlib.deterministic import set_deterministic
-from mmlib.model_equals import imagenet_input, equals, whitebox_equals, blackbox_equals
-from mmlib.probe import ProbeInfo, probe_inference, probe_training, imagenet_target
+from mmlib.helper import imagenet_input, imagenet_target
+from mmlib.model_equals import equals, whitebox_equals, blackbox_equals
+from mmlib.probe import ProbeInfo, probe_inference, probe_training
 
 MODEL = models.alexnet
 

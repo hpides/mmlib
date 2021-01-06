@@ -4,7 +4,8 @@ import torch
 from torchvision import models
 
 from mmlib.deterministic import set_deterministic
-from mmlib.model_equals import state_dict_equals, equals, imagenet_input
+from mmlib.helper import imagenet_input
+from mmlib.model_equals import state_dict_equals, equals
 
 
 class TestStateDictEquals(unittest.TestCase):

@@ -1,9 +1,10 @@
-import random
 from enum import Enum
 
 import torch
 import torch.nn as nn
 from colorama import Fore, Style
+
+from mmlib.helper import _get_device
 
 
 class ProbeInfo(Enum):
@@ -259,6 +260,8 @@ def _probe_reproducibility(model, inp, mode, device, optimizer=None, loss_func=N
         assert loss_func is not None, 'for training mode a loss_func is needed'
         assert target is not None, 'for training mode a target is needed'
 
+    device = _get_device(device)
+
     def register_forward_hook(module, ):
 
         def hook(module, input, output):
@@ -309,11 +312,10 @@ def _probe_reproducibility(model, inp, mode, device, optimizer=None, loss_func=N
     model.apply(register_forward_hook)
     model.apply(register_backward_hook)
 
-    if 'cuda' in str(device):
-        model.to(device)
-        inp = inp.cuda()
-        if target is not None:
-            target = target.cuda()
+    model.to(device)
+    inp = inp.to(device)
+    if target is not None:
+        target = target.to(device)
 
     if mode == ProbeMode.INFERENCE:
         model.eval()
@@ -331,19 +333,6 @@ def _probe_reproducibility(model, inp, mode, device, optimizer=None, loss_func=N
         h.remove()
 
     return summary
-
-
-def imagenet_target(dummy_input):
-    """
-    Creates a batch of random labels for imagenet data based on a given input data.
-    :param dummy_input: The input to a potential model for the the target values should be produced.
-    :return: The batch of random targets.
-    """
-    batch_size = dummy_input.shape[0]
-    batch = []
-    for i in range(batch_size):
-        batch.append(random.randint(1, 999))
-    return torch.tensor(batch)
 
 
 def _should_register(model, module):
