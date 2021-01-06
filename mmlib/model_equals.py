@@ -10,7 +10,7 @@ def blackbox_equals(m1, m2, produce_input, device: torch.device = None):
     :param m1: The first model to compare.
     :param m2: The second model to compare.
     :param produce_input: Method to produce input accepted by the given models.
-    :param device: The device to execute on
+    :param device: The device to execute on.
     :return: Returns if the two given models are equal.
     """
 
@@ -36,7 +36,7 @@ def whitebox_equals(m1, m2, device: torch.device = None):
     Compares two models in a whitebox manner meaning we compare the model weights.
     :param m1: The first model to compare.
     :param m2: The second model to compare.
-    :param device: The device to execute on
+    :param device: The device to execute on.
     :return: Returns if the two given models are equal.
     """
 
@@ -63,9 +63,8 @@ def state_dict_equals(d1, d2, device: torch.device = None):
         layer_name1, weight_tensor1 = item1
         layer_name2, weight_tensor2 = item2
 
-        if 'cuda' in str(device):
-            weight_tensor1 = weight_tensor1.to(device)
-            weight_tensor2 = weight_tensor2.to(device)
+        weight_tensor1 = weight_tensor1.to(device)
+        weight_tensor2 = weight_tensor2.to(device)
 
         if not layer_name1 == layer_name2 or not torch.equal(weight_tensor1, weight_tensor2):
             return False

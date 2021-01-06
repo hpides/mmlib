@@ -59,7 +59,7 @@ def backward_compare(device, forward_indices=None):
                               forward_indices=forward_indices)
 
     # fields that should for sure be the same
-    common = [ProbeInfo.LAYER_NAME]
+    common = [ProbeInfo.LAYER_NAME, ProbeInfo.FORWARD_INDEX]
 
     # fields where we might expect different values
     compare = [ProbeInfo.INPUT_TENSOR, ProbeInfo.OUTPUT_TENSOR, ProbeInfo.GRAD_INPUT_TENSOR,
@@ -87,7 +87,7 @@ def deterministic_backward_compare(device, forward_indices=None):
                               forward_indices=forward_indices)
 
     # fields that should for sure be the same
-    common = [ProbeInfo.LAYER_NAME]
+    common = [ProbeInfo.LAYER_NAME, ProbeInfo.FORWARD_INDEX]
 
     # fields where we might expect different values
     compare = [ProbeInfo.INPUT_TENSOR, ProbeInfo.OUTPUT_TENSOR, ProbeInfo.GRAD_INPUT_TENSOR,
