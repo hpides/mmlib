@@ -213,7 +213,7 @@ class ProbeSummary:
                                'for tensors). Hashes should be seen as an indicator.', Style.RESET_ALL)
 
 
-def probe_inference(model, inp, device: torch.device):
+def probe_inference(model, inp, device: torch.device = None):
     """
     Probes the inference of a given model.
     :param model: The model to probe.
@@ -224,7 +224,7 @@ def probe_inference(model, inp, device: torch.device):
     return _probe_reproducibility(model, inp, ProbeMode.INFERENCE, device)
 
 
-def probe_training(model, inp, optimizer, loss_func, target, device: torch.device):
+def probe_training(model, inp, optimizer, loss_func, target, device: torch.device = None):
     """
     Probes the training of a given model.
     :param model: The model to probe.
