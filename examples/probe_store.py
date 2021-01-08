@@ -6,8 +6,8 @@ from torch import nn
 from torchvision import models
 
 from mmlib.deterministic import set_deterministic
-from mmlib.model_equals import imagenet_input
-from mmlib.probe import probe_training, imagenet_target
+from mmlib.helper import imagenet_input, imagenet_target
+from mmlib.probe import probe_training
 
 
 def main(args):
