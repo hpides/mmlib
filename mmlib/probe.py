@@ -5,6 +5,7 @@ import torch.nn as nn
 from colorama import Fore, Style
 
 from mmlib.helper import _get_device
+from mmlib.util import _print_info, _print_warning
 
 
 class ProbeInfo(Enum):
@@ -226,6 +227,9 @@ def probe_inference(model, inp, device: torch.device = None, forward_indices=Non
     not big enough.
     :return: A ProbeSummary object.
     """
+
+    _inference_info()
+
     return _probe_reproducibility(model, inp, ProbeMode.INFERENCE, device, forward_indices=forward_indices)
 
 
@@ -358,29 +362,22 @@ def _shape_list(tensor_tuple):
 
 def _forward_indices_warning(forward_indices):
     if forward_indices is not None:
-        print(
-            Fore.YELLOW
-            + "WARNING: You set the forward_indices argument. "
-              "This means not all layers will be included in the summary."
-            + Style.RESET_ALL
-        )
+        _print_warning("You set the forward_indices argument. "
+                       "This means not all layers will be included in the summary.")
     else:
-        print(
-            Fore.YELLOW
-            + "WARNING: You did not set the forward_indices argument. "
-              "Every layer will be included in the summary. This might lead to very high memory consumption."
-            + Style.RESET_ALL
-        )
-
+        _print_warning("You did not set the forward_indices argument. "
+                       "Every layer will be included in the summary. This might lead to very high memory consumption.")
 
 
 def _hashwarning(fields: [ProbeInfo]):
     # If we print tensors or shapes it is likely that they are to long. iN this case we print a hash instead.
     # Warn the user that for example for long tensors same hash values do not guarantee the same values.
     if any('shape' in x.value or 'tensor' in x.value for x in fields):
-        print(
-            Fore.YELLOW
-            + "WARNING: Same hashes don\'t have to mean that values are exactly the same (especially for tensors)."
-              " Hashes should be seen as an indicator."
-            + Style.RESET_ALL
-        )
+        _print_warning("Same hashes don\'t have to mean that values are exactly the same (especially for tensors)."
+                       " Hashes should be seen as an indicator.")
+
+
+def _inference_info():
+    _print_info("You are probing in inference mode so the model will be in eval mode."
+                "\nSince layers like dropout are switched off in this mode you won't find factors that produce "
+                "non-reproducibility by these kind of layers.")
