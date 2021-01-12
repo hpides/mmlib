@@ -79,7 +79,7 @@ class ProbeSummary:
         Prints the summary object.
         :param info: The fields that should be included in the summary, given as a list of ProbeInfo Enums.
         """
-        self._print_hashwarning(info)
+        _hashwarning(info)
         self._print_header([x.value for x in info])
         for layer_key, layer_info in self.summary.items():
             self._print_summary_layer(layer_info, info)
@@ -214,13 +214,6 @@ class ProbeSummary:
         else:
             return v1 == v2
 
-    def _print_hashwarning(self, fields: [ProbeInfo]):
-        # If we print tensors or shapes it is likely that they are to long. iN this case we print a hash instead.
-        # Warn the user that for example for long tensors same hash values do not guarantee the same values.
-        if any('shape' in x.value or 'tensor' in x.value for x in fields):
-            print(Fore.YELLOW, 'Warning: Same hashes don\'t have to mean that values are exactly the same (especially '
-                               'for tensors). Hashes should be seen as an indicator.', Style.RESET_ALL)
-
 
 def probe_inference(model, inp, device: torch.device = None, forward_indices=None):
     """
@@ -259,6 +252,9 @@ def _probe_reproducibility(model, inp, mode, device, optimizer=None, loss_func=N
         assert optimizer is not None, 'for training mode an optimizer is needed'
         assert loss_func is not None, 'for training mode a loss_func is needed'
         assert target is not None, 'for training mode a target is needed'
+
+    if forward_indices is not None:
+        _forward_indices_warning()
 
     device = _get_device(device)
 
@@ -359,3 +355,24 @@ def _shape_list(tensor_tuple):
             result.append(list(t.shape))
 
     return result
+
+
+def _forward_indices_warning():
+    print(
+        Fore.YELLOW
+        + "WARNING: You set the forward_indices argument. "
+          "This means not all layers will be included in the summary."
+        + Style.RESET_ALL
+    )
+
+
+def _hashwarning(fields: [ProbeInfo]):
+    # If we print tensors or shapes it is likely that they are to long. iN this case we print a hash instead.
+    # Warn the user that for example for long tensors same hash values do not guarantee the same values.
+    if any('shape' in x.value or 'tensor' in x.value for x in fields):
+        print(
+            Fore.YELLOW
+            + "WARNING: Same hashes don\'t have to mean that values are exactly the same (especially for tensors)."
+              " Hashes should be seen as an indicator."
+            + Style.RESET_ALL
+        )
