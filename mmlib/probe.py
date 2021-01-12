@@ -253,8 +253,7 @@ def _probe_reproducibility(model, inp, mode, device, optimizer=None, loss_func=N
         assert loss_func is not None, 'for training mode a loss_func is needed'
         assert target is not None, 'for training mode a target is needed'
 
-    if forward_indices is not None:
-        _forward_indices_warning()
+    _forward_indices_warning(forward_indices)
 
     device = _get_device(device)
 
@@ -357,13 +356,22 @@ def _shape_list(tensor_tuple):
     return result
 
 
-def _forward_indices_warning():
-    print(
-        Fore.YELLOW
-        + "WARNING: You set the forward_indices argument. "
-          "This means not all layers will be included in the summary."
-        + Style.RESET_ALL
-    )
+def _forward_indices_warning(forward_indices):
+    if forward_indices is not None:
+        print(
+            Fore.YELLOW
+            + "WARNING: You set the forward_indices argument. "
+              "This means not all layers will be included in the summary."
+            + Style.RESET_ALL
+        )
+    else:
+        print(
+            Fore.YELLOW
+            + "WARNING: You did not set the forward_indices argument. "
+              "Every layer will be included in the summary. This might lead to very high memory consumption."
+            + Style.RESET_ALL
+        )
+
 
 
 def _hashwarning(fields: [ProbeInfo]):
