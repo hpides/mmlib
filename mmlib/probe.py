@@ -370,7 +370,7 @@ def _forward_indices_warning(forward_indices):
 
 
 def _hashwarning(fields: [ProbeInfo]):
-    # If we print tensors or shapes it is likely that they are to long. iN this case we print a hash instead.
+    # If we print tensors or shapes it is likely that they are to long. In this case we print a hash instead.
     # Warn the user that for example for long tensors same hash values do not guarantee the same values.
     if any('shape' in x.value or 'tensor' in x.value for x in fields):
         _print_warning("Same hashes don\'t have to mean that values are exactly the same (especially for tensors)."
