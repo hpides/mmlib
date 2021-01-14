@@ -7,7 +7,7 @@ from mmlib.helper import imagenet_input, imagenet_target
 from mmlib.model_equals import equals, whitebox_equals, blackbox_equals
 from mmlib.probe import ProbeInfo, probe_inference, probe_training
 
-MODEL = models.alexnet
+MODEL = models.googlenet
 
 
 def summary(device, forward_indices=None):
@@ -111,7 +111,7 @@ if __name__ == '__main__':
     print('device used: {}'.format(device))
 
     # show only the first 25 layers
-    forward_indices = list(range(1, 25))
+    forward_indices = list(range(175, 200))
 
     summary(device, forward_indices)
     print('\n\n\n')
