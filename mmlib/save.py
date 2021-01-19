@@ -1,9 +1,12 @@
+import os
 from enum import Enum
 
 import torch
 from pymongo import MongoClient
 
-SET = "$set"
+SAVE_PATH = 'save-path'
+STORE_TYPE = 'store-type'
+NAME = 'name'
 
 
 class SaveType(Enum):
@@ -13,16 +16,26 @@ class SaveType(Enum):
 
 
 class SaveService:
-    def __init__(self, host='127.0.0.1'):
-        self.mongo_service = MongoService(host)
+    def __init__(self, base_path, host='127.0.0.1'):
+        self._mongo_service = MongoService(host)
+        self._base_path = base_path
 
-    def model_to_dict(self, model):
-        pass
+    def save_model(self, name, model):
+        model_dict = {
+            NAME: name,
+            STORE_TYPE: SaveType.PICKLED_MODEL.value
+        }
 
-    def save_model(self, model):
-        model_dict = self.model_to_dict(model)
-        id = self.mongo_service.save_dict(model_dict)
-        return id
+        model_id = self._mongo_service.save_dict(model_dict)
+
+        save_path = os.path.join(self._base_path, str(model_id))
+        attribute = {SAVE_PATH: save_path}
+
+        torch.save(model, save_path)
+
+        self._mongo_service.add_attribute(model_id, attribute)
+
+        return model_id
 
     def saved_models(self):
         pass
@@ -31,6 +44,7 @@ class SaveService:
 MODELS = 'models'
 MMLIB = 'mmlib'
 ID = '_id'
+SET = "$set"
 
 
 class MongoService(object):
