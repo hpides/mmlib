@@ -1,4 +1,15 @@
+from enum import Enum
+
+import torch
 from pymongo import MongoClient
+
+SET = "$set"
+
+
+class SaveType(Enum):
+    PICKLED_MODEL = 1
+    ARCHITECTURE_AND_WEIGHTS = 2
+    PROVENANCE = 3
 
 
 class SaveService:
@@ -59,6 +70,19 @@ class MongoService(object):
         collection = self._get_collection()
 
         return collection.find({ID: model_id})[0]
+
+    def add_attribute(self, model_id, attribute):
+        """
+        Adds an attribute to an entry identified by the model_id.
+        :param model_id: The model_id to identify the entry to modify.
+        :param attribute: The attribute(s) to add.
+        """
+        collection = self._get_collection()
+
+        query = {ID: model_id}
+        new_values = {SET: attribute}
+
+        collection.update_one(query, new_values)
 
     def _get_collection(self):
         db = self._mongo_client[self._db_name]

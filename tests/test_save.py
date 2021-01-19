@@ -26,3 +26,18 @@ class TestProbe(unittest.TestCase):
 
         self.assertEqual(1, num_entries)
         self.assertEqual(expected_dict, retrieve)
+
+    def test_add_attribute(self):
+        test_dict = {'test': 'test'}
+        model_id = self.mongo_service.save_dict(test_dict)
+
+        add = {'added': 'added'}
+        self.mongo_service.add_attribute(model_id, add)
+
+        expected_dict = test_dict
+        expected_dict['_id'] = model_id
+        expected_dict.update(add)
+
+        retrieve = self.mongo_service.get_model_dict(model_id=model_id)
+
+        self.assertEqual(expected_dict, retrieve)
