@@ -8,7 +8,6 @@ MONGO_CONTAINER_NAME = 'mongo-test'
 
 class TestProbe(unittest.TestCase):
 
-    @classmethod
     def setUp(self) -> None:
         os.system('docker run --rm --name %s -it -p 27017:27017 -d  mongo:latest' % MONGO_CONTAINER_NAME)
         self.mongo_service = MongoService('127.0.0.1')
