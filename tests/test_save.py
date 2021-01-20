@@ -13,19 +13,22 @@ MONGO_CONTAINER_NAME = 'mongo-test'
 class TestProbe(unittest.TestCase):
 
     def setUp(self) -> None:
+        self.abs_tmp_path = os.path.abspath('./tmp')
+
+        self.__clean_up()
         # run mongo DB locally in docker container
         os.system('docker run --rm --name %s -it -p 27017:27017 -d  mongo:latest' % MONGO_CONTAINER_NAME)
 
         self.mongo_service = MongoService('127.0.0.1', 'mmlib', 'models')
 
-        self.abs_tmp_path = os.path.abspath('./tmp')
-
         os.mkdir(self.abs_tmp_path)
         self.save_service = SaveService(self.abs_tmp_path)
 
     def tearDown(self) -> None:
-        os.system('docker kill %s' % MONGO_CONTAINER_NAME)
+        self.__clean_up()
 
+    def __clean_up(self):
+        os.system('docker kill %s' % MONGO_CONTAINER_NAME)
         shutil.rmtree(self.abs_tmp_path)
 
     def test_save_json(self):
@@ -69,3 +72,31 @@ class TestProbe(unittest.TestCase):
 
         retrieve = self.mongo_service.get_dict(object_id=model_id)
         self.assertEqual(expected_dict, retrieve)
+
+    def test_get_saved_ids(self):
+        expected = []
+
+        ids = self.save_service.saved_model_ids()
+        self.assertEqual(ids, expected)
+
+        model = models.resnet18(pretrained=True)
+        model_id = self.save_service.save_model('test_model', model)
+        expected.append(model_id)
+
+        ids = self.save_service.saved_model_ids()
+        self.assertEqual(ids, expected)
+
+        model = models.resnet18(pretrained=True)
+        model_id = self.save_service.save_model('test_model', model)
+        expected.append(model_id)
+
+        ids = self.save_service.saved_model_ids()
+        self.assertEqual(ids, expected)
+
+
+
+
+
+
+
+

@@ -46,5 +46,9 @@ class SaveService:
     # def save_model(self, name, provenance):
     #     pass
 
-    def saved_models(self):
+    def saved_model_ids(self):
+        """Returns list of saved models ids"""
+        return self._mongo_service.get_ids()
+
+    def recover_model(self, id):
         pass
