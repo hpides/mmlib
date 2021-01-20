@@ -37,6 +37,12 @@ class SaveService:
 
         return model_id
 
+    def save_model(self, name, architecture, model):
+        pass
+
+    def save_model(self, name, provenance):
+        pass
+
     def saved_models(self):
         pass
 
