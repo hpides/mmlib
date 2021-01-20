@@ -4,6 +4,8 @@ import unittest
 
 from torchvision import models
 
+from mmlib.helper import imagenet_input
+from mmlib.model_equals import equals
 from mmlib.mongo import MongoService
 from mmlib.save import SaveService, SaveType
 
@@ -29,7 +31,8 @@ class TestProbe(unittest.TestCase):
 
     def __clean_up(self):
         os.system('docker kill %s' % MONGO_CONTAINER_NAME)
-        shutil.rmtree(self.abs_tmp_path)
+        if os.path.exists(self.abs_tmp_path):
+            shutil.rmtree(self.abs_tmp_path)
 
     def test_save_json(self):
         test_dict = {'test': 'test'}
@@ -93,10 +96,10 @@ class TestProbe(unittest.TestCase):
         ids = self.save_service.saved_model_ids()
         self.assertEqual(ids, expected)
 
+    def test_save_and_restore(self):
+        model = models.resnet18(pretrained=True)
+        model_id = self.save_service.save_model('test_model', model)
 
+        restored_model = self.save_service.recover_model(model_id)
 
-
-
-
-
-
+        self.assertTrue(equals(model, restored_model, imagenet_input))

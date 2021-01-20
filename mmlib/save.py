@@ -6,7 +6,7 @@ import torch
 from mmlib.mongo import MongoService
 
 SAVE_PATH = 'save-path'
-STORE_TYPE = 'store-type'
+SAVE_TYPE = 'save-type'
 NAME = 'name'
 MODELS = 'models'
 MMLIB = 'mmlib'
@@ -26,7 +26,7 @@ class SaveService:
     def save_model(self, name, model):
         model_dict = {
             NAME: name,
-            STORE_TYPE: SaveType.PICKLED_MODEL.value
+            SAVE_TYPE: SaveType.PICKLED_MODEL.value
         }
 
         model_id = self._mongo_service.save_dict(model_dict)
@@ -50,5 +50,18 @@ class SaveService:
         """Returns list of saved models ids"""
         return self._mongo_service.get_ids()
 
-    def recover_model(self, id):
-        pass
+    def recover_model(self, model_id):
+        model_dict = self._mongo_service.get_dict(model_id)
+        return self._recover_model(model_dict)
+
+    def _recover_model(self, model_dict):
+        save_type = SaveType(model_dict[SAVE_TYPE])
+        if save_type == SaveType.PICKLED_MODEL:
+            return self._retore_pickled_model(model_dict)
+
+    def _retore_pickled_model(self, model_dict):
+        # TODO think about warning
+        # TODO check wht restrictions we have with pickled models
+        file_path = model_dict[SAVE_PATH]
+        loaded = torch.load(file_path)
+        return loaded

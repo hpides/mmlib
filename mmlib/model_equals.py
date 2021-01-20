@@ -14,6 +14,9 @@ def blackbox_equals(m1, m2, produce_input, device: torch.device = None):
     :return: Returns if the two given models are equal.
     """
 
+    assert isinstance(m1, torch.nn.Module)
+    assert isinstance(m2, torch.nn.Module)
+
     device = _get_device(device)
 
     inp = produce_input()
@@ -39,6 +42,9 @@ def whitebox_equals(m1, m2, device: torch.device = None):
     :param device: The device to execute on.
     :return: Returns if the two given models are equal.
     """
+
+    assert isinstance(m1, torch.nn.Module)
+    assert isinstance(m2, torch.nn.Module)
 
     device = _get_device(device)
 
