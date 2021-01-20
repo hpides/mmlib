@@ -59,7 +59,7 @@ class SaveService:
         if save_type == SaveType.PICKLED_MODEL:
             return self._retore_pickled_model(model_dict)
 
-    def _retore_pickled_model(self, model_dict):
+    def _restore_pickled_model(self, model_dict):
         # TODO think about warning
         # TODO check wht restrictions we have with pickled models
         file_path = model_dict[SAVE_PATH]
