@@ -69,7 +69,7 @@ class TestProbe(unittest.TestCase):
         expected_dict = {
             '_id': model_id,
             'name': 'test_model',
-            'store-type': SaveType.PICKLED_MODEL.value,
+            'save-type': SaveType.PICKLED_MODEL.value,
             'save-path': os.path.join(self.save_service._base_path, str(model_id))
         }
 

@@ -57,7 +57,7 @@ class SaveService:
     def _recover_model(self, model_dict):
         save_type = SaveType(model_dict[SAVE_TYPE])
         if save_type == SaveType.PICKLED_MODEL:
-            return self._retore_pickled_model(model_dict)
+            return self._restore_pickled_model(model_dict)
 
     def _restore_pickled_model(self, model_dict):
         # TODO think about warning
