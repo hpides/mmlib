@@ -7,6 +7,8 @@ from pymongo import MongoClient
 SAVE_PATH = 'save-path'
 STORE_TYPE = 'store-type'
 NAME = 'name'
+MODELS = 'models'
+MMLIB = 'mmlib'
 
 
 class SaveType(Enum):
@@ -17,7 +19,7 @@ class SaveType(Enum):
 
 class SaveService:
     def __init__(self, base_path, host='127.0.0.1'):
-        self._mongo_service = MongoService(host)
+        self._mongo_service = MongoService(host, MMLIB, MODELS)
         self._base_path = base_path
 
     def save_model(self, name, model):
@@ -37,27 +39,25 @@ class SaveService:
 
         return model_id
 
-    def save_model(self, name, architecture, model):
-        pass
-
-    def save_model(self, name, provenance):
-        pass
+    # def save_model(self, name, architecture, model):
+    #     pass
+    #
+    # def save_model(self, name, provenance):
+    #     pass
 
     def saved_models(self):
         pass
 
 
-MODELS = 'models'
-MMLIB = 'mmlib'
 ID = '_id'
 SET = "$set"
 
 
 class MongoService(object):
-    def __init__(self, host):
+    def __init__(self, host, db_name, collection_name):
         self._mongo_client = MongoClient(host)
-        self._db_name = MMLIB
-        self._collection_name = MODELS
+        self._db_name = db_name
+        self._collection_name = collection_name
         # close connection for now, for new requests there will be a reconnect
         self._mongo_client.close()
 
@@ -81,25 +81,25 @@ class MongoService(object):
 
         return collection.find({}).distinct(ID)
 
-    def get_model_dict(self, model_id):
+    def get_dict(self, object_id):
         """
-        Retrieves the model dict identified by its mongoDB id.
-        :param model_id: The mongoDB id to find the model dict.
-        :return: The retrieved model dict.
+        Retrieves the dict identified by its mongoDB id.
+        :param object_id: The mongoDB id to find the dict.
+        :return: The retrieved dict.
         """
         collection = self._get_collection()
 
-        return collection.find({ID: model_id})[0]
+        return collection.find({ID: object_id})[0]
 
-    def add_attribute(self, model_id, attribute):
+    def add_attribute(self, object_id, attribute):
         """
-        Adds an attribute to an entry identified by the model_id.
-        :param model_id: The model_id to identify the entry to modify.
+        Adds an attribute to an entry identified by the object_id.
+        :param object_id: The id to identify the entry to modify.
         :param attribute: The attribute(s) to add.
         """
         collection = self._get_collection()
 
-        query = {ID: model_id}
+        query = {ID: object_id}
         new_values = {SET: attribute}
 
         collection.update_one(query, new_values)

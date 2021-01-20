@@ -15,7 +15,7 @@ class TestProbe(unittest.TestCase):
         # run mongo DB locally in docker container
         os.system('docker run --rm --name %s -it -p 27017:27017 -d  mongo:latest' % MONGO_CONTAINER_NAME)
 
-        self.mongo_service = MongoService('127.0.0.1')
+        self.mongo_service = MongoService('127.0.0.1', 'mmlib', 'models')
 
         self.abs_tmp_path = os.path.abspath('./tmp')
 
@@ -34,7 +34,7 @@ class TestProbe(unittest.TestCase):
         expected_dict['_id'] = model_id
 
         num_entries = len(self.mongo_service.get_ids())
-        retrieve = self.mongo_service.get_model_dict(model_id=model_id)
+        retrieve = self.mongo_service.get_dict(object_id=model_id)
 
         self.assertEqual(1, num_entries)
         self.assertEqual(expected_dict, retrieve)
@@ -50,7 +50,7 @@ class TestProbe(unittest.TestCase):
         expected_dict['_id'] = model_id
         expected_dict.update(add)
 
-        retrieve = self.mongo_service.get_model_dict(model_id=model_id)
+        retrieve = self.mongo_service.get_dict(object_id=model_id)
 
         self.assertEqual(expected_dict, retrieve)
 
@@ -66,5 +66,5 @@ class TestProbe(unittest.TestCase):
             'save-path': os.path.join(self.save_service._base_path, str(model_id))
         }
 
-        retrieve = self.mongo_service.get_model_dict(model_id=model_id)
+        retrieve = self.mongo_service.get_dict(object_id=model_id)
         self.assertEqual(expected_dict, retrieve)
