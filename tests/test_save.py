@@ -4,7 +4,8 @@ import unittest
 
 from torchvision import models
 
-from mmlib.save import MongoService, SaveService, SaveType
+from mmlib.mongo import MongoService
+from mmlib.save import SaveService, SaveType
 
 MONGO_CONTAINER_NAME = 'mongo-test'
 
