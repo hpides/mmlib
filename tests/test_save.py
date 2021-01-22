@@ -67,13 +67,13 @@ class TestProbe(unittest.TestCase):
     def test_save_model(self):
         model = models.resnet18(pretrained=True)
 
-        model_id = self.save_service.save_model('test_model', model)
+        model_id = self.save_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
 
         expected_dict = {
             '_id': model_id,
             'name': 'test_model',
             'save-type': SaveType.PICKLED_MODEL.value,
-            'save-path': os.path.join(self.save_service._base_path, str(model_id))
+            'save-path': os.path.join(self.save_service._base_path, str(model_id) + '.zip')
         }
 
         retrieve = self.mongo_service.get_dict(object_id=model_id)
@@ -86,14 +86,14 @@ class TestProbe(unittest.TestCase):
         self.assertEqual(ids, expected)
 
         model = models.resnet18(pretrained=True)
-        model_id = self.save_service.save_model('test_model', model)
+        model_id = self.save_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
         expected.append(model_id)
 
         ids = self.save_service.saved_model_ids()
         self.assertEqual(ids, expected)
 
         model = models.resnet18(pretrained=True)
-        model_id = self.save_service.save_model('test_model', model)
+        model_id = self.save_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
         expected.append(model_id)
 
         ids = self.save_service.saved_model_ids()
@@ -101,7 +101,7 @@ class TestProbe(unittest.TestCase):
 
     def test_save_and_restore(self):
         model = TestNet()
-        model_id = self.save_service.save_model('test_model', model, './networks/mynets/test_net.py', './..',)
+        model_id = self.save_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
 
         # TODO test restore also on other machine
         restored_model = self.recover_service.recover_model(model_id)

@@ -60,12 +60,17 @@ class SaveService:
 
         # create dir structure in tmp file, needed to restore the pickle dump
         os.makedirs(net_code_dst)
-        copyfile(code, os.path.join(net_code_dst, code_file))
+        copyfile(code_abs_path, os.path.join(net_code_dst, code_file))
 
         # zip everything
         path, name = os.path.split(save_path)
+        # temporarily change dict for zip process
+        owd = os.getcwd()
         os.chdir(path)
         zip_dir(name, name + '.zip')
+
+        # change path back
+        os.chdir(owd)
 
     # def save_model(self, name, architecture, model):
     #     pass
