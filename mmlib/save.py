@@ -1,4 +1,6 @@
 import os
+import sys
+import zipfile
 from enum import Enum
 from shutil import copyfile
 
@@ -25,7 +27,7 @@ class SaveService:
         self._mongo_service = MongoService(host, MMLIB, MODELS)
         self._base_path = base_path
 
-    def save_model(self, name, model, code, import_root, dst):
+    def save_model(self, name, model, code, import_root):
         model_dict = {
             NAME: name,
             SAVE_TYPE: SaveType.PICKLED_MODEL.value
@@ -33,10 +35,10 @@ class SaveService:
 
         model_id = self._mongo_service.save_dict(model_dict)
 
-        save_path = os.path.join(self._base_path, str(model_id))
+        save_path = os.path.join(self._base_path, str(model_id) + '.zip')
         attribute = {SAVE_PATH: save_path}
 
-        self._pickle_model(model, code, import_root, os.path.join(dst, str(model_id)))
+        self._pickle_model(model, code, import_root, os.path.join(self._base_path, str(model_id)))
 
         self._mongo_service.add_attribute(model_id, attribute)
 
@@ -60,6 +62,7 @@ class SaveService:
         os.makedirs(net_code_dst)
         copyfile(code, os.path.join(net_code_dst, code_file))
 
+        # zip everything
         path, name = os.path.split(save_path)
         os.chdir(path)
         zip_dir(name, name + '.zip')
@@ -74,6 +77,12 @@ class SaveService:
         """Returns list of saved models ids"""
         return self._mongo_service.get_ids()
 
+
+class RecoverService:
+    def __init__(self, base_path, host='127.0.0.1'):
+        self._mongo_service = MongoService(host, MMLIB, MODELS)
+        self._base_path = base_path
+
     def recover_model(self, model_id):
         model_dict = self._mongo_service.get_dict(model_id)
         return self._recover_model(model_dict)
@@ -84,8 +93,16 @@ class SaveService:
             return self._restore_pickled_model(model_dict)
 
     def _restore_pickled_model(self, model_dict):
-        # TODO think about warning
-        # TODO check wht restrictions we have with pickled models
         file_path = model_dict[SAVE_PATH]
-        loaded = torch.load(file_path)
-        return loaded
+
+        with zipfile.ZipFile(file_path, 'r') as zip_ref:
+            zip_ref.extractall(self._base_path)
+
+        # remove .zip file ending
+        unpacked_path = file_path.split('.')[0]
+        # make available for imports
+        sys.path.append(unpacked_path)
+
+        pickle_path = os.path.join(unpacked_path, 'model')
+        loaded_model = torch.load(pickle_path)
+        return loaded_model

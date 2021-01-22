@@ -4,8 +4,10 @@ import unittest
 
 from torchvision import models
 
+from mmlib.helper import imagenet_input
+from mmlib.model_equals import equals
 from mmlib.mongo import MongoService
-from mmlib.save import SaveService, SaveType
+from mmlib.save import SaveService, SaveType, RecoverService
 from tests.networks.mynets.test_net import TestNet
 
 MONGO_CONTAINER_NAME = 'mongo-test'
@@ -25,6 +27,7 @@ class TestProbe(unittest.TestCase):
 
         os.mkdir(self.abs_tmp_path)
         self.save_service = SaveService(self.abs_tmp_path)
+        self.recover_service = RecoverService(self.abs_tmp_path)
 
     def tearDown(self) -> None:
         self.__clean_up()
@@ -98,9 +101,9 @@ class TestProbe(unittest.TestCase):
 
     def test_save_and_restore(self):
         model = TestNet()
-        model_id = self.save_service.save_model('test_model', model, './networks/mynets/test_net.py', './..',
-                                                self.abs_tmp_path)
+        model_id = self.save_service.save_model('test_model', model, './networks/mynets/test_net.py', './..',)
 
-        restored_model = self.save_service.recover_model(model_id)
-        #
-        # self.assertTrue(equals(model, restored_model, imagenet_input))
+        # TODO test restore also on other machine
+        restored_model = self.recover_service.recover_model(model_id)
+
+        self.assertTrue(equals(model, restored_model, imagenet_input))
