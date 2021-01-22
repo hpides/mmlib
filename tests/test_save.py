@@ -5,7 +5,7 @@ import unittest
 from torchvision import models
 
 from mmlib.helper import imagenet_input
-from mmlib.model_equals import equals
+from mmlib.model_equal import equal
 from mmlib.mongo import MongoService
 from mmlib.save import SaveService, SaveType, RecoverService
 from tests.networks.mynets.test_net import TestNet
@@ -106,4 +106,4 @@ class TestProbe(unittest.TestCase):
         # TODO test restore also on other machine
         restored_model = self.recover_service.recover_model(model_id)
 
-        self.assertTrue(equals(model, restored_model, imagenet_input))
+        self.assertTrue(equal(model, restored_model, imagenet_input))

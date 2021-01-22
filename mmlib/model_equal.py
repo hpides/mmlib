@@ -3,7 +3,7 @@ import torch
 from mmlib.helper import _get_device
 
 
-def blackbox_equals(m1, m2, produce_input, device: torch.device = None):
+def blackbox_equal(m1, m2, produce_input, device: torch.device = None):
     """
     Compares two models in a blackbox manner meaning if the models are equal is determined only by comparing inputs and
     outputs.
@@ -34,7 +34,7 @@ def blackbox_equals(m1, m2, produce_input, device: torch.device = None):
     return torch.equal(out1, out2)
 
 
-def whitebox_equals(m1, m2, device: torch.device = None):
+def whitebox_equal(m1, m2, device: torch.device = None):
     """
     Compares two models in a whitebox manner meaning we compare the model weights.
     :param m1: The first model to compare.
@@ -51,10 +51,10 @@ def whitebox_equals(m1, m2, device: torch.device = None):
     state1 = m1.state_dict()
     state2 = m2.state_dict()
 
-    return state_dict_equals(state1, state2, device)
+    return state_dict_equal(state1, state2, device)
 
 
-def state_dict_equals(d1, d2, device: torch.device = None):
+def state_dict_equal(d1, d2, device: torch.device = None):
     """
     Compares two given state dicts.
     :param d1: The first state dict.
@@ -78,7 +78,7 @@ def state_dict_equals(d1, d2, device: torch.device = None):
     return True
 
 
-def equals(m1, m2, produce_input, device: torch.device = None):
+def equal(m1, m2, produce_input, device: torch.device = None):
     """
     An equals method to compare two given models by making use of whitebox and blackbox equals.
     :param m1: The first model to compare.
@@ -91,4 +91,4 @@ def equals(m1, m2, produce_input, device: torch.device = None):
 
     # whitebox and blackbox check should be redundant,
     # but this way we have an extra safety net in case we forgot a special case
-    return whitebox_equals(m1, m2, device) and blackbox_equals(m1, m2, produce_input, device)
+    return whitebox_equal(m1, m2, device) and blackbox_equal(m1, m2, produce_input, device)
