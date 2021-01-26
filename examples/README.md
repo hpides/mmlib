@@ -9,7 +9,7 @@ This directory contains example of how to use the functionality offered by the *
     - execution: `python probe_load_compare.py --path <path to the already stored probe summary>`
     - note: To generate and store a probe summary to compare to use the *probe_store.py* script.
 - *probe_example.py* - Show extensively how the probe functionality offered by the *mmlib* can be used to make the
-  PyTroch implementation of GoogLeNet reproducible. It runs the following steps:
+  PyTorch implementation of GoogLeNet reproducible. It runs the following steps:
     - simple summary
         - creates a probe summary for the inference mode and prints the representation
     - probe inference
