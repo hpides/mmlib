@@ -12,6 +12,7 @@ setuptools.setup(
     name="mmlib",
     version="0.0.1",
     author="Nils Strassenburg",
+    author_email="Nils.Strassenburg@student.hpi.uni-potsdam.de",
     description="library for model management",
     long_description=long_description,
     long_description_content_type="text/markdown",
