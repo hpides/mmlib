@@ -3,12 +3,10 @@ import setuptools
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
-with open('requirements-setup.txt') as f:
+with open('requirements.txt') as f:
     install_requires = [l.strip() for l in f]
 
-tests_require = [
-    'torchvision'
-]
+tests_require = []
 
 setuptools.setup(
     name="mmlib",
