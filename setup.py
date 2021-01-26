@@ -16,7 +16,7 @@ setuptools.setup(
     description="library for model management",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="PUT URL",
+    url="https://github.com/slin96/mmlib",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -27,5 +27,7 @@ setuptools.setup(
     extras_require={
         'testing': tests_require,
     },
-    python_requires='>=3.6',
+    python_requires='>=3.8',
 )
+
+
