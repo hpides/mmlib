@@ -7,7 +7,7 @@ from mmlib.helper import imagenet_input, imagenet_target
 from mmlib.model_equal import equal, blackbox_equal, whitebox_equal
 from mmlib.probe import ProbeInfo, probe_inference, probe_training
 
-MODEL = models.alexnet
+MODEL = models.googlenet
 
 
 def summary(device, forward_indices=None):

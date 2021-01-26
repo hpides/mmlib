@@ -11,7 +11,7 @@ python3 -m pip install --upgrade pip
 
 # install requirements
 python3 -m pip install --upgrade setuptools wheel
-# TODO use corect requirements
+# TODO use correct requirements
 python3 -m pip install -r requirements-tests.txt
 
 python3 setup.py sdist bdist_wheel
