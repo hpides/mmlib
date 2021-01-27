@@ -2,9 +2,9 @@
 
 This directory contains example of how to use the functionality offered by the *mmlib*.
 
-- *probe_store.py* - Creates and stores a probe summary of the training process of an GoogLeNet.
+- *probe_store.py* - Creates and stores a probe summary of the training process of a GoogLeNet.
     - execution: `python probe_store.py --path <optional path to store probe summary>`
-- *probe_load_compare.py* - Creates a probe summary of the training process of an GoogLeNet and compares it to a stored
+- *probe_load_compare.py* - Creates a probe summary of the training process of a GoogLeNet and compares it to a stored
   probe summary
     - execution: `python probe_load_compare.py --path <path to the already stored probe summary>`
     - note: To generate and store a probe summary to compare to use the *probe_store.py* script.
