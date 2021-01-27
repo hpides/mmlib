@@ -1,4 +1,5 @@
 # mmlib
+
 - TODO TODO TODO
 - Add a description here!
 
@@ -12,22 +13,23 @@ To build the library you have two options.
 - **Build Library**
     - run the script `generate-archives-docker.sh`
     - it runs a docker container and builds the *mmlib* in it.
-    - the created `dist`directory is copied back to repository root
+    - the created `dist` directory is copied back to repository root
     - it contains the `.whl` file that can used to install the library with pip (see below)
+- **Install**
+    - to install it run: `pip install <PATH>/dist/mmlib-0.0.1-py3-none-any.whl`
 
 ### Option 2: Local Build
-TODO TODO TODO
-- **Requirements**: Docker installed
-- **Build Library**
-    - run the script `generate-archives-docker.sh`
-    - it runs a docker container and builds the *mmlib* in it.
-    - the created `dist`directory is copied back to repository root
-    - it contains the `.whl` file that can used to install the library with pip (see below)
 
-- to build the lib run: `generate-archives.sh`
-- to install it run: `pip install <PATH>/dist/mmlib-0.0.1-py3-none-any.whl`
+- **Requirements**: Python 3.8
+- **Build Library**
+    - run the script `generate-archives.sh`
+    - it creates a virtual environment, activates it, and installs all requirements
+    - afterward it builds the library, and a `dist` directory containing the `.whl` file is created
+- **Install**
+    - to install it run: `pip install <PATH>/dist/mmlib-0.0.1-py3-none-any.whl`
 
 ## Examples
+
 - For examples checkout the [examples](./examples) directory.
 
 

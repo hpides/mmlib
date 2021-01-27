@@ -6,10 +6,10 @@ from torchvision import models
 
 from mmlib.helper import imagenet_input
 from mmlib.model_equal import equal
-from util.mongo import MongoService
-from mmlib.save import FileSystemMongoSaveService, SaveType
 from mmlib.recover import FileSystemMongoRecoverService
+from mmlib.save import FileSystemMongoSaveService, SaveType
 from tests.networks.mynets.test_net import TestNet
+from util.mongo import MongoService
 
 MONGO_CONTAINER_NAME = 'mongo-test'
 
