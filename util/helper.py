@@ -33,7 +33,7 @@ def zip_dir(root, dst_path):
             zip.write(file)
 
 
-def _get_device(device):
+def get_device(device):
     if device is None:
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     return device

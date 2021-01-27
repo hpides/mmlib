@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from colorama import Fore, Style
 
-from util.helper import print_info, _get_device
+from util.helper import print_info, get_device
 
 
 class ProbeInfo(Enum):
@@ -41,7 +41,10 @@ class ProbeSummary:
     DIFF = 'diff'
     SAME = 'same'
 
-    def __init__(self, summary_path=None):
+    def __init__(self, summary_path: str = None):
+        """
+        :param summary_path: Path to load a summary from
+        """
         if summary_path:
             self.load(summary_path)
         else:
@@ -105,14 +108,14 @@ class ProbeSummary:
         for layer_key, layer_info in self.summary.items():
             self._print_compare_layer(common, compare, layer_info, other_summary)
 
-    def save(self, path):
+    def save(self, path: str):
         """
         Saves an object to a disk file.
         :param path: The path to store to.
         """
         torch.save(self.summary, path)
 
-    def load(self, path):
+    def load(self, path: str):
         """
         Loads an object saved with :func:`mmlib.probe.save` from a file.
         :param path: The path to load from.
@@ -216,7 +219,8 @@ class ProbeSummary:
             return v1 == v2
 
 
-def probe_inference(model, inp, device: torch.device = None, forward_indices=None):
+def probe_inference(model: torch.nn.Module, inp: torch.tensor, device: torch.device = None,
+                    forward_indices: [int] = None) -> ProbeSummary:
     """
     Probes the inference of a given model.
     :param model: The model to probe.
@@ -233,7 +237,8 @@ def probe_inference(model, inp, device: torch.device = None, forward_indices=Non
     return _probe_reproducibility(model, inp, ProbeMode.INFERENCE, device, forward_indices=forward_indices)
 
 
-def probe_training(model, inp, optimizer, loss_func, target, device: torch.device = None, forward_indices=None):
+def probe_training(model: torch.nn.Module, inp: torch.tensor, optimizer: torch.optim.Optimizer, loss_func,
+                   target: torch.tensor, device: torch.device = None, forward_indices: [int] = None) -> ProbeSummary:
     """
     Probes the training of a given model.
     :param model: The model to probe.
@@ -259,7 +264,7 @@ def _probe_reproducibility(model, inp, mode, device, optimizer=None, loss_func=N
 
     _forward_indices_warning(forward_indices)
 
-    device = _get_device(device)
+    device = get_device(device)
 
     def register_forward_hook(module, ):
 
