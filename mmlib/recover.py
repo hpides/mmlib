@@ -11,6 +11,7 @@ from util.mongo import MongoService
 
 
 class RecoverService(metaclass=abc.ABCMeta):
+    """A Service that offers functionality to recover PyTorch models from given data."""
 
     @classmethod
     def __subclasshook__(cls, subclass):
@@ -22,13 +23,14 @@ class RecoverService(metaclass=abc.ABCMeta):
     def recover_model(self, model_id: bson.ObjectId) -> torch.nn.Module:
         """
         Recovers a the model identified by the given id.
-        :param model_id: The id t identify the model with.
+        :param model_id: The id to identify the model with.
         :return: The recovered model as an object.
         """
 
 
 class FileSystemMongoRecoverService(RecoverService):
-    """A Service that offers functionality to recover PyTorch models from given data."""
+    """A Service that offers functionality to recover PyTorch models that have been stored using the
+    FileSystemMongoSaveService. """
 
     def __init__(self, base_path, host='127.0.0.1'):
         """
@@ -39,11 +41,6 @@ class FileSystemMongoRecoverService(RecoverService):
         self._base_path = base_path
 
     def recover_model(self, model_id: bson.ObjectId) -> torch.nn.Module:
-        """
-        Recovers a the model identified by the given id.
-        :param model_id: The id t identify the model with.
-        :return: The recovered model as an object.
-        """
         model_dict = self._mongo_service.get_dict(model_id)
         return self._recover_model(model_dict)
 
