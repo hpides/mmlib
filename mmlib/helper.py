@@ -3,7 +3,7 @@ import random
 import torch
 
 
-def imagenet_input(batch_size=10):
+def imagenet_input(batch_size: int = 10) -> torch.tensor:
     """
     Generates a batch of dummy imputes for models processing imagenet data.
     :param batch_size: The size of the batch.
@@ -15,7 +15,7 @@ def imagenet_input(batch_size=10):
     return torch.stack(batch)
 
 
-def imagenet_target(dummy_input):
+def imagenet_target(dummy_input: torch.tensor) -> torch.tensor:
     """
     Creates a batch of random labels for imagenet data based on a given input data.
     :param dummy_input: The input to a potential model for the the target values should be produced.
