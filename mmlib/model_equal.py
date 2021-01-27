@@ -1,6 +1,6 @@
 import torch
 
-from mmlib.helper import _get_device
+from util.helper import _get_device
 
 
 def blackbox_equal(m1, m2, produce_input, device: torch.device = None):

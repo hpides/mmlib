@@ -1,11 +1,12 @@
 import os
 from zipfile import ZipFile
 
+import torch
 from bson import ObjectId
 from colorama import Fore, Style
 
 
-def _print_info(message):
+def print_info(message):
     print(Fore.GREEN + "INFO: " + message + Style.RESET_ALL + '\n')
 
 
@@ -30,3 +31,9 @@ def zip_dir(root, dst_path):
         # writing each file one by one
         for file in all_files:
             zip.write(file)
+
+
+def _get_device(device):
+    if device is None:
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    return device

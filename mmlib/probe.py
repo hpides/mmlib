@@ -5,8 +5,7 @@ import torch
 import torch.nn as nn
 from colorama import Fore, Style
 
-from mmlib.helper import _get_device
-from mmlib.util import _print_info
+from util.helper import print_info, _get_device
 
 
 class ProbeInfo(Enum):
@@ -363,7 +362,7 @@ def _shape_list(tensor_tuple):
 
 def _forward_indices_warning(forward_indices):
     if forward_indices is not None:
-        _print_info("You set the forward_indices argument. "
+        print_info("You set the forward_indices argument. "
                     "This means not all layers will be included in the summary.")
     else:
         warnings.warn("You did not set the forward_indices argument."
@@ -374,11 +373,11 @@ def _hashwarning(fields: [ProbeInfo]):
     # If we print tensors or shapes it is likely that they are to long. In this case we print a hash instead.
     # Warn the user that for example for long tensors same hash values do not guarantee the same values.
     if any('shape' in x.value or 'tensor' in x.value for x in fields):
-        _print_info("Same hashes don\'t have to mean that values are exactly the same (especially for tensors)."
+        print_info("Same hashes don\'t have to mean that values are exactly the same (especially for tensors)."
                     " Hashes should be seen as an indicator.")
 
 
 def _inference_info():
-    _print_info("You are probing in inference mode so the model will be in eval mode."
+    print_info("You are probing in inference mode so the model will be in eval mode."
                 "\nSince layers like dropout are switched off in this mode you won't find factors that produce "
                 "non-reproducibility by these kind of layers.")

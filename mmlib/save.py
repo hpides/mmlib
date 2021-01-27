@@ -6,8 +6,8 @@ from shutil import copyfile
 
 import torch
 
-from mmlib.mongo import MongoService
-from mmlib.util import zip_dir
+from util.mongo import MongoService
+from util.helper import zip_dir
 
 SAVE_PATH = 'save-path'
 SAVE_TYPE = 'save-type'

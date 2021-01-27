@@ -6,7 +6,7 @@ from torchvision import models
 
 from mmlib.helper import imagenet_input
 from mmlib.model_equal import equal
-from mmlib.mongo import MongoService
+from util.mongo import MongoService
 from mmlib.save import SaveService, SaveType, RecoverService
 from tests.networks.mynets.test_net import TestNet
 

@@ -3,12 +3,6 @@ import random
 import torch
 
 
-def _get_device(device):
-    if device is None:
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    return device
-
-
 def imagenet_input(batch_size=10):
     """
     Generates a batch of dummy imputes for models processing imagenet data.
