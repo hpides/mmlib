@@ -2,6 +2,7 @@ import os
 import shutil
 import unittest
 
+from bson import ObjectId
 from torchvision import models
 
 from mmlib.helper import imagenet_input
@@ -69,15 +70,16 @@ class TestProbe(unittest.TestCase):
         model = models.resnet18(pretrained=True)
 
         model_id = self.save_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
+        obj_id = ObjectId(model_id)
 
         expected_dict = {
-            '_id': model_id,
+            '_id': obj_id,
             'name': 'test_model',
             'save-type': SaveType.PICKLED_MODEL.value,
             'save-path': os.path.join(self.save_service._base_path, str(model_id) + '.zip')
         }
 
-        retrieve = self.mongo_service.get_dict(object_id=model_id)
+        retrieve = self.mongo_service.get_dict(object_id=obj_id)
         self.assertEqual(expected_dict, retrieve)
 
     def test_get_saved_ids(self):

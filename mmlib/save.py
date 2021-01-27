@@ -3,7 +3,6 @@ import os
 from enum import Enum
 from shutil import copyfile
 
-import bson
 import torch
 
 from util.helper import zip_dir
@@ -33,7 +32,7 @@ class AbstractSaveService(metaclass=abc.ABCMeta):
                 NotImplemented)
 
     @abc.abstractmethod
-    def save_model(self, name: str, model: torch.nn.Module, code: str, import_root: str) -> bson.ObjectId:
+    def save_model(self, name: str, model: torch.nn.Module, code: str, import_root: str) -> str:
         """
         Saves a model as a pickle dump together with the given metadata.
         :param name: The name of the model as a string. Used for easier identification.
@@ -45,7 +44,7 @@ class AbstractSaveService(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def saved_model_ids(self) -> [bson.ObjectId]:
+    def saved_model_ids(self) -> [str]:
         """Returns list of saved models ids"""
         raise NotImplementedError
 
@@ -62,7 +61,7 @@ class FileSystemMongoSaveService(AbstractSaveService):
         self._mongo_service = MongoService(host, MMLIB, MODELS)
         self._base_path = base_path
 
-    def save_model(self, name: str, model: torch.nn.Module, code: str, import_root: str) -> bson.ObjectId:
+    def save_model(self, name: str, model: torch.nn.Module, code: str, import_root: str) -> str:
         model_dict = {
             NAME: name,
             SAVE_TYPE: SaveType.PICKLED_MODEL.value
@@ -77,7 +76,7 @@ class FileSystemMongoSaveService(AbstractSaveService):
 
         self._mongo_service.add_attribute(model_id, attribute)
 
-        return model_id
+        return str(model_id)
 
     def _pickle_model(self, model, code, import_root, save_path):
         # create directory to store in
@@ -107,5 +106,6 @@ class FileSystemMongoSaveService(AbstractSaveService):
         # change path back
         os.chdir(owd)
 
-    def saved_model_ids(self) -> [bson.ObjectId]:
-        return self._mongo_service.get_ids()
+    def saved_model_ids(self) -> [str]:
+        str_ids = list(map(str, self._mongo_service.get_ids()))
+        return str_ids

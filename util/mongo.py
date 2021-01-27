@@ -1,3 +1,4 @@
+from bson import ObjectId
 from pymongo import MongoClient
 
 ID = '_id'
@@ -12,7 +13,7 @@ class MongoService(object):
         # close connection for now, for new requests there will be a reconnect
         self._mongo_client.close()
 
-    def save_dict(self, insert_dict):
+    def save_dict(self, insert_dict: dict) -> ObjectId:
         """
         Saves a python dictionary in the underlying mongoDB.
         :param insert_dict: The dictionary to save.
@@ -23,7 +24,7 @@ class MongoService(object):
 
         return feedback.inserted_id
 
-    def get_ids(self):
+    def get_ids(self) -> [ObjectId]:
         """
         Gets all ids that can be found in the used mongoDB collection
         :return: The list of ids.
@@ -32,7 +33,7 @@ class MongoService(object):
 
         return collection.find({}).distinct(ID)
 
-    def get_dict(self, object_id):
+    def get_dict(self, object_id: ObjectId) -> dict:
         """
         Retrieves the dict identified by its mongoDB id.
         :param object_id: The mongoDB id to find the dict.
@@ -42,7 +43,7 @@ class MongoService(object):
 
         return collection.find({ID: object_id})[0]
 
-    def add_attribute(self, object_id, attribute):
+    def add_attribute(self, object_id: ObjectId, attribute):
         """
         Adds an attribute to an entry identified by the object_id.
         :param object_id: The id to identify the entry to modify.

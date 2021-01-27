@@ -20,7 +20,7 @@ class RecoverService(metaclass=abc.ABCMeta):
                 NotImplemented)
 
     @abc.abstractmethod
-    def recover_model(self, model_id: bson.ObjectId) -> torch.nn.Module:
+    def recover_model(self, model_id: str) -> torch.nn.Module:
         """
         Recovers a the model identified by the given id.
         :param model_id: The id to identify the model with.
@@ -40,7 +40,8 @@ class FileSystemMongoRecoverService(RecoverService):
         self._mongo_service = MongoService(host, MMLIB, MODELS)
         self._base_path = base_path
 
-    def recover_model(self, model_id: bson.ObjectId) -> torch.nn.Module:
+    def recover_model(self, model_id: str) -> torch.nn.Module:
+        model_id = bson.ObjectId(model_id)
         model_dict = self._mongo_service.get_dict(model_id)
         return self._recover_model(model_dict)
 

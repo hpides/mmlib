@@ -2,16 +2,11 @@ import os
 from zipfile import ZipFile
 
 import torch
-from bson import ObjectId
 from colorama import Fore, Style
 
 
 def print_info(message):
     print(Fore.GREEN + "INFO: " + message + Style.RESET_ALL + '\n')
-
-
-def extract_mongo_id(msg):
-    return ObjectId(msg[0].decode("utf-8"))
 
 
 def get_all_file_paths(directory):
