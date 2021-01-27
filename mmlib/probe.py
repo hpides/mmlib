@@ -363,7 +363,7 @@ def _shape_list(tensor_tuple):
 def _forward_indices_warning(forward_indices):
     if forward_indices is not None:
         print_info("You set the forward_indices argument. "
-                    "This means not all layers will be included in the summary.")
+                   "This means not all layers will be included in the summary.")
     else:
         warnings.warn("You did not set the forward_indices argument."
                       "Every layer will be included in the summary. This might lead to very high memory consumption.")
@@ -374,10 +374,10 @@ def _hashwarning(fields: [ProbeInfo]):
     # Warn the user that for example for long tensors same hash values do not guarantee the same values.
     if any('shape' in x.value or 'tensor' in x.value for x in fields):
         print_info("Same hashes don\'t have to mean that values are exactly the same (especially for tensors)."
-                    " Hashes should be seen as an indicator.")
+                   " Hashes should be seen as an indicator.")
 
 
 def _inference_info():
     print_info("You are probing in inference mode so the model will be in eval mode."
-                "\nSince layers like dropout are switched off in this mode you won't find factors that produce "
-                "non-reproducibility by these kind of layers.")
+               "\nSince layers like dropout are switched off in this mode you won't find factors that produce "
+               "non-reproducibility by these kind of layers.")

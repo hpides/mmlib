@@ -1,13 +1,13 @@
+import abc
 import os
-import sys
-import zipfile
 from enum import Enum
 from shutil import copyfile
 
+import bson
 import torch
 
-from util.mongo import MongoService
 from util.helper import zip_dir
+from util.mongo import MongoService
 
 SAVE_PATH = 'save-path'
 SAVE_TYPE = 'save-type'
@@ -22,8 +22,37 @@ class SaveType(Enum):
     PROVENANCE = 3
 
 
-class SaveService:
-    """A Service that offers functionality to store PyTorch models."""
+class AbstractSaveService(metaclass=abc.ABCMeta):
+
+    @classmethod
+    def __subclasshook__(cls, subclass):
+        return (hasattr(subclass, 'save_model') and
+                callable(subclass.save_model) and
+                hasattr(subclass, 'saved_model_ids') and
+                callable(subclass.saved_model_ids) or
+                NotImplemented)
+
+    @abc.abstractmethod
+    def save_model(self, name: str, model: torch.nn.Module, code: str, import_root: str) -> bson.ObjectId:
+        """
+        Saves a model as a pickle dump together with the given metadata.
+        :param name: The name of the model as a string. Used for easier identification.
+        :param model: The model object.
+        :param code: The path to the code of the model (is needed for recover process)
+        :param import_root: The directory that is root for all imports, e.g. the Python project root.
+        :return: Returns the ID that was sued to store the model data in the MongoDB.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def saved_model_ids(self) -> [bson.ObjectId]:
+        """Returns list of saved models ids"""
+        raise NotImplementedError
+
+
+class FileSystemMongoSaveService(AbstractSaveService):
+    """A Service that offers functionality to store PyTorch models. In order to do so it stores the metadata is
+    stored in a MongoDB, the model (pickled) is stored on the file system. """
 
     def __init__(self, base_path, host='127.0.0.1'):
         """
@@ -33,16 +62,7 @@ class SaveService:
         self._mongo_service = MongoService(host, MMLIB, MODELS)
         self._base_path = base_path
 
-    def save_model(self, name, model, code, import_root):
-        """
-        Saves a model as a pickle dump together with the given metadata.
-        The metadata is stored in a MongoDB, the model (pickled) is stored on the file system.
-        :param name: The name of the model as a string. Used for easier identification.
-        :param model: The model object.
-        :param code: The path to the code of the model (is needed for recover process)
-        :param import_root: The directory that is root for all imports, e.g. the Python project root.
-        :return: Returns the ID that was sued to store the model data in the MongoDB.
-        """
+    def save_model(self, name: str, model: torch.nn.Module, code: str, import_root: str) -> bson.ObjectId:
         model_dict = {
             NAME: name,
             SAVE_TYPE: SaveType.PICKLED_MODEL.value
@@ -87,53 +107,5 @@ class SaveService:
         # change path back
         os.chdir(owd)
 
-    # def save_model(self, name, architecture, model):
-    #     pass
-    #
-    # def save_model(self, name, provenance):
-    #     pass
-
-    def saved_model_ids(self):
-        """Returns list of saved models ids"""
+    def saved_model_ids(self) -> [bson.ObjectId]:
         return self._mongo_service.get_ids()
-
-
-class RecoverService:
-    """A Service that offers functionality to recover PyTorch models from given data."""
-
-    def __init__(self, base_path, host='127.0.0.1'):
-        """
-        :param base_path: The path that is used as a root directory for everything that is stored to the file system.
-        :param host: The host name or Ip address to connect to a running MongoDB instance.
-        """
-        self._mongo_service = MongoService(host, MMLIB, MODELS)
-        self._base_path = base_path
-
-    def recover_model(self, model_id):
-        """
-        Recovers a the model identified by the given id.
-        :param model_id: The id t identify the model with.
-        :return: The recovered model as an object.
-        """
-        model_dict = self._mongo_service.get_dict(model_id)
-        return self._recover_model(model_dict)
-
-    def _recover_model(self, model_dict):
-        save_type = SaveType(model_dict[SAVE_TYPE])
-        if save_type == SaveType.PICKLED_MODEL:
-            return self._restore_pickled_model(model_dict)
-
-    def _restore_pickled_model(self, model_dict):
-        file_path = model_dict[SAVE_PATH]
-
-        with zipfile.ZipFile(file_path, 'r') as zip_ref:
-            zip_ref.extractall(self._base_path)
-
-        # remove .zip file ending
-        unpacked_path = file_path.split('.')[0]
-        # make available for imports
-        sys.path.append(unpacked_path)
-
-        pickle_path = os.path.join(unpacked_path, 'model')
-        loaded_model = torch.load(pickle_path)
-        return loaded_model

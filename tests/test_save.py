@@ -7,7 +7,8 @@ from torchvision import models
 from mmlib.helper import imagenet_input
 from mmlib.model_equal import equal
 from util.mongo import MongoService
-from mmlib.save import SaveService, SaveType, RecoverService
+from mmlib.save import FileSystemMongoSaveService, SaveType
+from mmlib.recover import FileSystemMongoRecoverService
 from tests.networks.mynets.test_net import TestNet
 
 MONGO_CONTAINER_NAME = 'mongo-test'
@@ -26,8 +27,8 @@ class TestProbe(unittest.TestCase):
         self.mongo_service = MongoService('127.0.0.1', 'mmlib', 'models')
 
         os.mkdir(self.abs_tmp_path)
-        self.save_service = SaveService(self.abs_tmp_path)
-        self.recover_service = RecoverService(self.abs_tmp_path)
+        self.save_service = FileSystemMongoSaveService(self.abs_tmp_path)
+        self.recover_service = FileSystemMongoRecoverService(self.abs_tmp_path)
 
     def tearDown(self) -> None:
         self.__clean_up()
