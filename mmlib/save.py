@@ -23,11 +23,26 @@ class SaveType(Enum):
 
 
 class SaveService:
+    """A Service that offers functionality to store PyTorch models."""
+
     def __init__(self, base_path, host='127.0.0.1'):
+        """
+        :param base_path: The path that is used as a root directory for everything that is stored to the file system.
+        :param host: The host name or Ip address to connect to a running MongoDB instance.
+        """
         self._mongo_service = MongoService(host, MMLIB, MODELS)
         self._base_path = base_path
 
     def save_model(self, name, model, code, import_root):
+        """
+        Saves a model as a pickle dump together with the given metadata.
+        The metadata is stored in a MongoDB, the model (pickled) is stored on the file system.
+        :param name: The name of the model as a string. Used for easier identification.
+        :param model: The model object.
+        :param code: The path to the code of the model (is needed for recover process)
+        :param import_root: The directory that is root for all imports, e.g. the Python project root.
+        :return: Returns the ID that was sued to store the model data in the MongoDB.
+        """
         model_dict = {
             NAME: name,
             SAVE_TYPE: SaveType.PICKLED_MODEL.value
@@ -84,11 +99,22 @@ class SaveService:
 
 
 class RecoverService:
+    """A Service that offers functionality to recover PyTorch models from given data."""
+
     def __init__(self, base_path, host='127.0.0.1'):
+        """
+        :param base_path: The path that is used as a root directory for everything that is stored to the file system.
+        :param host: The host name or Ip address to connect to a running MongoDB instance.
+        """
         self._mongo_service = MongoService(host, MMLIB, MODELS)
         self._base_path = base_path
 
     def recover_model(self, model_id):
+        """
+        Recovers a the model identified by the given id.
+        :param model_id: The id t identify the model with.
+        :return: The recovered model as an object.
+        """
         model_dict = self._mongo_service.get_dict(model_id)
         return self._recover_model(model_dict)
 
