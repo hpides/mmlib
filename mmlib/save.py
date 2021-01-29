@@ -21,6 +21,7 @@ class SaveType(Enum):
     PROVENANCE = 3
 
 
+# TODO if for experiments Python 3.8 is available, use protocol here
 class AbstractSaveService(metaclass=abc.ABCMeta):
 
     @classmethod

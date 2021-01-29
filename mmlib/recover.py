@@ -10,6 +10,7 @@ from mmlib.save import MMLIB, MODELS, SAVE_TYPE, SaveType, SAVE_PATH
 from util.mongo import MongoService
 
 
+# TODO if for experiments Python 3.8 is available, use protocol here
 class RecoverService(metaclass=abc.ABCMeta):
     """A Service that offers functionality to recover PyTorch models from given data."""
 
