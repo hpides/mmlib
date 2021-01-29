@@ -5,8 +5,8 @@ import torch
 from util.helper import get_device
 
 
-def blackbox_equal(m1: torch.nn.Module, m2: torch.nn.Module, produce_input: Callable[[], torch.tensor],
-                   device: torch.device = None) -> bool:
+def blackbox_model_equal(m1: torch.nn.Module, m2: torch.nn.Module, produce_input: Callable[[], torch.tensor],
+                         device: torch.device = None) -> bool:
     """
     Compares two models in a blackbox manner meaning if the models are equal is determined only by comparing inputs and
     outputs.
@@ -37,7 +37,7 @@ def blackbox_equal(m1: torch.nn.Module, m2: torch.nn.Module, produce_input: Call
     return torch.equal(out1, out2)
 
 
-def whitebox_equal(m1: torch.nn.Module, m2: torch.nn.Module, device: torch.device = None) -> bool:
+def whitebox_model_equal(m1: torch.nn.Module, m2: torch.nn.Module, device: torch.device = None) -> bool:
     """
     Compares two models in a whitebox manner meaning we compare the model weights.
     :param m1: The first model to compare.
@@ -81,8 +81,8 @@ def state_dict_equal(d1: dict, d2: dict, device: torch.device = None) -> bool:
     return True
 
 
-def equal(m1: torch.nn.Module, m2: torch.nn.Module, produce_input: Callable[[], torch.tensor],
-          device: torch.device = None) -> bool:
+def model_equal(m1: torch.nn.Module, m2: torch.nn.Module, produce_input: Callable[[], torch.tensor],
+                device: torch.device = None) -> bool:
     """
     An equals method to compare two given models by making use of whitebox and blackbox equals.
     :param m1: The first model to compare.
@@ -95,4 +95,14 @@ def equal(m1: torch.nn.Module, m2: torch.nn.Module, produce_input: Callable[[], 
 
     # whitebox and blackbox check should be redundant,
     # but this way we have an extra safety net in case we forgot a special case
-    return whitebox_equal(m1, m2, device) and blackbox_equal(m1, m2, produce_input, device)
+    return whitebox_model_equal(m1, m2, device) and blackbox_model_equal(m1, m2, produce_input, device)
+
+
+def tensor_equal(tensor1: torch.tensor, tensor2: torch.tensor):
+    """
+    Compares to given Pytorch tensors.
+    :param tensor1: The first tensor to be compared.
+    :param tensor2: The second tensor to be compared.
+    :return: Returns if the two given tensors are equal.
+    """
+    return torch.equal(tensor1, tensor2)

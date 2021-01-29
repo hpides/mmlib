@@ -6,7 +6,7 @@ from bson import ObjectId
 from torchvision import models
 
 from mmlib.helper import imagenet_input
-from mmlib.model_equal import equal
+from mmlib.equal import model_equal
 from mmlib.recover import FileSystemMongoRecoverService
 from mmlib.save import FileSystemMongoSaveService, SaveType
 from tests.networks.mynets.test_net import TestNet
@@ -109,4 +109,4 @@ class TestProbe(unittest.TestCase):
         # TODO test restore also on other machine
         restored_model = self.recover_service.recover_model(model_id)
 
-        self.assertTrue(equal(model, restored_model, imagenet_input))
+        self.assertTrue(model_equal(model, restored_model, imagenet_input))

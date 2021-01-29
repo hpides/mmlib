@@ -5,7 +5,7 @@ from torchvision import models
 
 from mmlib.deterministic import set_deterministic
 from mmlib.helper import imagenet_input
-from mmlib.model_equal import state_dict_equal, equal
+from mmlib.equal import state_dict_equal, model_equal
 
 
 class TestStateDictEqual(unittest.TestCase):
@@ -55,44 +55,44 @@ class TestModelEqual(unittest.TestCase):
         mod1 = models.resnet18(pretrained=True)
         mod2 = models.resnet18(pretrained=True)
 
-        self.assertTrue(equal(mod1, mod2, imagenet_input))
+        self.assertTrue(model_equal(mod1, mod2, imagenet_input))
 
     def test_resnet50_pretrained(self):
         mod1 = models.resnet50(pretrained=True)
         mod2 = models.resnet50(pretrained=True)
 
-        self.assertTrue(equal(mod1, mod2, imagenet_input))
+        self.assertTrue(model_equal(mod1, mod2, imagenet_input))
 
     def test_resnet152_pretrained(self):
         mod1 = models.resnet152(pretrained=True)
         mod2 = models.resnet152(pretrained=True)
 
-        self.assertTrue(equal(mod1, mod2, imagenet_input))
+        self.assertTrue(model_equal(mod1, mod2, imagenet_input))
 
     def test_vgg19_pretrained(self):
         mod1 = models.vgg19(pretrained=True)
         mod2 = models.vgg19(pretrained=True)
 
-        self.assertTrue(equal(mod1, mod2, imagenet_input))
+        self.assertTrue(model_equal(mod1, mod2, imagenet_input))
 
     def test_alexnet_pretrained(self):
         mod1 = models.alexnet(pretrained=True)
         mod2 = models.alexnet(pretrained=True)
 
-        self.assertTrue(equal(mod1, mod2, imagenet_input))
+        self.assertTrue(model_equal(mod1, mod2, imagenet_input))
 
     def test_resnet18_resnet152_pretrained(self):
         mod1 = models.resnet18(pretrained=True)
         mod2 = models.resnet152(pretrained=True)
 
-        self.assertFalse(equal(mod1, mod2, imagenet_input))
+        self.assertFalse(model_equal(mod1, mod2, imagenet_input))
 
     def test_not_pretrained(self):
         mod1 = models.resnet18()
         mod2 = models.resnet18()
 
         # we expect this to be false since the weight initialization is random
-        self.assertFalse(equal(mod1, mod2, imagenet_input))
+        self.assertFalse(model_equal(mod1, mod2, imagenet_input))
 
     def test_resnet18_not_pretrained_deterministic(self):
         set_deterministic()
@@ -103,7 +103,7 @@ class TestModelEqual(unittest.TestCase):
 
         # we expect this to be true, the weights are randomly initialized,
         # but we set the seeds before weight initialization
-        self.assertTrue(equal(mod1, mod2, imagenet_input))
+        self.assertTrue(model_equal(mod1, mod2, imagenet_input))
 
     def test_resnet152_not_pretrained_deterministic(self):
         set_deterministic()
@@ -114,7 +114,7 @@ class TestModelEqual(unittest.TestCase):
 
         # we expect this to be true, the weights are randomly initialized,
         # but we set the seeds before weight initialization
-        self.assertTrue(equal(mod1, mod2, imagenet_input))
+        self.assertTrue(model_equal(mod1, mod2, imagenet_input))
 
     def test_vgg19_not_pretrained_deterministic(self):
         set_deterministic()
@@ -125,7 +125,7 @@ class TestModelEqual(unittest.TestCase):
 
         # we expect this to be true, the weights are randomly initialized,
         # but we set the seeds before weight initialization
-        self.assertTrue(equal(mod1, mod2, imagenet_input))
+        self.assertTrue(model_equal(mod1, mod2, imagenet_input))
 
     def test_alexnet_not_pretrained_deterministic(self):
         set_deterministic()
@@ -136,7 +136,7 @@ class TestModelEqual(unittest.TestCase):
 
         # we expect this to be true, the weights are randomly initialized,
         # but we set the seeds before weight initialization
-        self.assertTrue(equal(mod1, mod2, imagenet_input))
+        self.assertTrue(model_equal(mod1, mod2, imagenet_input))
 
     def test_not_pretrained_deterministic_multiple_models(self):
         set_deterministic()
@@ -147,5 +147,5 @@ class TestModelEqual(unittest.TestCase):
         alex2 = models.alexnet()
         resnet2 = models.resnet18()
 
-        self.assertTrue(equal(alex1, alex2, imagenet_input))
-        self.assertTrue(equal(resnet1, resnet2, imagenet_input))
+        self.assertTrue(model_equal(alex1, alex2, imagenet_input))
+        self.assertTrue(model_equal(resnet1, resnet2, imagenet_input))
