@@ -15,7 +15,7 @@ from util.mongo import MongoService
 MONGO_CONTAINER_NAME = 'mongo-test'
 
 
-class TestProbe(unittest.TestCase):
+class TestSave(unittest.TestCase):
 
     def setUp(self) -> None:
         self.tmp_path = './tmp'
