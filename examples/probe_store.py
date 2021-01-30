@@ -22,7 +22,7 @@ def _generate_probe_training_summary():
     dummy_input = imagenet_input()
     dummy_target = imagenet_target(dummy_input)
     loss_func = nn.CrossEntropyLoss()
-    model = models.alexnet(pretrained=True)
+    model = models.googlenet(pretrained=True)
     optimizer = torch.optim.SGD(model.parameters(), 1e-3)
     summary = probe_training(model, dummy_input, optimizer, loss_func, dummy_target)
     return summary

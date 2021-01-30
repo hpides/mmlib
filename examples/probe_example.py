@@ -4,7 +4,7 @@ from torchvision import models
 
 from mmlib.deterministic import set_deterministic
 from mmlib.helper import imagenet_input, imagenet_target
-from mmlib.model_equals import equals, whitebox_equals, blackbox_equals
+from mmlib.equal import model_equal, blackbox_model_equal, whitebox_model_equal
 from mmlib.probe import ProbeInfo, probe_inference, probe_training
 
 MODEL = models.googlenet
@@ -96,13 +96,13 @@ def deterministic_backward_compare(device, forward_indices=None):
     summary1.compare_to(summary2, common, compare)
 
     # also the models should be equal
-    blackbox_equal = blackbox_equals(model1, model2, imagenet_input)
-    whitebox_equal = whitebox_equals(model1, model2)
-    models_are_equal = equals(model1, model2, imagenet_input)
+    blackbox_eq = blackbox_model_equal(model1, model2, imagenet_input)
+    whitebox_eq = whitebox_model_equal(model1, model2)
+    models_are_equal = model_equal(model1, model2, imagenet_input)
     print()
     print('Also the models should be the same - compare the models')
-    print('models_are_equal (blackbox): {}'.format(blackbox_equal))
-    print('models_are_equal (whitebox): {}'.format(whitebox_equal))
+    print('models_are_equal (blackbox): {}'.format(blackbox_eq))
+    print('models_are_equal (whitebox): {}'.format(whitebox_eq))
     print('models_are_equal: {}'.format(models_are_equal))
 
 

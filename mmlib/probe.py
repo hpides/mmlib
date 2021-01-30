@@ -1,11 +1,11 @@
+import warnings
 from enum import Enum
 
 import torch
 import torch.nn as nn
 from colorama import Fore, Style
 
-from mmlib.helper import _get_device
-from mmlib.util import _print_info, _print_warning
+from util.helper import print_info, get_device
 
 
 class ProbeInfo(Enum):
@@ -41,7 +41,10 @@ class ProbeSummary:
     DIFF = 'diff'
     SAME = 'same'
 
-    def __init__(self, summary_path=None):
+    def __init__(self, summary_path: str = None):
+        """
+        :param summary_path: Path to load a summary from
+        """
         if summary_path:
             self.load(summary_path)
         else:
@@ -105,14 +108,14 @@ class ProbeSummary:
         for layer_key, layer_info in self.summary.items():
             self._print_compare_layer(common, compare, layer_info, other_summary)
 
-    def save(self, path):
+    def save(self, path: str):
         """
         Saves an object to a disk file.
         :param path: The path to store to.
         """
         torch.save(self.summary, path)
 
-    def load(self, path):
+    def load(self, path: str):
         """
         Loads an object saved with :func:`mmlib.probe.save` from a file.
         :param path: The path to load from.
@@ -216,7 +219,8 @@ class ProbeSummary:
             return v1 == v2
 
 
-def probe_inference(model, inp, device: torch.device = None, forward_indices=None):
+def probe_inference(model: torch.nn.Module, inp: torch.tensor, device: torch.device = None,
+                    forward_indices: [int] = None) -> ProbeSummary:
     """
     Probes the inference of a given model.
     :param model: The model to probe.
@@ -233,7 +237,8 @@ def probe_inference(model, inp, device: torch.device = None, forward_indices=Non
     return _probe_reproducibility(model, inp, ProbeMode.INFERENCE, device, forward_indices=forward_indices)
 
 
-def probe_training(model, inp, optimizer, loss_func, target, device: torch.device = None, forward_indices=None):
+def probe_training(model: torch.nn.Module, inp: torch.tensor, optimizer: torch.optim.Optimizer, loss_func,
+                   target: torch.tensor, device: torch.device = None, forward_indices: [int] = None) -> ProbeSummary:
     """
     Probes the training of a given model.
     :param model: The model to probe.
@@ -259,7 +264,7 @@ def _probe_reproducibility(model, inp, mode, device, optimizer=None, loss_func=N
 
     _forward_indices_warning(forward_indices)
 
-    device = _get_device(device)
+    device = get_device(device)
 
     def register_forward_hook(module, ):
 
@@ -362,22 +367,22 @@ def _shape_list(tensor_tuple):
 
 def _forward_indices_warning(forward_indices):
     if forward_indices is not None:
-        _print_warning("You set the forward_indices argument. "
-                       "This means not all layers will be included in the summary.")
+        print_info("You set the forward_indices argument. "
+                   "This means not all layers will be included in the summary.")
     else:
-        _print_warning("You did not set the forward_indices argument. "
-                       "Every layer will be included in the summary. This might lead to very high memory consumption.")
+        warnings.warn("You did not set the forward_indices argument."
+                      "Every layer will be included in the summary. This might lead to very high memory consumption.")
 
 
 def _hashwarning(fields: [ProbeInfo]):
     # If we print tensors or shapes it is likely that they are to long. In this case we print a hash instead.
     # Warn the user that for example for long tensors same hash values do not guarantee the same values.
     if any('shape' in x.value or 'tensor' in x.value for x in fields):
-        _print_warning("Same hashes don\'t have to mean that values are exactly the same (especially for tensors)."
-                       " Hashes should be seen as an indicator.")
+        print_info("Same hashes don\'t have to mean that values are exactly the same (especially for tensors)."
+                   " Hashes should be seen as an indicator.")
 
 
 def _inference_info():
-    _print_info("You are probing in inference mode so the model will be in eval mode."
-                "\nSince layers like dropout are switched off in this mode you won't find factors that produce "
-                "non-reproducibility by these kind of layers.")
+    print_info("You are probing in inference mode so the model will be in eval mode."
+               "\nSince layers like dropout are switched off in this mode you won't find factors that produce "
+               "non-reproducibility by these kind of layers.")
