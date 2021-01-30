@@ -1,6 +1,6 @@
 # Examples
 
-This directory contains example of how to use the functionality offered by the *mmlib*.
+This directory contains examples of how to use the functionality offered by the *mmlib*.
 
 - *probe_store.py* - Creates and stores a probe summary of the training process of a GoogLeNet.
     - execution: `python probe_store.py --path <optional path to store probe summary>`
@@ -8,7 +8,7 @@ This directory contains example of how to use the functionality offered by the *
   probe summary
     - execution: `python probe_load_compare.py --path <path to the already stored probe summary>`
     - note: To generate and store a probe summary to compare to use the *probe_store.py* script.
-- *probe_example.py* - Show extensively how the probe functionality offered by the *mmlib* can be used to make the
+- *probe_example.py* - Shows extensively how the probe functionality offered by the *mmlib* can be used to make the
   PyTorch implementation of GoogLeNet reproducible. It runs the following steps:
     - simple summary
         - creates a probe summary for the inference mode and prints the representation
@@ -26,4 +26,4 @@ This directory contains example of how to use the functionality offered by the *
           reproducible
         - creates training mode probe summaries (covering forward and backward path)
         - compares the probe summaries
-        - compares both models using the methods *blackbox_equal*, *whitebox_equal*, and *equal* offered by the *mmlib*.
+        - compares both models using the methods *blackbox_model_equal*, *whitebox_model_equal*, and *model_equal* offered by the *mmlib*.
