@@ -26,4 +26,5 @@ This directory contains examples of how to use the functionality offered by the 
           reproducible
         - creates training mode probe summaries (covering forward and backward path)
         - compares the probe summaries
-        - compares both models using the methods *blackbox_model_equal*, *whitebox_model_equal*, and *model_equal* offered by the *mmlib*.
+        - compares both models using the methods *blackbox_model_equal*, *whitebox_model_equal*, and *model_equal*
+          offered by the *mmlib*.

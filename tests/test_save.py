@@ -5,8 +5,8 @@ import unittest
 from bson import ObjectId
 from torchvision import models
 
-from mmlib.helper import imagenet_input
 from mmlib.equal import model_equal
+from mmlib.helper import imagenet_input
 from mmlib.recover import FileSystemMongoRecoverService
 from mmlib.save import FileSystemMongoSaveService, SaveType
 from tests.networks.mynets.test_net import TestNet
