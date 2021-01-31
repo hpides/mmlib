@@ -53,7 +53,7 @@ class AbstractSaveService(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def model_save_size(self, model_id: str) -> float:
         """
-        Calculates and returns the amount of bytes that is used for storing the model.
+        Calculates and returns the amount of bytes that are used for storing the model.
         :param model_id: The ID to identify the model in the mongoDB.
         :return: The amout of bytes used to store the model.
         """
