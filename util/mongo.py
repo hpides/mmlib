@@ -1,3 +1,4 @@
+import bson
 from bson import ObjectId
 from pymongo import MongoClient
 
@@ -55,6 +56,16 @@ class MongoService(object):
         new_values = {SET: attribute}
 
         collection.update_one(query, new_values)
+
+    def document_size(self, object_id: ObjectId) -> int:
+        """
+        Calculated the size in bytes of a document identified by its object_id.
+        :param object_id: The id to identify the document.
+        :return: The document size in bytes.
+        """
+        collection = self._get_collection()
+        item = collection.find({ID: object_id})[0]
+        return len(bson.BSON.encode(item))
 
     def _get_collection(self):
         db = self._mongo_client[self._db_name]

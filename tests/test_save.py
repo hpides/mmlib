@@ -23,7 +23,7 @@ class TestSave(unittest.TestCase):
 
         self.__clean_up()
         # run mongo DB locally in docker container
-        os.system('docker run --rm --name %s -it -p 27017:27017 -d  mongo:latest' % MONGO_CONTAINER_NAME)
+        os.system('docker run --rm --name %s -it -p 27017:27017 -d  mongo:4.4.3 ' % MONGO_CONTAINER_NAME)
 
         self.mongo_service = MongoService('127.0.0.1', 'mmlib', 'models')
 
@@ -110,3 +110,16 @@ class TestSave(unittest.TestCase):
         restored_model = self.recover_service.recover_model(model_id)
 
         self.assertTrue(model_equal(model, restored_model, imagenet_input))
+
+    def test_model_save_size(self):
+        model = TestNet()
+        model_id = self.save_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
+
+        save_size = self.save_service.model_save_size(model_id)
+
+        # got number form mac os finder file size info
+        zip_size = 52242909
+
+        met_data_size = self.mongo_service.document_size(ObjectId(model_id))
+
+        self.assertEqual(met_data_size + zip_size, save_size)
