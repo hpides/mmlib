@@ -3,6 +3,7 @@ import os
 from enum import Enum
 from shutil import copyfile
 
+import bson
 import torch
 
 from util.helper import zip_dir
@@ -40,13 +41,22 @@ class AbstractSaveService(metaclass=abc.ABCMeta):
         :param model: The model object.
         :param code: The path to the code of the model (is needed for recover process)
         :param import_root: The directory that is root for all imports, e.g. the Python project root.
-        :return: Returns the ID that was sued to store the model data in the MongoDB.
+        :return: Returns the ID that was used to store the model data in the MongoDB.
         """
         raise NotImplementedError
 
     @abc.abstractmethod
     def saved_model_ids(self) -> [str]:
         """Returns list of saved models ids"""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def model_save_size(self, model_id: str) -> float:
+        """
+        Calculates and returns the amount of bytes that are used for storing the model.
+        :param model_id: The ID to identify the model in the mongoDB.
+        :return: The amout of bytes used to store the model.
+        """
         raise NotImplementedError
 
 
@@ -110,3 +120,14 @@ class FileSystemMongoSaveService(AbstractSaveService):
     def saved_model_ids(self) -> [str]:
         str_ids = list(map(str, self._mongo_service.get_ids()))
         return str_ids
+
+    def model_save_size(self, model_id: str) -> float:
+        model_id = bson.ObjectId(model_id)
+
+        document_size = self._mongo_service.document_size(model_id)
+
+        meta_data = self._mongo_service.get_dict(model_id)
+        save_path = meta_data[SAVE_PATH]
+        zip_size = os.path.getsize(save_path)
+
+        return document_size + zip_size
