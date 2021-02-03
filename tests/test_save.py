@@ -64,6 +64,25 @@ class TestSave(unittest.TestCase):
 
         self.assertEqual(expected_dict, retrieve)
 
+    def test_save_model_version(self):
+        model = models.resnet18(pretrained=True)
+
+        model_id = self.save_recover_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
+
+        model_version_id = self.save_recover_service.save_version(model, model_id)
+        obj_id = ObjectId(model_version_id)
+
+        expected_dict = {
+            '_id': obj_id,
+            'name': 'test_model',
+            'save-type': SaveType.PICKLED_MODEL.value,
+            'save-path': os.path.join(self.save_recover_service._base_path, str(model_version_id) + '.zip')
+        }
+
+        retrieve = self.mongo_service.get_dict(object_id=obj_id)
+        self.assertEqual(expected_dict, retrieve)
+
+
     def test_save_model(self):
         model = models.resnet18(pretrained=True)
 
@@ -108,6 +127,19 @@ class TestSave(unittest.TestCase):
         restored_model = self.save_recover_service.recover_model(model_id)
 
         self.assertTrue(model_equal(model, restored_model, imagenet_input))
+
+    def test_save_version_and_restore(self):
+        model = TestNet()
+        base_model_id = self.save_recover_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
+        model_version_id = self.save_recover_service.save_version(model, base_model_id)
+
+        # TODO test restore also on other machine
+        restored_base_model = self.save_recover_service.recover_model(base_model_id)
+        restored_model_version = self.save_recover_service.recover_model(model_version_id)
+
+        self.assertTrue(model_equal(model, restored_base_model, imagenet_input))
+        self.assertTrue(model_equal(model, restored_model_version, imagenet_input))
+        self.assertTrue(model_equal(restored_base_model, restored_model_version, imagenet_input))
 
     def test_model_save_size(self):
         model = TestNet()
