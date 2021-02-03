@@ -6,6 +6,7 @@ from shutil import copyfile
 import bson
 import torch
 
+from mmlib.recover import FileSystemMongoRecoverService
 from util.helper import zip_dir
 from util.mongo import MongoService
 
@@ -29,6 +30,8 @@ class AbstractSaveService(metaclass=abc.ABCMeta):
     def __subclasshook__(cls, subclass):
         return (hasattr(subclass, 'save_model') and
                 callable(subclass.save_model) and
+                hasattr(subclass, 'save_version') and
+                callable(subclass.save_version) and
                 hasattr(subclass, 'saved_model_ids') and
                 callable(subclass.saved_model_ids) or
                 NotImplemented)
@@ -44,6 +47,15 @@ class AbstractSaveService(metaclass=abc.ABCMeta):
         :return: Returns the ID that was used to store the model data in the MongoDB.
         """
         raise NotImplementedError
+
+    @abc.abstractmethod
+    def save_version(self, model:torch.nn.Module, base_model_id: str) -> str:
+        """
+        Saves a new model version by referring to the base_model
+        :param model: The model to save.
+        :param base_model_id: the model id of the base_model
+        :return: Returns the ID that was used to store the new model version data in the MongoDB.
+        """
 
     @abc.abstractmethod
     def saved_model_ids(self) -> [str]:
@@ -71,6 +83,7 @@ class FileSystemMongoSaveService(AbstractSaveService):
         """
         self._mongo_service = MongoService(host, MMLIB, MODELS)
         self._base_path = base_path
+        self._recover_service = FileSystemMongoRecoverService(base_path, host)
 
     def save_model(self, name: str, model: torch.nn.Module, code: str, import_root: str) -> str:
         model_dict = {
@@ -88,6 +101,11 @@ class FileSystemMongoSaveService(AbstractSaveService):
         self._mongo_service.add_attribute(model_id, attribute)
 
         return str(model_id)
+
+    def save_version(self, model: torch.nn.Module, base_model_id: str) -> str:
+        pass
+
+
 
     def _pickle_model(self, model, code, import_root, save_path):
         # create directory to store in
