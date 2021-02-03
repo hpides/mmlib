@@ -122,29 +122,30 @@ class FileSystemMongoSaveRecoverService(AbstractSaveRecoverService):
         version_model_dict = base_model_dict.copy()
         base_model_save_path = base_model_dict[SAVE_PATH]
 
+        # save metadata to mongoDB
         # del fields that will change
         version_model_dict.pop(ID)
         version_model_dict.pop(SAVE_PATH)
-
         # add save path
         model_id = self._mongo_service.save_dict(version_model_dict)
         save_path = self._save_path(model_id)
         self._add_save_path(model_id, save_path)
 
-        unzipped_root = self._unzip(base_model_save_path)
-
-        # there should be only one file with ending ".py" and this should be the model
-        py_files = self._find_py_files(unzipped_root)
-        assert len(py_files) == 1
-        code = py_files[0]
-
+        # extract code and import root from base model
+        code = self._code_path(base_model_save_path)
         import_root = os.path.splitext(base_model_save_path)[0]
 
         self._pickle_model(model, code, import_root, os.path.join(self._base_path, str(model_id)))
 
         return str(model_id)
 
-        pass
+    def _code_path(self, base_model_save_path):
+        unzipped_root = self._unzip(base_model_save_path)
+        # there should be only one file with ending ".py" and this should be the model
+        py_files = self._find_py_files(unzipped_root)
+        assert len(py_files) == 1
+        code = py_files[0]
+        return code
 
     def _pickle_model(self, model, code, import_root, save_path):
         # create directory to store in
