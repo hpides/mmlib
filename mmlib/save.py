@@ -1,5 +1,7 @@
 import abc
 import os
+import sys
+import zipfile
 from enum import Enum
 from shutil import copyfile
 
@@ -24,7 +26,7 @@ class SaveType(Enum):
 
 
 # TODO if for experiments Python 3.8 is available, use protocol here
-class AbstractSaveService(metaclass=abc.ABCMeta):
+class AbstractSaveRecoverService(metaclass=abc.ABCMeta):
 
     @classmethod
     def __subclasshook__(cls, subclass):
@@ -32,6 +34,8 @@ class AbstractSaveService(metaclass=abc.ABCMeta):
                 callable(subclass.save_model) and
                 hasattr(subclass, 'save_version') and
                 callable(subclass.save_version) and
+                hasattr(subclass, 'recover_model') and
+                callable(subclass.recover_model) and
                 hasattr(subclass, 'saved_model_ids') and
                 callable(subclass.saved_model_ids) or
                 NotImplemented)
@@ -49,7 +53,7 @@ class AbstractSaveService(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def save_version(self, model:torch.nn.Module, base_model_id: str) -> str:
+    def save_version(self, model: torch.nn.Module, base_model_id: str) -> str:
         """
         Saves a new model version by referring to the base_model
         :param model: The model to save.
@@ -71,8 +75,16 @@ class AbstractSaveService(metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def recover_model(self, model_id: str) -> torch.nn.Module:
+        """
+        Recovers a the model identified by the given id.
+        :param model_id: The id to identify the model with.
+        :return: The recovered model as an object.
+        """
 
-class FileSystemMongoSaveService(AbstractSaveService):
+
+class FileSystemMongoSaveService(AbstractSaveRecoverService):
     """A Service that offers functionality to store PyTorch models. In order to do so it stores the metadata is
     stored in a MongoDB, the model (pickled) is stored on the file system. """
 
@@ -104,8 +116,6 @@ class FileSystemMongoSaveService(AbstractSaveService):
 
     def save_version(self, model: torch.nn.Module, base_model_id: str) -> str:
         pass
-
-
 
     def _pickle_model(self, model, code, import_root, save_path):
         # create directory to store in
@@ -149,3 +159,28 @@ class FileSystemMongoSaveService(AbstractSaveService):
         zip_size = os.path.getsize(save_path)
 
         return document_size + zip_size
+
+    def recover_model(self, model_id: str) -> torch.nn.Module:
+        model_id = bson.ObjectId(model_id)
+        model_dict = self._mongo_service.get_dict(model_id)
+        return self._recover_model(model_dict)
+
+    def _recover_model(self, model_dict):
+        save_type = SaveType(model_dict[SAVE_TYPE])
+        if save_type == SaveType.PICKLED_MODEL:
+            return self._restore_pickled_model(model_dict)
+
+    def _restore_pickled_model(self, model_dict):
+        file_path = model_dict[SAVE_PATH]
+
+        with zipfile.ZipFile(file_path, 'r') as zip_ref:
+            zip_ref.extractall(self._base_path)
+
+        # remove .zip file ending
+        unpacked_path = file_path.split('.')[0]
+        # make available for imports
+        sys.path.append(unpacked_path)
+
+        pickle_path = os.path.join(unpacked_path, 'model')
+        loaded_model = torch.load(pickle_path)
+        return loaded_model
