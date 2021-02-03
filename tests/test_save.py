@@ -7,8 +7,7 @@ from torchvision import models
 
 from mmlib.equal import model_equal
 from mmlib.helper import imagenet_input
-from mmlib.recover import FileSystemMongoRecoverService
-from mmlib.save import FileSystemMongoSaveService, SaveType
+from mmlib.save import FileSystemMongoSaveRecoverService, SaveType
 from tests.networks.mynets.test_net import TestNet
 from util.mongo import MongoService
 
@@ -28,8 +27,7 @@ class TestSave(unittest.TestCase):
         self.mongo_service = MongoService('127.0.0.1', 'mmlib', 'models')
 
         os.mkdir(self.abs_tmp_path)
-        self.save_service = FileSystemMongoSaveService(self.abs_tmp_path)
-        self.recover_service = FileSystemMongoRecoverService(self.abs_tmp_path)
+        self.save_recover_service = FileSystemMongoSaveRecoverService(self.abs_tmp_path)
 
     def tearDown(self) -> None:
         self.__clean_up()
@@ -69,14 +67,14 @@ class TestSave(unittest.TestCase):
     def test_save_model(self):
         model = models.resnet18(pretrained=True)
 
-        model_id = self.save_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
+        model_id = self.save_recover_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
         obj_id = ObjectId(model_id)
 
         expected_dict = {
             '_id': obj_id,
             'name': 'test_model',
             'save-type': SaveType.PICKLED_MODEL.value,
-            'save-path': os.path.join(self.save_service._base_path, str(model_id) + '.zip')
+            'save-path': os.path.join(self.save_recover_service._base_path, str(model_id) + '.zip')
         }
 
         retrieve = self.mongo_service.get_dict(object_id=obj_id)
@@ -85,37 +83,37 @@ class TestSave(unittest.TestCase):
     def test_get_saved_ids(self):
         expected = []
 
-        ids = self.save_service.saved_model_ids()
+        ids = self.save_recover_service.saved_model_ids()
         self.assertEqual(ids, expected)
 
         model = models.resnet18(pretrained=True)
-        model_id = self.save_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
+        model_id = self.save_recover_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
         expected.append(model_id)
 
-        ids = self.save_service.saved_model_ids()
+        ids = self.save_recover_service.saved_model_ids()
         self.assertEqual(ids, expected)
 
         model = models.resnet18(pretrained=True)
-        model_id = self.save_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
+        model_id = self.save_recover_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
         expected.append(model_id)
 
-        ids = self.save_service.saved_model_ids()
+        ids = self.save_recover_service.saved_model_ids()
         self.assertEqual(ids, expected)
 
     def test_save_and_restore(self):
         model = TestNet()
-        model_id = self.save_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
+        model_id = self.save_recover_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
 
         # TODO test restore also on other machine
-        restored_model = self.recover_service.recover_model(model_id)
+        restored_model = self.save_recover_service.recover_model(model_id)
 
         self.assertTrue(model_equal(model, restored_model, imagenet_input))
 
     def test_model_save_size(self):
         model = TestNet()
-        model_id = self.save_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
+        model_id = self.save_recover_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
 
-        save_size = self.save_service.model_save_size(model_id)
+        save_size = self.save_recover_service.model_save_size(model_id)
 
         # got number form mac os finder file size info
         zip_size = 52242909

@@ -8,7 +8,6 @@ from shutil import copyfile
 import bson
 import torch
 
-from mmlib.recover import FileSystemMongoRecoverService
 from util.helper import zip_dir
 from util.mongo import MongoService
 
@@ -84,7 +83,7 @@ class AbstractSaveRecoverService(metaclass=abc.ABCMeta):
         """
 
 
-class FileSystemMongoSaveService(AbstractSaveRecoverService):
+class FileSystemMongoSaveRecoverService(AbstractSaveRecoverService):
     """A Service that offers functionality to store PyTorch models. In order to do so it stores the metadata is
     stored in a MongoDB, the model (pickled) is stored on the file system. """
 
@@ -95,7 +94,6 @@ class FileSystemMongoSaveService(AbstractSaveRecoverService):
         """
         self._mongo_service = MongoService(host, MMLIB, MODELS)
         self._base_path = base_path
-        self._recover_service = FileSystemMongoRecoverService(base_path, host)
 
     def save_model(self, name: str, model: torch.nn.Module, code: str, import_root: str) -> str:
         model_dict = {
