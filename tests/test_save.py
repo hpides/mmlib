@@ -82,7 +82,6 @@ class TestSave(unittest.TestCase):
         retrieve = self.mongo_service.get_dict(object_id=obj_id)
         self.assertEqual(expected_dict, retrieve)
 
-
     def test_save_model(self):
         model = models.resnet18(pretrained=True)
 
@@ -130,7 +129,8 @@ class TestSave(unittest.TestCase):
 
     def test_save_version_and_restore(self):
         model = TestNet()
-        base_model_id = self.save_recover_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
+        base_model_id = self.save_recover_service.save_model('test_model', model, './networks/mynets/test_net.py',
+                                                             './..')
         model_version_id = self.save_recover_service.save_version(model, base_model_id)
 
         # TODO test restore also on other machine

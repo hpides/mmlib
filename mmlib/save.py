@@ -110,13 +110,6 @@ class FileSystemMongoSaveRecoverService(AbstractSaveRecoverService):
 
         return str(model_id)
 
-    def _add_save_path(self, model_id, save_path):
-        attribute = {SAVE_PATH: save_path}
-        self._mongo_service.add_attribute(model_id, attribute)
-
-    def _save_path(self, model_id):
-        return os.path.join(self._base_path, str(model_id) + '.zip')
-
     def save_version(self, model: torch.nn.Module, base_model_id: str) -> str:
         base_model_dict = self._get_model_dict(base_model_id)
         version_model_dict = base_model_dict.copy()
@@ -138,46 +131,6 @@ class FileSystemMongoSaveRecoverService(AbstractSaveRecoverService):
         self._pickle_model(model, code, import_root, os.path.join(self._base_path, str(model_id)))
 
         return str(model_id)
-
-    def _code_path(self, base_model_save_path):
-        unzipped_root = self._unzip(base_model_save_path)
-        # there should be only one file with ending ".py" and this should be the model
-        py_files = self._find_py_files(unzipped_root)
-        assert len(py_files) == 1
-        code = py_files[0]
-        return code
-
-    def _pickle_model(self, model, code, import_root, save_path):
-        # create directory to store in
-        abs_save_path = os.path.abspath(save_path)
-        os.makedirs(abs_save_path)
-
-        # store pickle dump of model
-        torch.save(model, os.path.join(abs_save_path, 'model'))
-
-        # store code
-        self._store_code(abs_save_path, code, import_root)
-
-        # zip everything
-        self._zip(save_path)
-
-    def _store_code(self, abs_save_path, code, import_root):
-        code_abs_path = os.path.abspath(code)
-        import_root_abs = os.path.abspath(import_root)
-        copy_path, code_file = os.path.split(os.path.relpath(code_abs_path, import_root_abs))
-        net_code_dst = os.path.join(abs_save_path, copy_path)
-        # create dir structure in tmp file, needed to restore the pickle dump
-        os.makedirs(net_code_dst)
-        copyfile(code_abs_path, os.path.join(net_code_dst, code_file))
-
-    def _zip(self, save_path):
-        path, name = os.path.split(save_path)
-        # temporarily change dict for zip process
-        owd = os.getcwd()
-        os.chdir(path)
-        zip_dir(name, name + '.zip')
-        # change path back
-        os.chdir(owd)
 
     def saved_model_ids(self) -> [str]:
         str_ids = list(map(str, self._mongo_service.get_ids()))
@@ -236,3 +189,50 @@ class FileSystemMongoSaveRecoverService(AbstractSaveRecoverService):
                     result.append(os.path.join(root, file))
 
         return result
+
+    def _code_path(self, base_model_save_path):
+        unzipped_root = self._unzip(base_model_save_path)
+        # there should be only one file with ending ".py" and this should be the model
+        py_files = self._find_py_files(unzipped_root)
+        assert len(py_files) == 1
+        code = py_files[0]
+        return code
+
+    def _pickle_model(self, model, code, import_root, save_path):
+        # create directory to store in
+        abs_save_path = os.path.abspath(save_path)
+        os.makedirs(abs_save_path)
+
+        # store pickle dump of model
+        torch.save(model, os.path.join(abs_save_path, 'model'))
+
+        # store code
+        self._store_code(abs_save_path, code, import_root)
+
+        # zip everything
+        self._zip(save_path)
+
+    def _store_code(self, abs_save_path, code, import_root):
+        code_abs_path = os.path.abspath(code)
+        import_root_abs = os.path.abspath(import_root)
+        copy_path, code_file = os.path.split(os.path.relpath(code_abs_path, import_root_abs))
+        net_code_dst = os.path.join(abs_save_path, copy_path)
+        # create dir structure in tmp file, needed to restore the pickle dump
+        os.makedirs(net_code_dst)
+        copyfile(code_abs_path, os.path.join(net_code_dst, code_file))
+
+    def _zip(self, save_path):
+        path, name = os.path.split(save_path)
+        # temporarily change dict for zip process
+        owd = os.getcwd()
+        os.chdir(path)
+        zip_dir(name, name + '.zip')
+        # change path back
+        os.chdir(owd)
+
+    def _add_save_path(self, model_id, save_path):
+        attribute = {SAVE_PATH: save_path}
+        self._mongo_service.add_attribute(model_id, attribute)
+
+    def _save_path(self, model_id):
+        return os.path.join(self._base_path, str(model_id) + '.zip')
