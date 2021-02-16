@@ -7,7 +7,8 @@ from torchvision import models
 
 from mmlib.equal import model_equal
 from mmlib.helper import imagenet_input
-from mmlib.save import SaveType, SimpleSaveRecoverService, FileSystemMongoPS
+from mmlib.persistence import FileSystemMongoPS
+from mmlib.save import SaveType, SimpleSaveRecoverService
 from tests.networks.mynets.test_net import TestNet
 from util.mongo import MongoService
 

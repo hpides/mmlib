@@ -8,20 +8,17 @@ from shutil import copyfile
 
 import bson
 import torch
-from bson import ObjectId
 
+from mmlib.persistence import AbstractPersistenceService
 from util.helper import zip_dir
-from util.mongo import MongoService
 
-FILE = 'file-'
 
-DICT = 'dict-'
 
 SAVE_PATH = 'save-path'
 SAVE_TYPE = 'save-type'
 NAME = 'name'
 MODELS = 'models'
-MMLIB = 'mmlib'
+
 ID = '_id'
 
 MODEL_INFO = 'model_info'
@@ -107,56 +104,6 @@ class AbstractSaveRecoverService(metaclass=abc.ABCMeta):
         :param model_id: The id to identify the model with.
         :return: The recovered model as an object.
         """
-
-
-class AbstractPersistenceService(metaclass=abc.ABCMeta):
-
-    @abc.abstractmethod
-    def save_dict(self, insert_dict: dict, represent_type: str) -> str:
-        """
-        TODO docs
-        :param insert_dict:
-        :param represent_type:
-        :return:
-        """
-
-    @abc.abstractmethod
-    def save_file(self, file_path: str) -> str:
-        """
-        TODO docs
-        :param file_path:
-        :return:
-        """
-
-    @abc.abstractmethod
-    def generate_id(self) -> str:
-        """
-        TODO docs
-        :return:
-        """
-
-
-# TODO move in separate file
-class FileSystemMongoPS(AbstractPersistenceService):
-    def __init__(self, base_path, host='127.0.0.1'):
-        self._mongo_service = MongoService(host, MMLIB)
-        self._base_path = base_path
-
-    def save_dict(self, insert_dict: dict, represent_type: str) -> str:
-        mongo_id = self._mongo_service.save_dict(insert_dict, collection=represent_type)
-        return DICT + str(mongo_id)
-
-    def save_file(self, file_path: str) -> str:
-        path, file_name = os.path.split(file_path)
-        file_id = str(ObjectId())
-        dst_path = os.path.join(self._base_path, file_id)
-        os.mkdir(dst_path)
-        copyfile(file_path, os.path.join(dst_path, file_name))
-
-        return FILE + file_id
-
-    def generate_id(self) -> str:
-        return str(ObjectId())
 
 
 class SimpleSaveRecoverService(AbstractSaveRecoverService):
