@@ -61,9 +61,10 @@ class AbstractSaveRecoverService(metaclass=abc.ABCMeta):
                 NotImplemented)
 
     @abc.abstractmethod
-    def save_model(self, name: str, model: torch.nn.Module, code: str, import_root: str) -> str:
+    def save_model(self, name: str, generate_call: str, model: torch.nn.Module, code: str, import_root: str) -> str:
         """
         Saves a model as a pickle dump together with the given metadata.
+        :param generate_call: TODO docs
         :param name: The name of the model as a string. Used for easier identification.
         :param model: The model object.
         :param code: The path to the code of the model (is needed for recover process)
@@ -117,7 +118,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         self._pers_service = persistence_service
         self._tmp_path = tmp_path
 
-    def save_model(self, name: str, model: torch.nn.Module, code: str, import_root: str) -> str:
+    def save_model(self, name: str, generate_call: str, model: torch.nn.Module, code: str, import_root: str) -> str:
         dst_path = os.path.join(self._tmp_path, self._pers_service.generate_id())
 
         zip_file = self._pickle_model(model, code, import_root, dst_path)
@@ -130,7 +131,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         recover_info_t1 = {
             RecoverInfoT1.PICKLED_MODEL.value: zip_file_id,
             RecoverInfoT1.MODEL_CODE.value: code_file_id,
-            RecoverInfoT1.GENERATE_CALL.value: '',  # TODO param needed
+            RecoverInfoT1.GENERATE_CALL.value: generate_call,
             RecoverInfoT1.RECOVER_VAL.value: None  # TODO to implement
         }
         recover_info_id = self._pers_service.save_dict(recover_info_t1, RECOVER_T1)
