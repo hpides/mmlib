@@ -12,8 +12,6 @@ import torch
 from mmlib.persistence import AbstractPersistenceService
 from util.helper import zip_dir
 
-
-
 SAVE_PATH = 'save-path'
 SAVE_TYPE = 'save-type'
 NAME = 'name'
