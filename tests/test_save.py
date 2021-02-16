@@ -70,11 +70,12 @@ class TestSave(unittest.TestCase):
 
         self.assertEqual(expected_dict, retrieve)
 
-    def test_save_model_version(self):
-        model = models.resnet18(pretrained=True)
-
-        model_id = self.save_recover_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
-        print(model_id)
+    # def test_save_model_version(self):
+    #     model = models.googlenet()
+    #
+    #     model_id = self.save_recover_service.save_model('test_model', 'googlenet', model,
+    #                                                     './networks/mynets/test_net.py', './..')
+    #     print(model_id)
 
         # model_version_id = self.save_recover_service.save_version(model, model_id)
         # obj_id = ObjectId(model_version_id)
@@ -89,21 +90,15 @@ class TestSave(unittest.TestCase):
         # retrieve = self.mongo_service.get_dict(object_id=obj_id)
         # self.assertEqual(expected_dict, retrieve)
 
-    def test_save_model(self):
+    def test_save_restore_model(self):
         model = models.googlenet(pretrained=True)
 
-        model_id = self.save_recover_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
-        obj_id = ObjectId(model_id)
+        model_id = self.save_recover_service.save_model('test_model', 'googlenet', model,
+                                                        './networks/mynets/test_net.py', './..')
 
-        expected_dict = {
-            '_id': obj_id,
-            'name': 'test_model',
-            'save-type': SaveType.PICKLED_MODEL.value,
-            'save-path': os.path.join(self.save_recover_service._base_path, str(model_id) + '.zip')
-        }
+        restored_model = self.save_recover_service.recover_model(model_id)
 
-        retrieve = self.mongo_service.get_dict(object_id=obj_id)
-        self.assertEqual(expected_dict, retrieve)
+        self.assertTrue(model_equal(model, restored_model, imagenet_input))
 
     def test_get_saved_ids(self):
         expected = []
