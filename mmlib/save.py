@@ -1,5 +1,6 @@
 import abc
 import os
+import shutil
 import sys
 import zipfile
 from enum import Enum
@@ -7,9 +8,14 @@ from shutil import copyfile
 
 import bson
 import torch
+from bson import ObjectId
 
 from util.helper import zip_dir
 from util.mongo import MongoService
+
+FILE = 'file-'
+
+DICT = 'dict-'
 
 SAVE_PATH = 'save-path'
 SAVE_TYPE = 'save-type'
@@ -18,11 +24,30 @@ MODELS = 'models'
 MMLIB = 'mmlib'
 ID = '_id'
 
+MODEL_INFO = 'model_info'
+RECOVER_T1 = 'recover_t1'
+
 
 class SaveType(Enum):
     PICKLED_MODEL = 1
     ARCHITECTURE_AND_WEIGHTS = 2
     PROVENANCE = 3
+
+
+class RecoverInfoT1(Enum):
+    PICKLED_MODEL = 'pickled_model'
+    MODEL_CODE = 'model_code'
+    GENERATE_CALL = 'generate_call'
+    RECOVER_VAL = 'recover_val'
+
+
+class ModelInfo(Enum):
+    NAME = 'name'
+    STORE_TYPE = 'store_type'
+    RECOVER_INFO = 'recover_info'
+    DERIVED_FROM = 'derived_from'
+    INFERENCE_INFO = 'inference_info'
+    TRAIN_INFO = 'train_info'
 
 
 # TODO if for experiments Python 3.8 is available, use protocol here
@@ -84,72 +109,145 @@ class AbstractSaveRecoverService(metaclass=abc.ABCMeta):
         """
 
 
-class FileSystemMongoSaveRecoverService(AbstractSaveRecoverService):
-    """A Service that offers functionality to store PyTorch models. In order to do so it stores the metadata is
+class AbstractPersistenceService(metaclass=abc.ABCMeta):
+
+    @abc.abstractmethod
+    def save_dict(self, insert_dict: dict, represent_type: str) -> str:
+        """
+        TODO docs
+        :param insert_dict:
+        :param represent_type:
+        :return:
+        """
+
+    @abc.abstractmethod
+    def save_file(self, file_path: str) -> str:
+        """
+        TODO docs
+        :param file_path:
+        :return:
+        """
+
+    @abc.abstractmethod
+    def generate_id(self) -> str:
+        """
+        TODO docs
+        :return:
+        """
+
+
+# TODO move in separate file
+class FileSystemMongoPS(AbstractPersistenceService):
+    def __init__(self, base_path, host='127.0.0.1'):
+        self._mongo_service = MongoService(host, MMLIB)
+        self._base_path = base_path
+
+    def save_dict(self, insert_dict: dict, represent_type: str) -> str:
+        mongo_id = self._mongo_service.save_dict(insert_dict, collection=represent_type)
+        return DICT + str(mongo_id)
+
+    def save_file(self, file_path: str) -> str:
+        path, file_name = os.path.split(file_path)
+        file_id = str(ObjectId())
+        dst_path = os.path.join(self._base_path, file_id)
+        os.mkdir(dst_path)
+        copyfile(file_path, os.path.join(dst_path, file_name))
+
+        return FILE + file_id
+
+    def generate_id(self) -> str:
+        return str(ObjectId())
+
+
+class SimpleSaveRecoverService(AbstractSaveRecoverService):
+    """TODO docs A Service that offers functionality to store PyTorch models. In order to do so it stores the metadata is
     stored in a MongoDB, the model (pickled) is stored on the file system. """
 
-    def __init__(self, base_path, host='127.0.0.1'):
+    def __init__(self, persistence_service: AbstractPersistenceService, tmp_path: str):
         """
+        TODO docs
         :param base_path: The path that is used as a root directory for everything that is stored to the file system.
         :param host: The host name or Ip address to connect to a running MongoDB instance.
         """
-        self._mongo_service = MongoService(host, MMLIB, MODELS)
-        self._base_path = base_path
+        self._pers_service = persistence_service
+        self._tmp_path = tmp_path
 
     def save_model(self, name: str, model: torch.nn.Module, code: str, import_root: str) -> str:
-        model_dict = {
-            NAME: name,
-            SAVE_TYPE: SaveType.PICKLED_MODEL.value
+        dst_path = os.path.join(self._tmp_path, self._pers_service.generate_id())
+
+        zip_file = self._pickle_model(model, code, import_root, dst_path)
+        zip_file_id = self._pers_service.save_file(zip_file)
+        code_file_id = self._pers_service.save_file(code)
+
+        self._clean(dst_path)
+        self._clean(zip_file)
+
+        recover_info_t1 = {
+            RecoverInfoT1.PICKLED_MODEL.value: zip_file_id,
+            RecoverInfoT1.MODEL_CODE.value: code_file_id,
+            RecoverInfoT1.GENERATE_CALL.value: '',  # TODO param needed
+            RecoverInfoT1.RECOVER_VAL.value: None  # TODO to implement
         }
+        recover_info_id = self._pers_service.save_dict(recover_info_t1, RECOVER_T1)
 
-        model_id = self._mongo_service.save_dict(model_dict)
-        save_path = self._save_path(model_id)
-        self._add_save_path(model_id, save_path)
+        model_dict = {
+            ModelInfo.NAME.value: name,
+            ModelInfo.STORE_TYPE.value: SaveType.PICKLED_MODEL.value,
+            ModelInfo.RECOVER_INFO.value: recover_info_id,
+            ModelInfo.DERIVED_FROM.value: None,  # TODO to implement
+            ModelInfo.INFERENCE_INFO.value: None,  # TODO to implement
+            ModelInfo.TRAIN_INFO.value: None  # TODO to implement
 
-        self._pickle_model(model, code, import_root, os.path.join(self._base_path, str(model_id)))
+        }
+        model_id = self._pers_service.save_dict(model_dict, MODEL_INFO)
 
-        return str(model_id)
+        return model_id
 
     def save_version(self, model: torch.nn.Module, base_model_id: str) -> str:
-        base_model_dict = self._get_model_dict(base_model_id)
-        version_model_dict = base_model_dict.copy()
-        base_model_save_path = base_model_dict[SAVE_PATH]
+        pass
 
-        # save metadata to mongoDB
-        # del fields that will change
-        version_model_dict.pop(ID)
-        version_model_dict.pop(SAVE_PATH)
-        # add save path
-        model_id = self._mongo_service.save_dict(version_model_dict)
-        save_path = self._save_path(model_id)
-        self._add_save_path(model_id, save_path)
-
-        # extract code and import root from base model
-        code = self._code_path(base_model_save_path)
-        import_root = os.path.splitext(base_model_save_path)[0]
-
-        self._pickle_model(model, code, import_root, os.path.join(self._base_path, str(model_id)))
-
-        return str(model_id)
+    #     base_model_dict = self._get_model_dict(base_model_id)
+    #     version_model_dict = base_model_dict.copy()
+    #     base_model_save_path = base_model_dict[SAVE_PATH]
+    #
+    #     # save metadata to mongoDB
+    #     # del fields that will change
+    #     version_model_dict.pop(ID)
+    #     version_model_dict.pop(SAVE_PATH)
+    #     # add save path
+    #     model_id = self._mongo_service.save_dict(version_model_dict)
+    #     save_path = self._save_path(model_id)
+    #     self._add_save_path(model_id, save_path)
+    #
+    #     # extract code and import root from base model
+    #     code = self._code_path(base_model_save_path)
+    #     import_root = os.path.splitext(base_model_save_path)[0]
+    #
+    #     self._pickle_model(model, code, import_root, os.path.join(self._base_path, str(model_id)))
+    #
+    #     return str(model_id)
 
     def saved_model_ids(self) -> [str]:
-        str_ids = list(map(str, self._mongo_service.get_ids()))
-        return str_ids
+        pass
+        # str_ids = list(map(str, self._mongo_service.get_ids()))
+        # return str_ids
 
     def model_save_size(self, model_id: str) -> float:
-        model_id = bson.ObjectId(model_id)
-
-        document_size = self._mongo_service.document_size(model_id)
-
-        meta_data = self._mongo_service.get_dict(model_id)
-        save_path = meta_data[SAVE_PATH]
-        zip_size = os.path.getsize(save_path)
-
-        return document_size + zip_size
+        pass
+        # model_id = bson.ObjectId(model_id)
+        #
+        # document_size = self._mongo_service.document_size(model_id)
+        #
+        # meta_data = self._mongo_service.get_dict(model_id)
+        # save_path = meta_data[SAVE_PATH]
+        # zip_size = os.path.getsize(save_path)
+        #
+        # return document_size + zip_size
 
     def recover_model(self, model_id: str) -> torch.nn.Module:
-        model_dict = self._get_model_dict(model_id)
-        return self._recover_model(model_dict)
+        pass
+        # model_dict = self._get_model_dict(model_id)
+        # return self._recover_model(model_dict)
 
     def _get_model_dict(self, model_id):
         model_id = bson.ObjectId(model_id)
@@ -210,7 +308,7 @@ class FileSystemMongoSaveRecoverService(AbstractSaveRecoverService):
         self._store_code(abs_save_path, code, import_root)
 
         # zip everything
-        self._zip(save_path)
+        return self._zip(save_path)
 
     def _store_code(self, abs_save_path, code, import_root):
         code_abs_path = os.path.abspath(code)
@@ -226,13 +324,19 @@ class FileSystemMongoSaveRecoverService(AbstractSaveRecoverService):
         # temporarily change dict for zip process
         owd = os.getcwd()
         os.chdir(path)
-        zip_dir(name, name + '.zip')
+        zip_name = name + '.zip'
+        zip_dir(name, zip_name)
         # change path back
         os.chdir(owd)
+
+        return os.path.join(path, zip_name)
 
     def _add_save_path(self, model_id, save_path):
         attribute = {SAVE_PATH: save_path}
         self._mongo_service.add_attribute(model_id, attribute)
 
-    def _save_path(self, model_id):
-        return os.path.join(self._base_path, str(model_id) + '.zip')
+    def _clean(self, path):
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+        else:
+            os.remove(path)
