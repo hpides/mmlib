@@ -41,7 +41,7 @@ class AbstractPersistenceService(metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def recover_file(self, file_id: str, dst_path):
+    def recover_file(self, file_id: str, dst_path) -> str:
         """
         TODO docs
         :param file_id:
@@ -87,6 +87,8 @@ class FileSystemMongoPS(AbstractPersistenceService):
         file = find_file(store_path)
         dst = os.path.join(os.path.abspath(dst_path), os.path.split(file)[1])
         copyfile(file, dst)
+
+        return dst
 
     def generate_id(self) -> str:
         return str(ObjectId())

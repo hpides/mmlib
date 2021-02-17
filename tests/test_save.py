@@ -5,6 +5,7 @@ import unittest
 from bson import ObjectId
 from torchvision import models
 
+from mmlib.deterministic import set_deterministic
 from mmlib.equal import model_equal
 from mmlib.helper import imagenet_input
 from mmlib.persistence import FileSystemMongoPS
@@ -43,26 +44,6 @@ class TestSave(unittest.TestCase):
         if os.path.exists(self.abs_save_service_tmp):
             shutil.rmtree(self.abs_save_service_tmp)
 
-    # def test_save_model_version(self):
-    #     model = models.googlenet()
-    #
-    #     model_id = self.save_recover_service.save_model('test_model', 'googlenet', model,
-    #                                                     './networks/mynets/test_net.py', './..')
-    #     print(model_id)
-
-    # model_version_id = self.save_recover_service.save_version(model, model_id)
-    # obj_id = ObjectId(model_version_id)
-    #
-    # expected_dict = {
-    #     '_id': obj_id,
-    #     'name': 'test_model',
-    #     'save-type': SaveType.PICKLED_MODEL.value,
-    #     'save-path': os.path.join(self.save_recover_service._base_path, str(model_version_id) + '.zip')
-    # }
-    #
-    # retrieve = self.mongo_service.get_dict(object_id=obj_id)
-    # self.assertEqual(expected_dict, retrieve)
-
     def test_save_restore_model(self):
         model = models.googlenet(pretrained=True)
 
@@ -72,6 +53,28 @@ class TestSave(unittest.TestCase):
         restored_model = self.save_recover_service.recover_model(model_id)
 
         self.assertTrue(model_equal(model, restored_model, imagenet_input))
+
+    def test_save_restore_model_version(self):
+        set_deterministic()
+        model = models.googlenet()
+
+        model_id = self.save_recover_service.save_model('test_model', 'googlenet', model,
+                                                        './networks/mynets/test_net.py', './..')
+
+        set_deterministic()
+        model_version = models.googlenet()
+        model_version1_id = self.save_recover_service.save_version(model_version, base_model_id=model_id)
+
+        model_version = models.googlenet(pretrained=True)
+        model_version2_id = self.save_recover_service.save_version(model_version, base_model_id=model_version1_id)
+
+        restored_model = self.save_recover_service.recover_model(model_id)
+        restored_model_version1 = self.save_recover_service.recover_model(model_version1_id)
+        restored_model_version2 = self.save_recover_service.recover_model(model_version2_id)
+
+        self.assertTrue(model_equal(model, restored_model, imagenet_input))
+        self.assertTrue(model_equal(model, restored_model_version1, imagenet_input))
+        self.assertFalse(model_equal(restored_model_version1, restored_model_version2, imagenet_input))
 
     def test_get_saved_ids(self):
         expected = []

@@ -8,7 +8,7 @@ from shutil import copyfile
 import torch
 
 from mmlib.persistence import AbstractPersistenceService
-from util.helper import zip_dir, find_zip_file, clean
+from util.helper import zip_dir, clean
 
 TMP_DIR = 'tmp-dir'
 
@@ -115,7 +115,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         :param host: The host name or Ip address to connect to a running MongoDB instance.
         """
         self._pers_service = persistence_service
-        self._tmp_path = tmp_path
+        self._tmp_path = os.path.abspath(tmp_path)
 
     def save_model(self, name: str, generate_call: str, model: torch.nn.Module, code: str, import_root: str) -> str:
         recover_info_t1 = self._save_model_t1(code, generate_call, import_root, model)
@@ -150,35 +150,40 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         recover_info_t1 = {
             RecoverInfoT1.PICKLED_MODEL.value: zip_file_id,
             RecoverInfoT1.MODEL_CODE.value: code_file_id,
-            RecoverInfoT1.IMPORT_ROOT.value: import_root,
+            RecoverInfoT1.IMPORT_ROOT.value: import_root,  # TODO think about how to handle import root
             RecoverInfoT1.GENERATE_CALL.value: generate_call,
             RecoverInfoT1.RECOVER_VAL.value: None  # TODO to implement
         }
         return recover_info_t1
 
     def save_version(self, model: torch.nn.Module, base_model_id: str) -> str:
-        pass
+        base_model_info = self._pers_service.recover_dict(base_model_id, MODEL_INFO)
+        base_model_recover_info = self._get_recover_info(base_model_info)
 
-    #     base_model_dict = self._get_model_dict(base_model_id)
-    #     version_model_dict = base_model_dict.copy()
-    #     base_model_save_path = base_model_dict[SAVE_PATH]
-    #
-    #     # save metadata to mongoDB
-    #     # del fields that will change
-    #     version_model_dict.pop(ID)
-    #     version_model_dict.pop(SAVE_PATH)
-    #     # add save path
-    #     model_id = self._mongo_service.save_dict(version_model_dict)
-    #     save_path = self._save_path(model_id)
-    #     self._add_save_path(model_id, save_path)
-    #
-    #     # extract code and import root from base model
-    #     code = self._code_path(base_model_save_path)
-    #     import_root = os.path.splitext(base_model_save_path)[0]
-    #
-    #     self._pickle_model(model, code, import_root, os.path.join(self._base_path, str(model_id)))
-    #
-    #     return str(model_id)
+        # copy fields from previous model that will stay the same
+        name = base_model_info[ModelInfo.NAME.value]
+        generate_call = base_model_recover_info[RecoverInfoT1.GENERATE_CALL.value]
+        import_root = base_model_recover_info[RecoverInfoT1.IMPORT_ROOT.value]
+
+        tmp_path = os.path.abspath(os.path.join(self._tmp_path, TMP_DIR))
+        os.mkdir(tmp_path)  # TODO maybe use with context
+        code = self._pers_service.recover_file(base_model_recover_info[RecoverInfoT1.MODEL_CODE.value], tmp_path)
+
+        recover_info_t1 = self._save_model_t1(code, generate_call, import_root, model)
+        clean(tmp_path)
+
+        recover_info_id = self._pers_service.save_dict(recover_info_t1, RECOVER_T1)
+
+        # TODO to implement other fields that are default None
+        model_id = self._save_model_info(name, SaveType.PICKLED_MODEL.value, recover_info_id,
+                                         derived_from=base_model_id)
+
+        return model_id
+
+    def _get_recover_info(self, base_model_info):
+        recover_info_id = base_model_info[ModelInfo.RECOVER_INFO.value]
+        base_model_recover_info = self._pers_service.recover_dict(recover_info_id, RECOVER_T1)
+        return base_model_recover_info
 
     def saved_model_ids(self) -> [str]:
         pass
@@ -204,18 +209,17 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         pickle_file_id = recover_info[RecoverInfoT1.PICKLED_MODEL.value]
 
         tmp_path = os.path.abspath(os.path.join(self._tmp_path, TMP_DIR))
-        os.mkdir(tmp_path)
-        self._pers_service.recover_file(pickle_file_id, tmp_path)
-        recovered_model = self._recover_pickled_model(tmp_path)
+        os.mkdir(tmp_path)  # TODO maybe use with context
+        pickle_path = self._pers_service.recover_file(pickle_file_id, tmp_path)
+        recovered_model = self._recover_pickled_model(pickle_path, tmp_path)
 
         clean(tmp_path)
 
         return recovered_model
 
-    def _recover_pickled_model(self, extract_path):
-        file_path = find_zip_file(extract_path)
+    def _recover_pickled_model(self, pickle_path, extract_path):
 
-        unpacked_path = self._unzip(file_path, extract_path)
+        unpacked_path = self._unzip(pickle_path, extract_path)
         # make available for imports
         sys.path.append(unpacked_path)
 
