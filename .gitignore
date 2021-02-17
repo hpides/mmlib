@@ -144,3 +144,5 @@ cython_debug/
 build/
 dist/
 /examples/summary
+/tests/filesystem-tmp/
+/tests/saveservice-tmp/
