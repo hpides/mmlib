@@ -10,10 +10,8 @@ import torch
 from mmlib.persistence import AbstractPersistenceService
 from util.helper import zip_dir, find_zip_file, clean
 
-TMP_FILE = 'tmp-file'
+TMP_DIR = 'tmp-dir'
 
-SAVE_PATH = 'save-path'
-SAVE_TYPE = 'save-type'
 NAME = 'name'
 MODELS = 'models'
 
@@ -119,21 +117,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         self._tmp_path = tmp_path
 
     def save_model(self, name: str, generate_call: str, model: torch.nn.Module, code: str, import_root: str) -> str:
-        dst_path = os.path.join(self._tmp_path, self._pers_service.generate_id())
-
-        zip_file = self._pickle_model(model, code, import_root, dst_path)
-        zip_file_id = self._pers_service.save_file(zip_file)
-        code_file_id = self._pers_service.save_file(code)
-
-        clean(dst_path)
-        clean(zip_file)
-
-        recover_info_t1 = {
-            RecoverInfoT1.PICKLED_MODEL.value: zip_file_id,
-            RecoverInfoT1.MODEL_CODE.value: code_file_id,
-            RecoverInfoT1.GENERATE_CALL.value: generate_call,
-            RecoverInfoT1.RECOVER_VAL.value: None  # TODO to implement
-        }
+        recover_info_t1 = self._save_model_t1(code, generate_call, import_root, model)
         recover_info_id = self._pers_service.save_dict(recover_info_t1, RECOVER_T1)
 
         model_dict = {
@@ -148,6 +132,21 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         model_id = self._pers_service.save_dict(model_dict, MODEL_INFO)
 
         return model_id
+
+    def _save_model_t1(self, code, generate_call, import_root, model):
+        dst_path = os.path.join(self._tmp_path, self._pers_service.generate_id())
+        zip_file = self._pickle_model(model, code, import_root, dst_path)
+        zip_file_id = self._pers_service.save_file(zip_file)
+        code_file_id = self._pers_service.save_file(code)
+        clean(dst_path)
+        clean(zip_file)
+        recover_info_t1 = {
+            RecoverInfoT1.PICKLED_MODEL.value: zip_file_id,
+            RecoverInfoT1.MODEL_CODE.value: code_file_id,
+            RecoverInfoT1.GENERATE_CALL.value: generate_call,
+            RecoverInfoT1.RECOVER_VAL.value: None  # TODO to implement
+        }
+        return recover_info_t1
 
     def save_version(self, model: torch.nn.Module, base_model_id: str) -> str:
         pass
@@ -196,7 +195,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         recover_info = self._pers_service.recover_dict(recover_id, RECOVER_T1)
         pickle_file_id = recover_info[RecoverInfoT1.PICKLED_MODEL.value]
 
-        tmp_path = os.path.abspath(os.path.join(self._tmp_path, TMP_FILE))
+        tmp_path = os.path.abspath(os.path.join(self._tmp_path, TMP_DIR))
         os.mkdir(tmp_path)
         self._pers_service.recover_file(pickle_file_id, tmp_path)
         recovered_model = self._recover_pickled_model(tmp_path)
