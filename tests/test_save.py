@@ -8,7 +8,7 @@ from torchvision import models
 from mmlib.equal import model_equal
 from mmlib.helper import imagenet_input
 from mmlib.persistence import FileSystemMongoPS
-from mmlib.save import SaveType, SimpleSaveRecoverService
+from mmlib.save import SimpleSaveRecoverService
 from tests.networks.mynets.test_net import TestNet
 from util.mongo import MongoService
 
@@ -43,7 +43,6 @@ class TestSave(unittest.TestCase):
         if os.path.exists(self.abs_save_service_tmp):
             shutil.rmtree(self.abs_save_service_tmp)
 
-
     # def test_save_model_version(self):
     #     model = models.googlenet()
     #
@@ -51,18 +50,18 @@ class TestSave(unittest.TestCase):
     #                                                     './networks/mynets/test_net.py', './..')
     #     print(model_id)
 
-        # model_version_id = self.save_recover_service.save_version(model, model_id)
-        # obj_id = ObjectId(model_version_id)
-        #
-        # expected_dict = {
-        #     '_id': obj_id,
-        #     'name': 'test_model',
-        #     'save-type': SaveType.PICKLED_MODEL.value,
-        #     'save-path': os.path.join(self.save_recover_service._base_path, str(model_version_id) + '.zip')
-        # }
-        #
-        # retrieve = self.mongo_service.get_dict(object_id=obj_id)
-        # self.assertEqual(expected_dict, retrieve)
+    # model_version_id = self.save_recover_service.save_version(model, model_id)
+    # obj_id = ObjectId(model_version_id)
+    #
+    # expected_dict = {
+    #     '_id': obj_id,
+    #     'name': 'test_model',
+    #     'save-type': SaveType.PICKLED_MODEL.value,
+    #     'save-path': os.path.join(self.save_recover_service._base_path, str(model_version_id) + '.zip')
+    # }
+    #
+    # retrieve = self.mongo_service.get_dict(object_id=obj_id)
+    # self.assertEqual(expected_dict, retrieve)
 
     def test_save_restore_model(self):
         model = models.googlenet(pretrained=True)

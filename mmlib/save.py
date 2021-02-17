@@ -1,16 +1,16 @@
 import abc
 import os
-import shutil
 import sys
 import zipfile
 from enum import Enum
 from shutil import copyfile
 
-import bson
 import torch
 
 from mmlib.persistence import AbstractPersistenceService
-from util.helper import zip_dir
+from util.helper import zip_dir, find_zip_file, clean
+
+TMP_FILE = 'tmp-file'
 
 SAVE_PATH = 'save-path'
 SAVE_TYPE = 'save-type'
@@ -125,8 +125,8 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         zip_file_id = self._pers_service.save_file(zip_file)
         code_file_id = self._pers_service.save_file(code)
 
-        self._clean(dst_path)
-        self._clean(zip_file)
+        clean(dst_path)
+        clean(zip_file)
 
         recover_info_t1 = {
             RecoverInfoT1.PICKLED_MODEL.value: zip_file_id,
@@ -191,24 +191,24 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         # return document_size + zip_size
 
     def recover_model(self, model_id: str) -> torch.nn.Module:
-        pass
-        # model_dict = self._get_model_dict(model_id)
-        # return self._recover_model(model_dict)
+        model_info = self._pers_service.recover_dict(model_id, MODEL_INFO)
+        recover_id = model_info[ModelInfo.RECOVER_INFO.value]
+        recover_info = self._pers_service.recover_dict(recover_id, RECOVER_T1)
+        pickle_file_id = recover_info[RecoverInfoT1.PICKLED_MODEL.value]
 
-    def _get_model_dict(self, model_id):
-        model_id = bson.ObjectId(model_id)
-        model_dict = self._mongo_service.get_dict(model_id)
-        return model_dict
+        tmp_path = os.path.abspath(os.path.join(self._tmp_path, TMP_FILE))
+        os.mkdir(tmp_path)
+        self._pers_service.recover_file(pickle_file_id, tmp_path)
+        recovered_model = self._recover_pickled_model(tmp_path)
 
-    def _recover_model(self, model_dict):
-        save_type = SaveType(model_dict[SAVE_TYPE])
-        if save_type == SaveType.PICKLED_MODEL:
-            return self._recovered_pickled_model(model_dict)
+        clean(tmp_path)
 
-    def _recovered_pickled_model(self, model_dict):
-        file_path = model_dict[SAVE_PATH]
+        return recovered_model
 
-        unpacked_path = self._unzip(file_path)
+    def _recover_pickled_model(self, extract_path):
+        file_path = find_zip_file(extract_path)
+
+        unpacked_path = self._unzip(file_path, extract_path)
         # make available for imports
         sys.path.append(unpacked_path)
 
@@ -216,9 +216,9 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         loaded_model = torch.load(pickle_path)
         return loaded_model
 
-    def _unzip(self, file_path):
+    def _unzip(self, file_path, extract_path):
         with zipfile.ZipFile(file_path, 'r') as zip_ref:
-            zip_ref.extractall(self._base_path)
+            zip_ref.extractall(extract_path)
 
         # remove .zip file ending
         unpacked_path = file_path.split('.')[0]
@@ -280,9 +280,3 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
     def _add_save_path(self, model_id, save_path):
         attribute = {SAVE_PATH: save_path}
         self._mongo_service.add_attribute(model_id, attribute)
-
-    def _clean(self, path):
-        if os.path.isdir(path):
-            shutil.rmtree(path)
-        else:
-            os.remove(path)
