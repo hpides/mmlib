@@ -30,6 +30,7 @@ class SaveType(Enum):
 class RecoverInfoT1(Enum):
     PICKLED_MODEL = 'pickled_model'
     MODEL_CODE = 'model_code'
+    IMPORT_ROOT = 'import_root'
     GENERATE_CALL = 'generate_call'
     RECOVER_VAL = 'recover_val'
 
@@ -120,17 +121,23 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         recover_info_t1 = self._save_model_t1(code, generate_call, import_root, model)
         recover_info_id = self._pers_service.save_dict(recover_info_t1, RECOVER_T1)
 
+        # TODO to implement other fields that are default None
+        model_id = self._save_model_info(name, SaveType.PICKLED_MODEL.value, recover_info_id)
+
+        return model_id
+
+    def _save_model_info(self, name, save_type, recover_info_id, derived_from=None, inference_info=None,
+                         train_info=None):
         model_dict = {
             ModelInfo.NAME.value: name,
-            ModelInfo.STORE_TYPE.value: SaveType.PICKLED_MODEL.value,
+            ModelInfo.STORE_TYPE.value: save_type,
             ModelInfo.RECOVER_INFO.value: recover_info_id,
-            ModelInfo.DERIVED_FROM.value: None,  # TODO to implement
-            ModelInfo.INFERENCE_INFO.value: None,  # TODO to implement
-            ModelInfo.TRAIN_INFO.value: None  # TODO to implement
+            ModelInfo.DERIVED_FROM.value: derived_from,
+            ModelInfo.INFERENCE_INFO.value: inference_info,
+            ModelInfo.TRAIN_INFO.value: train_info
 
         }
         model_id = self._pers_service.save_dict(model_dict, MODEL_INFO)
-
         return model_id
 
     def _save_model_t1(self, code, generate_call, import_root, model):
@@ -143,6 +150,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         recover_info_t1 = {
             RecoverInfoT1.PICKLED_MODEL.value: zip_file_id,
             RecoverInfoT1.MODEL_CODE.value: code_file_id,
+            RecoverInfoT1.IMPORT_ROOT.value: import_root,
             RecoverInfoT1.GENERATE_CALL.value: generate_call,
             RecoverInfoT1.RECOVER_VAL.value: None  # TODO to implement
         }
