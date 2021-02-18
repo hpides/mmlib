@@ -17,47 +17,46 @@ class AbstractPersistenceService(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def save_dict(self, insert_dict: dict, represent_type: str) -> str:
         """
-        TODO docs
-        :param insert_dict:
-        :param represent_type:
-        :return:
+        Persists a python dictionary.
+        :param insert_dict: The dict that should be persisted.
+        :param represent_type: The type of the dict to store.
+        :return: The id that was used to store the dictionary.
         """
 
     @abc.abstractmethod
     def recover_dict(self, dict_id: str, represent_type: str) -> dict:
         """
-        TODO docs
-        :param dict_id:
-        :param represent_type:
-        :return:
+        Recovers a dictionary.
+        :param dict_id: The id that identifies the dictionary to recover.
+        :param represent_type: The type of the dict to recover.
+        :return: The recovered python dictionary.
         """
 
     @abc.abstractmethod
     def save_file(self, file_path: str) -> str:
         """
-        TODO docs
-        :param file_path:
-        :return:
+        Persists a file.
+        :param file_path: The path the file to persist.
+        :return: The id that was used to store the file.
         """
 
     @abc.abstractmethod
     def recover_file(self, file_id: str, dst_path) -> str:
         """
-        TODO docs
-        :param file_id:
-        :param dst_path:
-        :return:
+        Recovers a file.
+        :param file_id: The id that identifies the file to recover.
+        :param dst_path: The path where the restored file should be stored to.
+        :return: The path to the restored file.
         """
 
     @abc.abstractmethod
     def generate_id(self) -> str:
         """
-        TODO docs
-        :return:
+        Generates an id as a string.
+        :return: The generated id.
         """
 
 
-# TODO move in separate file
 class FileSystemMongoPS(AbstractPersistenceService):
 
     def __init__(self, base_path, host='127.0.0.1'):
