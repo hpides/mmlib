@@ -81,25 +81,24 @@ class TestSave(unittest.TestCase):
         self.assertTrue(model_equal(model, restored_model_version1, imagenet_input))
         self.assertFalse(model_equal(restored_model_version1, restored_model_version2, imagenet_input))
 
-    # def test_get_saved_ids(self):
-    #     expected = []
-    #
-    #     ids = self.save_recover_service.saved_model_ids()
-    #     self.assertEqual(ids, expected)
-    #
-    #     model = models.resnet18(pretrained=True)
-    #     model_id = self.save_recover_service.save_model(model, './networks/mynets/test_net.py', './..')
-    #     expected.append(model_id)
-    #
-    #     ids = self.save_recover_service.saved_model_ids()
-    #     self.assertEqual(ids, expected)
-    #
-    #     model = models.resnet18(pretrained=True)
-    #     model_id = self.save_recover_service.save_model(model, './networks/mynets/test_net.py', './..')
-    #     expected.append(model_id)
-    #
-    #     ids = self.save_recover_service.saved_model_ids()
-    #     self.assertEqual(ids, expected)
+    def test_get_saved_ids(self):
+        expected = []
+        model = resnet18()
+
+        ids = self.save_recover_service.saved_model_ids()
+        self.assertEqual(ids, expected)
+
+        model_id = self.save_recover_service.save_model(model, './networks/mynets/resnet18.py', 'resnet18')
+        expected.append(model_id)
+
+        ids = self.save_recover_service.saved_model_ids()
+        self.assertEqual(ids, expected)
+
+        model_id = self.save_recover_service.save_model(model, './networks/mynets/resnet18.py', 'resnet18')
+        expected.append(model_id)
+
+        ids = self.save_recover_service.saved_model_ids()
+        self.assertEqual(ids, expected)
     #
     # def test_model_save_size(self):
     #     model = TestNet()

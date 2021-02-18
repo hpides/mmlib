@@ -153,9 +153,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         return model_id
 
     def saved_model_ids(self) -> [str]:
-        pass
-        # str_ids = list(map(str, self._mongo_service.get_ids()))
-        # return str_ids
+        return self._pers_service.get_all_dict_ids(SchemaObjType.MODEL_INFO.value)
 
     def saved_model_infos(self) -> [dict]:
         pass

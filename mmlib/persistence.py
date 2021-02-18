@@ -56,6 +56,14 @@ class AbstractPersistenceService(metaclass=abc.ABCMeta):
         :return: The generated id.
         """
 
+    @abc.abstractmethod
+    def get_all_dict_ids(self, represent_type: str) -> [str]:
+        """
+        Returns all ids for a given type.
+        :param represent_type: The type of the collection to get the ids for.
+        :return: all ids as a list of strings
+        """
+
 
 class FileSystemMongoPS(AbstractPersistenceService):
 
@@ -91,3 +99,7 @@ class FileSystemMongoPS(AbstractPersistenceService):
 
     def generate_id(self) -> str:
         return str(ObjectId())
+
+    def get_all_dict_ids(self, represent_type: str) -> [str]:
+        mongo_ids = self._mongo_service.get_ids(represent_type)
+        return list(map(lambda i: '{}{}'.format(DICT, str(i)), mongo_ids))
