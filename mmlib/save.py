@@ -11,15 +11,13 @@ from mmlib.schema.recover_info_t1 import RecoverInfoT1
 from util.helper import clean
 from util.zip import zip_path, unzip
 
-TMP_DIR = 'tmp-dir'
-
-NAME = 'name'
-MODELS = 'models'
-
 ID = '_id'
-
 MODEL_INFO = 'model_info'
 RECOVER_T1 = 'recover_t1'
+MODEL_WEIGHTS = 'model_weights'
+TMP_DIR = 'tmp-dir'
+NAME = 'name'
+MODELS = 'models'
 
 
 class SaveType(Enum):
@@ -212,23 +210,23 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
 
         return recover_info
 
-    def _recover_pickled_weights(self, weights_file, extract_path):
-        unpacked_path = unzip(weights_file, extract_path)
-        pickle_path = os.path.join(unpacked_path, 'model_weights')
-        state_dict = torch.load(pickle_path)
-
-        return state_dict
-
     def _pickle_weights(self, model, save_path):
         # create directory to store in
         abs_save_path = os.path.abspath(save_path)
         os.makedirs(abs_save_path)
 
         # store pickle dump of model
-        torch.save(model.state_dict(), os.path.join(abs_save_path, 'model_weights'))
+        torch.save(model.state_dict(), os.path.join(abs_save_path, MODEL_WEIGHTS))
 
         # zip everything
         return zip_path(save_path)
+
+    def _recover_pickled_weights(self, weights_file, extract_path):
+        unpacked_path = unzip(weights_file, extract_path)
+        pickle_path = os.path.join(unpacked_path, MODEL_WEIGHTS)
+        state_dict = torch.load(pickle_path)
+
+        return state_dict
 
     def _init_model(self, code, generate_call):
         path, file = os.path.split(code)
