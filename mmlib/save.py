@@ -107,14 +107,13 @@ class AbstractSaveRecoverService(metaclass=abc.ABCMeta):
 
 
 class SimpleSaveRecoverService(AbstractSaveRecoverService):
-    """TODO docs A Service that offers functionality to store PyTorch models. In order to do so it stores the metadata is
-    stored in a MongoDB, the model (pickled) is stored on the file system. """
+    """A Service that offers functionality to store PyTorch models by making use of a persistence service.
+     The metadata is stored in JSON like dictionaries, files and weights are stored as files."""
 
     def __init__(self, persistence_service: AbstractPersistenceService, tmp_path: str):
         """
-        TODO docs
-        :param base_path: The path that is used as a root directory for everything that is stored to the file system.
-        :param host: The host name or Ip address to connect to a running MongoDB instance.
+        :param persistence_service: An instance of AbstractPersistenceService that is used to store metadata and files.
+        :param tmp_path: A path/directory that can be used to store files temporarily.
         """
         self._pers_service = persistence_service
         self._tmp_path = os.path.abspath(tmp_path)
