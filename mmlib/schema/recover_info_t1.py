@@ -1,3 +1,5 @@
+from mmlib.schema.schema_obj import SchemaObj
+
 ID = 'id'
 WEIGHTS = 'weights'
 MODEL_CODE = 'model_code'
@@ -6,7 +8,7 @@ CODE_NAME = 'code_name'
 RECOVER_VAL = 'recover_val'
 
 
-class RecoverInfoT1:
+class RecoverInfoT1(SchemaObj):
 
     def __init__(self, r_id: str = None, weights: str = None, model_code: str = None, code_name: str = None,
                  recover_validation: str = None):

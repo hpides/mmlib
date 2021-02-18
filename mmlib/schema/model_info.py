@@ -1,3 +1,5 @@
+from mmlib.schema.schema_obj import SchemaObj
+
 ID = 'id'
 STORE_TYPE = 'store_type'
 RECOVER_INFO = 'recover_info'
@@ -6,7 +8,7 @@ INFERENCE_INFO = 'inference_info'
 TRAIN_INFO = 'train_info'
 
 
-class ModelInfo:
+class ModelInfo(SchemaObj):
 
     def __init__(self, m_id: str = None, store_type: str = None, recover_info: str = None, derived_from: str = None,
                  inference_info: str = None, train_info: str = None):

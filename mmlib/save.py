@@ -8,7 +8,7 @@ import torch
 from mmlib.persistence import AbstractPersistenceService
 from mmlib.schema.model_info import ModelInfo
 from mmlib.schema.recover_info_t1 import RecoverInfoT1
-from mmlib.schema.schema_obj_type import SchemaObjType
+from mmlib.schema.schema_obj import SchemaObjType
 from util.helper import clean
 from util.zip import zip_path, unzip
 
@@ -156,7 +156,8 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         return self._pers_service.get_all_dict_ids(SchemaObjType.MODEL_INFO.value)
 
     def saved_model_infos(self) -> [dict]:
-        pass
+        model_ids = self.saved_model_ids()
+        return [self._get_model_info(i) for i in model_ids]
 
     def model_save_size(self, model_id: str) -> float:
         pass

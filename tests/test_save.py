@@ -99,6 +99,25 @@ class TestSave(unittest.TestCase):
 
         ids = self.save_recover_service.saved_model_ids()
         self.assertEqual(ids, expected)
+
+    def test_get_model_infos(self):
+        expected = set()
+        model = resnet18()
+
+        ids = self.save_recover_service.saved_model_infos()
+        self.assertEqual(set(ids), expected)
+
+        model_id = self.save_recover_service.save_model(model, './networks/mynets/resnet18.py', 'resnet18')
+        expected.add(self.save_recover_service._get_model_info(model_id))
+
+        ids = self.save_recover_service.saved_model_infos()
+        self.assertEqual(set(ids), expected)
+
+        model_id = self.save_recover_service.save_model(model, './networks/mynets/resnet18.py', 'resnet18')
+        expected.add(self.save_recover_service._get_model_info(model_id))
+
+        ids = self.save_recover_service.saved_model_infos()
+        self.assertEqual(set(ids), expected)
     #
     # def test_model_save_size(self):
     #     model = TestNet()
