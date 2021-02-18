@@ -62,21 +62,19 @@ class AbstractSaveRecoverService(metaclass=abc.ABCMeta):
     def save_model(self, model: torch.nn.Module, code: str, code_name: str, ) -> str:
         """
         Saves a model together with the given metadata.
-        :param code_name: TODO docs
-        :param name: The name of the model as a string. Used for easier identification.
-        :param model: The model object.
-        :param code: The path to the code of the model (is needed for recover process)
-        :param import_root: The directory that is root for all imports, e.g. the Python project root.
-        :return: Returns the ID that was used to store the model data in the MongoDB.
+        :param model: The actual model to save as an instance of torch.nn.Module.
+        :param code: The path to the code of the model (is needed for recover process).
+        :param code_name: The name of the model, i.e. the model constructor (is needed for recover process).
+        :return: Returns the id that was used to store the model.
         """
         raise NotImplementedError
 
     @abc.abstractmethod
     def save_version(self, model: torch.nn.Module, base_model_id: str) -> str:
         """
-        Saves a new model version by referring to the base_model
-        :param model: The model to save.
-        :param base_model_id: the model id of the base_model
+        Saves a new model version by referring to the base_model.
+        :param model: The actual model to save as an instance of torch.nn.Module.
+        :param base_model_id: the model id of the base_model.
         :return: Returns the ID that was used to store the new model version data in the MongoDB.
         """
 
@@ -86,21 +84,26 @@ class AbstractSaveRecoverService(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def model_save_size(self, model_id: str) -> float:
-        """
-        Calculates and returns the amount of bytes that are used for storing the model.
-        :param model_id: The ID to identify the model in the mongoDB.
-        :return: The amout of bytes used to store the model.
-        """
+    def saved_model_infos(self) -> [dict]:
+        """Returns list of saved models infos"""
         raise NotImplementedError
 
     @abc.abstractmethod
     def recover_model(self, model_id: str) -> torch.nn.Module:
         """
-        Recovers a the model identified by the given id.
+        Recovers a the model identified by the given model id.
         :param model_id: The id to identify the model with.
-        :return: The recovered model as an object.
+        :return: The recovered model as an object of type torch.nn.Module.
         """
+
+    @abc.abstractmethod
+    def model_save_size(self, model_id: str) -> float:
+        """
+        Calculates and returns the amount of bytes that are used for storing the model.
+        :param model_id: The id to identify the model.
+        :return: The amount of bytes used to store the model.
+        """
+        raise NotImplementedError
 
 
 class SimpleSaveRecoverService(AbstractSaveRecoverService):
