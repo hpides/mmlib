@@ -84,35 +84,35 @@ class TestSave(unittest.TestCase):
         self.assertTrue(model_equal(model, restored_model_version1, imagenet_input))
         self.assertFalse(model_equal(restored_model_version1, restored_model_version2, imagenet_input))
 
-    def test_get_saved_ids(self):
-        expected = []
-
-        ids = self.save_recover_service.saved_model_ids()
-        self.assertEqual(ids, expected)
-
-        model = models.resnet18(pretrained=True)
-        model_id = self.save_recover_service.save_model(model, './networks/mynets/test_net.py', './..')
-        expected.append(model_id)
-
-        ids = self.save_recover_service.saved_model_ids()
-        self.assertEqual(ids, expected)
-
-        model = models.resnet18(pretrained=True)
-        model_id = self.save_recover_service.save_model(model, './networks/mynets/test_net.py', './..')
-        expected.append(model_id)
-
-        ids = self.save_recover_service.saved_model_ids()
-        self.assertEqual(ids, expected)
-
-    def test_model_save_size(self):
-        model = TestNet()
-        model_id = self.save_recover_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
-
-        save_size = self.save_recover_service.model_save_size(model_id)
-
-        # got number form mac os finder file size info
-        zip_size = 52242909
-
-        met_data_size = self.mongo_service.document_size(ObjectId(model_id))
-
-        self.assertEqual(met_data_size + zip_size, save_size)
+    # def test_get_saved_ids(self):
+    #     expected = []
+    #
+    #     ids = self.save_recover_service.saved_model_ids()
+    #     self.assertEqual(ids, expected)
+    #
+    #     model = models.resnet18(pretrained=True)
+    #     model_id = self.save_recover_service.save_model(model, './networks/mynets/test_net.py', './..')
+    #     expected.append(model_id)
+    #
+    #     ids = self.save_recover_service.saved_model_ids()
+    #     self.assertEqual(ids, expected)
+    #
+    #     model = models.resnet18(pretrained=True)
+    #     model_id = self.save_recover_service.save_model(model, './networks/mynets/test_net.py', './..')
+    #     expected.append(model_id)
+    #
+    #     ids = self.save_recover_service.saved_model_ids()
+    #     self.assertEqual(ids, expected)
+    #
+    # def test_model_save_size(self):
+    #     model = TestNet()
+    #     model_id = self.save_recover_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
+    #
+    #     save_size = self.save_recover_service.model_save_size(model_id)
+    #
+    #     # got number form mac os finder file size info
+    #     zip_size = 52242909
+    #
+    #     met_data_size = self.mongo_service.document_size(ObjectId(model_id))
+    #
+    #     self.assertEqual(met_data_size + zip_size, save_size)

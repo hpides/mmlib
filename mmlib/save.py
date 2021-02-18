@@ -117,7 +117,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         self._tmp_path = os.path.abspath(tmp_path)
 
     def save_model(self, model: torch.nn.Module, code: str, code_name: str, ) -> str:
-        recover_info_t1 = self._save_model_t1(code, code_name, model)
+        recover_info_t1 = self._save_model_t1(model, code, code_name)
         recover_info_id = self._pers_service.save_dict(recover_info_t1, RECOVER_T1)
 
         # TODO to implement other fields that are default None
@@ -137,7 +137,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         model_id = self._pers_service.save_dict(model_dict, MODEL_INFO)
         return model_id
 
-    def _save_model_t1(self, code, generate_call, model):
+    def _save_model_t1(self, model, code, code_name):
         dst_path = os.path.join(self._tmp_path, self._pers_service.generate_id())
 
         zip_file = self._pickle_weights(model, dst_path)
@@ -149,7 +149,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         recover_info_t1 = {
             RecoverInfoT1.WEIGHTS.value: zip_file_id,
             RecoverInfoT1.MODEL_CODE.value: code_file_id,
-            RecoverInfoT1.CODE_NAME.value: generate_call,
+            RecoverInfoT1.CODE_NAME.value: code_name,
             RecoverInfoT1.RECOVER_VAL.value: None  # TODO to implement
         }
         return recover_info_t1
@@ -159,13 +159,13 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         base_model_recover_info = self._get_recover_info(base_model_info)
 
         # copy fields from previous model that will stay the same
-        generate_call = base_model_recover_info[RecoverInfoT1.CODE_NAME.value]
+        code_name = base_model_recover_info[RecoverInfoT1.CODE_NAME.value]
 
         tmp_path = os.path.abspath(os.path.join(self._tmp_path, TMP_DIR))
         os.mkdir(tmp_path)  # TODO maybe use with context
         code = self._pers_service.recover_file(base_model_recover_info[RecoverInfoT1.MODEL_CODE.value], tmp_path)
 
-        recover_info_t1 = self._save_model_t1(code, generate_call, model)
+        recover_info_t1 = self._save_model_t1(model, code, code_name)
         clean(tmp_path)
 
         recover_info_id = self._pers_service.save_dict(recover_info_t1, RECOVER_T1)
