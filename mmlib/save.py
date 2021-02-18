@@ -8,12 +8,11 @@ import torch
 from mmlib.persistence import AbstractPersistenceService
 from mmlib.schema.model_info import ModelInfo
 from mmlib.schema.recover_info_t1 import RecoverInfoT1
+from mmlib.schema.schema_obj_type import SchemaObjType
 from util.helper import clean
 from util.zip import zip_path, unzip
 
 ID = '_id'
-MODEL_INFO = 'model_info'
-RECOVER_T1 = 'recover_t1'
 MODEL_WEIGHTS = 'model_weights'
 TMP_DIR = 'tmp-dir'
 NAME = 'name'
@@ -105,7 +104,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
 
     def save_model(self, model: torch.nn.Module, code: str, code_name: str, ) -> str:
         recover_info_t1 = self._save_model_t1(model, code, code_name)
-        recover_info_id = self._pers_service.save_dict(recover_info_t1.to_dict(), RECOVER_T1)
+        recover_info_id = self._pers_service.save_dict(recover_info_t1.to_dict(), SchemaObjType.RECOVER_T1.value)
 
         # TODO to implement other fields that are default None
         model_id = self._save_model_info(SaveType.PICKLED_WEIGHTS.value, recover_info_id)
@@ -115,7 +114,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
     def _save_model_info(self, store_type, recover_info_id, derived_from=None, inference_info=None, train_info=None):
         model_info = ModelInfo(store_type=store_type, recover_info=recover_info_id, derived_from=derived_from,
                                inference_info=inference_info, train_info=train_info)
-        model_id = self._pers_service.save_dict(model_info.to_dict(), MODEL_INFO)
+        model_id = self._pers_service.save_dict(model_info.to_dict(), SchemaObjType.MODEL_INFO.value)
         return model_id
 
     def _save_model_t1(self, model, code, code_name):
@@ -146,7 +145,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         recover_info_t1 = self._save_model_t1(model, code, code_name)
         clean(tmp_path)
 
-        recover_info_id = self._pers_service.save_dict(recover_info_t1.to_dict(), RECOVER_T1)
+        recover_info_id = self._pers_service.save_dict(recover_info_t1.to_dict(), SchemaObjType.RECOVER_T1.value)
 
         # TODO to implement other fields that are default None
         model_id = self._save_model_info(SaveType.PICKLED_WEIGHTS.value, recover_info_id, derived_from=base_model_id)
@@ -194,7 +193,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         return model
 
     def _get_model_info(self, model_id):
-        model_info_dict = self._pers_service.recover_dict(model_id, MODEL_INFO)
+        model_info_dict = self._pers_service.recover_dict(model_id, SchemaObjType.MODEL_INFO.value)
 
         model_info = ModelInfo()
         model_info.load_dict(model_info_dict)
@@ -203,7 +202,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
 
     def _get_recover_info_t1(self, model_info):
         recover_info_id = model_info.recover_info
-        recover_info_dict = self._pers_service.recover_dict(recover_info_id, RECOVER_T1)
+        recover_info_dict = self._pers_service.recover_dict(recover_info_id, SchemaObjType.RECOVER_T1.value)
 
         recover_info = RecoverInfoT1()
         recover_info.load_dict(recover_info_dict)
