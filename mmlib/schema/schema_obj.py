@@ -4,8 +4,10 @@ from enum import Enum
 
 
 class SchemaObjType(Enum):
-    MODEL_INFO = 'model_info'
-    RECOVER_T1 = 'recover_t1'
+    STRING = 'string'
+    FILE = 'file'
+    MODEL_INFO = 'ModelInfo'
+    RECOVER_T1 = 'RecoverInfoT1'
 
 
 class SchemaObj(metaclass=abc.ABCMeta):
@@ -22,6 +24,14 @@ class SchemaObj(metaclass=abc.ABCMeta):
         """
         Updtae the internal state based on the given dict.
         :param state_dict: The dict to load the state from.
+        """
+
+    @abc.abstractmethod
+    def get_type(self, dict_key) -> SchemaObjType:
+        """
+        Maps a dict key to the type that is used to store it.
+        :param dict_key: The key of the idct to request the type for.
+        :return: The type as an objet of SchemaObjType.
         """
 
     def __eq__(self, other):

@@ -8,7 +8,7 @@ import torch
 from mmlib.persistence import AbstractPersistenceService
 from mmlib.schema.model_info import ModelInfo
 from mmlib.schema.recover_info_t1 import RecoverInfoT1
-from mmlib.schema.schema_obj import SchemaObjType
+from mmlib.schema.schema_obj import SchemaObjType, SchemaObj
 from util.helper import clean
 from util.zip import zip_path, unzip
 
@@ -111,26 +111,6 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
 
         return model_id
 
-    def _save_model_info(self, store_type, recover_info_id, derived_from=None, inference_info=None, train_info=None):
-        model_info = ModelInfo(store_type=store_type, recover_info=recover_info_id, derived_from=derived_from,
-                               inference_info=inference_info, train_info=train_info)
-        model_id = self._pers_service.save_dict(model_info.to_dict(), SchemaObjType.MODEL_INFO.value)
-        return model_id
-
-    def _save_model_t1(self, model, code, code_name):
-        gen_id = self._pers_service.generate_id()
-        dst_path = os.path.join(self._tmp_path, gen_id)
-
-        zip_file = self._pickle_weights(model, dst_path)
-        zip_file_id = self._pers_service.save_file(zip_file)
-        code_file_id = self._pers_service.save_file(code)
-        clean(dst_path)
-        clean(zip_file)
-
-        recover_info_t1 = RecoverInfoT1(r_id=gen_id, weights=zip_file_id, model_code=code_file_id, code_name=code_name)
-
-        return recover_info_t1
-
     def save_version(self, model: torch.nn.Module, base_model_id: str) -> str:
         base_model_info = self._get_model_info(base_model_id)
         base_model_recover_info = self._get_recover_info_t1(base_model_info)
@@ -160,16 +140,8 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         return [self._get_model_info(i) for i in model_ids]
 
     def model_save_size(self, model_id: str) -> float:
-        pass
-        # model_id = bson.ObjectId(model_id)
-        #
-        # document_size = self._mongo_service.document_size(model_id)
-        #
-        # meta_data = self._mongo_service.get_dict(model_id)
-        # save_path = meta_data[SAVE_PATH]
-        # zip_size = os.path.getsize(save_path)
-        #
-        # return document_size + zip_size
+        model_info = self._get_model_info(model_id)
+        return self._get_save_size(model_info)
 
     def recover_model(self, model_id: str) -> torch.nn.Module:
         model_info = self._get_model_info(model_id)
@@ -191,7 +163,73 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
 
         return model
 
+    def _get_save_size(self, obj: SchemaObj):
+        if isinstance(obj, ModelInfo):
+            return self._get_model_info_size(obj)
+        elif isinstance(obj, RecoverInfoT1):
+            return self._get_rec_info_t1_size(obj)
+        else:
+            assert False, 'not implemented'
+
+    def _get_model_info_size(self, model_info: ModelInfo):
+        total_size = 0
+        # add size of the metadata (dict) itself
+        total_size += self._pers_service.get_dict_size(model_info.m_id, SchemaObjType.MODEL_INFO.value)
+        # add size of all references
+        model_info_dict = self._get_model_info(model_info.m_id).to_dict()
+        # TODO keep in mind that we dont want to include the size of "derived from"
+
+        total_size += self._ref_objects_size(model_info)
+
+        return total_size
+
+    def _ref_objects_size(self, root_object):
+        total_size = 0
+        info_dict = root_object.to_dict()
+        for k, v in info_dict.items():
+            k_type = root_object.get_type(k)
+            if not k_type == SchemaObjType.STRING:
+                if k_type == SchemaObjType.FILE:
+                    total_size += self._pers_service.get_file_size(v)
+                else:
+                    schema_obj = self._recover_schema_obj(v, k_type)
+                    total_size += self._get_save_size(schema_obj)
+
+        return total_size
+
+    def _get_rec_info_t1_size(self, rec_info: RecoverInfoT1):
+        total_size = 0
+        # add size of the metadata (dict) itself
+        total_size += self._pers_service.get_dict_size(rec_info.r_id, SchemaObjType.RECOVER_T1.value)
+        # add size of all references
+
+        total_size += self._ref_objects_size(rec_info)
+
+        return total_size
+
+    def _save_model_info(self, store_type, recover_info_id, derived_from=None, inference_info=None, train_info=None):
+        gen_id = self._pers_service.generate_id()
+        model_info = ModelInfo(m_id=gen_id, store_type=store_type, recover_info=recover_info_id,
+                               derived_from=derived_from, inference_info=inference_info, train_info=train_info)
+        model_id = self._pers_service.save_dict(model_info.to_dict(), SchemaObjType.MODEL_INFO.value)
+        return model_id
+
+    def _save_model_t1(self, model, code, code_name):
+        gen_id = self._pers_service.generate_id()
+        dst_path = os.path.join(self._tmp_path, gen_id)
+
+        zip_file = self._pickle_weights(model, dst_path)
+        zip_file_id = self._pers_service.save_file(zip_file)
+        code_file_id = self._pers_service.save_file(code)
+        clean(dst_path)
+        clean(zip_file)
+
+        recover_info_t1 = RecoverInfoT1(r_id=gen_id, weights=zip_file_id, model_code=code_file_id, code_name=code_name)
+
+        return recover_info_t1
+
     def _get_model_info(self, model_id):
+        # TODO see if can be replaced by _recover_schema_obj
         model_info_dict = self._pers_service.recover_dict(model_id, SchemaObjType.MODEL_INFO.value)
 
         model_info = ModelInfo()
@@ -200,6 +238,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         return model_info
 
     def _get_recover_info_t1(self, model_info):
+        # TODO see if can be replaced by _recover_schema_obj
         recover_info_id = model_info.recover_info
         recover_info_dict = self._pers_service.recover_dict(recover_info_id, SchemaObjType.RECOVER_T1.value)
 
@@ -207,6 +246,13 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         recover_info.load_dict(recover_info_dict)
 
         return recover_info
+
+    def _recover_schema_obj(self, obj_id: str, obj_type: SchemaObjType):
+        s_obj = eval('{}()'.format(obj_type.value))
+        state_dict = self._pers_service.recover_dict(obj_id, obj_type.value)
+        s_obj.load_dict(state_dict)
+
+        return s_obj
 
     def _pickle_weights(self, model, save_path):
         # create directory to store in

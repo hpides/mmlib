@@ -1,4 +1,4 @@
-from mmlib.schema.schema_obj import SchemaObj
+from mmlib.schema.schema_obj import SchemaObj, SchemaObjType
 
 ID = 'id'
 STORE_TYPE = 'store_type'
@@ -18,6 +18,13 @@ class ModelInfo(SchemaObj):
         self.derived_from = derived_from
         self.inference_info = inference_info
         self.train_info = train_info
+        self._type_mapping = {
+            ID: SchemaObjType.STRING,
+            STORE_TYPE: SchemaObjType.STRING,
+            DERIVED_FROM: SchemaObjType.STRING,  # TODO to specify
+            INFERENCE_INFO: SchemaObjType.STRING,  # TODO to specify
+            TRAIN_INFO: SchemaObjType.STRING,  # TODO to specify
+        }
 
     def load_dict(self, state_dict):
         self.m_id = state_dict[ID] if ID in state_dict else None
@@ -43,3 +50,12 @@ class ModelInfo(SchemaObj):
             model_info[TRAIN_INFO] = self.derived_from
 
         return model_info
+
+    def get_type(self, dict_key) -> SchemaObjType:
+        if dict_key == RECOVER_INFO:
+            if self.store_type:
+                return SchemaObjType.RECOVER_T1
+            else:
+                assert False, 'not implemented yet'
+        else:
+            return self._type_mapping[dict_key]

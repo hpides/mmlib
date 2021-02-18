@@ -64,6 +64,39 @@ class AbstractPersistenceService(metaclass=abc.ABCMeta):
         :return: all ids as a list of strings
         """
 
+    @abc.abstractmethod
+    def get_dict_size(self, dict_id: str, represent_type: str) -> int:
+        """
+        Calculates and returns the size of a dict in bytes.
+        :param dict_id: The id to identify the dict.
+        :param represent_type: The type of the collection to get the ids for.
+        :return: The dict size in bytes.
+        """
+
+    @abc.abstractmethod
+    def get_file_size(self, file_id: str) -> int:
+        """
+        Calculates and returns the size of a file in bytes.
+        :param file_id: The id to identify the file.
+        :return: The file size in bytes.
+        """
+
+    @abc.abstractmethod
+    def is_dict_ref(self, field: str) -> bool:
+        """
+        Checks if the given field is a reference to a dictionary.
+        :param field: The field potentially referencing a dict.
+        :return: True if the field is referencing a dict.
+        """
+
+    @abc.abstractmethod
+    def is_file_ref(self, field: str) -> bool:
+        """
+        Checks if the given field is a reference to a file.
+        :param field: The field potentially referencing a file.
+        :return: True if the field is referencing a file.
+        """
+
 
 class FileSystemMongoPS(AbstractPersistenceService):
 
@@ -76,21 +109,21 @@ class FileSystemMongoPS(AbstractPersistenceService):
         return DICT + str(mongo_id)
 
     def recover_dict(self, dict_id: str, represent_type: str) -> dict:
-        mongo_dict_id = ObjectId(dict_id.replace(DICT, ''))
+        mongo_dict_id = self._to_mongo_dict_id(dict_id)
         return self._mongo_service.get_dict(mongo_dict_id, collection=represent_type)
 
     def save_file(self, file_path: str) -> str:
         path, file_name = os.path.split(file_path)
         file_id = str(ObjectId())
-        dst_path = os.path.join(self._base_path, file_id)
+        dst_path = self._get_store_path(file_id)
         os.mkdir(dst_path)
         copyfile(file_path, os.path.join(dst_path, file_name))
 
         return FILE + file_id
 
     def recover_file(self, file_id: str, dst_path):
-        file_id = file_id.replace(FILE, '')
-        store_path = os.path.join(self._base_path, file_id)
+        file_id = self._to_internal_file_id(file_id)
+        store_path = self._get_store_path(file_id)
         file = find_file(store_path)
         dst = os.path.join(os.path.abspath(dst_path), os.path.split(file)[1])
         copyfile(file, dst)
@@ -103,3 +136,31 @@ class FileSystemMongoPS(AbstractPersistenceService):
     def get_all_dict_ids(self, represent_type: str) -> [str]:
         mongo_ids = self._mongo_service.get_ids(represent_type)
         return ['{}{}'.format(DICT, str(i)) for i in mongo_ids]
+
+    def get_dict_size(self, dict_id: str, represent_type: str) -> int:
+
+        dict_id = self._to_mongo_dict_id(dict_id)
+        return self._mongo_service.document_size(dict_id, represent_type)
+
+    def get_file_size(self, file_id: str) -> int:
+        file_id = self._to_internal_file_id(file_id)
+        store_path = self._get_store_path(file_id)
+        file = find_file(store_path)
+
+        return os.path.getsize(file)
+
+    def is_dict_ref(self, field: str) -> bool:
+        return field.startswith(DICT)
+
+    def is_file_ref(self, field: str) -> bool:
+        return field.startswith(FILE)
+
+    def _to_mongo_dict_id(self, dict_id):
+        return ObjectId(dict_id.replace(DICT, ''))
+
+    def _to_internal_file_id(self, file_id):
+        return file_id.replace(FILE, '')
+
+    def _get_store_path(self, file_id):
+        store_path = os.path.join(self._base_path, file_id)
+        return store_path

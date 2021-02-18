@@ -1,9 +1,8 @@
-from mmlib.schema.schema_obj import SchemaObj
+from mmlib.schema.schema_obj import SchemaObj, SchemaObjType
 
 ID = 'id'
 WEIGHTS = 'weights'
 MODEL_CODE = 'model_code'
-IMPORT_ROOT = 'import_root'
 CODE_NAME = 'code_name'
 RECOVER_VAL = 'recover_val'
 
@@ -17,6 +16,13 @@ class RecoverInfoT1(SchemaObj):
         self.model_code = model_code
         self.code_name = code_name
         self.recover_validation = recover_validation
+        self._type_mapping = {
+            ID: SchemaObjType.STRING,
+            WEIGHTS: SchemaObjType.FILE,
+            MODEL_CODE: SchemaObjType.FILE,
+            CODE_NAME: SchemaObjType.STRING,
+            RECOVER_VAL: SchemaObjType.STRING,  # TODO to specify
+        }
 
     def load_dict(self, state_dict):
         self.r_id = state_dict[ID]
@@ -40,3 +46,6 @@ class RecoverInfoT1(SchemaObj):
             recover_info_t1[RECOVER_VAL] = self.recover_validation
 
         return recover_info_t1
+
+    def get_type(self, dict_key) -> SchemaObjType:
+        return self._type_mapping[dict_key]
