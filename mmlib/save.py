@@ -6,6 +6,7 @@ from enum import Enum
 import torch
 
 from mmlib.persistence import AbstractPersistenceService
+from mmlib.schema.model_info import ModelInfo
 from mmlib.schema.recover_info_t1 import RecoverInfoT1
 from util.helper import clean
 from util.zip import zip_path, unzip
@@ -25,14 +26,6 @@ class SaveType(Enum):
     PICKLED_WEIGHTS = 1
     WEIGHT_UPDATES = 2
     PROVENANCE = 3
-
-
-class ModelInfo(Enum):
-    STORE_TYPE = 'store_type'
-    RECOVER_INFO = 'recover_info'
-    DERIVED_FROM = 'derived_from'
-    INFERENCE_INFO = 'inference_info'
-    TRAIN_INFO = 'train_info'
 
 
 # TODO if for experiments Python 3.8 is available, use protocol here
@@ -121,16 +114,10 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
 
         return model_id
 
-    def _save_model_info(self, save_type, recover_info_id, derived_from=None, inference_info=None, train_info=None):
-        model_dict = {
-            ModelInfo.STORE_TYPE.value: save_type,
-            ModelInfo.RECOVER_INFO.value: recover_info_id,
-            ModelInfo.DERIVED_FROM.value: derived_from,
-            ModelInfo.INFERENCE_INFO.value: inference_info,
-            ModelInfo.TRAIN_INFO.value: train_info
-
-        }
-        model_id = self._pers_service.save_dict(model_dict, MODEL_INFO)
+    def _save_model_info(self, store_type, recover_info_id, derived_from=None, inference_info=None, train_info=None):
+        model_info = ModelInfo(store_type=store_type, recover_info=recover_info_id, derived_from=derived_from,
+                               inference_info=inference_info, train_info=train_info)
+        model_id = self._pers_service.save_dict(model_info.to_dict(), MODEL_INFO)
         return model_id
 
     def _save_model_t1(self, model, code, code_name):
@@ -148,7 +135,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         return recover_info_t1
 
     def save_version(self, model: torch.nn.Module, base_model_id: str) -> str:
-        base_model_info = self._pers_service.recover_dict(base_model_id, MODEL_INFO)
+        base_model_info = self._get_model_info(base_model_id)
         base_model_recover_info = self._get_recover_info_t1(base_model_info)
 
         # copy fields from previous model that will stay the same
@@ -189,7 +176,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         # return document_size + zip_size
 
     def recover_model(self, model_id: str) -> torch.nn.Module:
-        model_info = self._pers_service.recover_dict(model_id, MODEL_INFO)
+        model_info = self._get_model_info(model_id)
         recover_info_t1 = self._get_recover_info_t1(model_info)
         weights_file_id = recover_info_t1.weights
 
@@ -209,7 +196,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         return model
 
     def _get_recover_info_t1(self, model_info):
-        recover_info_id = model_info[ModelInfo.RECOVER_INFO.value]
+        recover_info_id = model_info.recover_info
         recover_info_dict = self._pers_service.recover_dict(recover_info_id, RECOVER_T1)
 
         recover_info = RecoverInfoT1()
@@ -243,3 +230,11 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         model = eval('{}()'.format(generate_call))
 
         return model
+
+    def _get_model_info(self, model_id):
+        model_info_dict = self._pers_service.recover_dict(model_id, MODEL_INFO)
+
+        model_info = ModelInfo()
+        model_info.load_dict(model_info_dict)
+
+        return model_info

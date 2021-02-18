@@ -32,4 +32,9 @@ class RecoverInfoT1:
             RECOVER_VAL: self.recover_validation  # TODO needs implementation
         }
 
+        if self.r_id:
+            recover_info_t1[ID] = self.r_id
+        if self.recover_validation:
+            recover_info_t1[RECOVER_VAL] = self.recover_validation
+
         return recover_info_t1
