@@ -10,7 +10,7 @@ from mmlib.helper import imagenet_input
 from mmlib.persistence import FileSystemMongoPS
 from mmlib.save import SimpleSaveRecoverService
 from tests.networks.mynets.resnet18 import resnet18
-from tests.networks.mynets.test_net import TestNet, googlenet
+from tests.networks.mynets.test_net import TestNet
 from util.mongo import MongoService
 
 MONGO_CONTAINER_NAME = 'mongo-test'
@@ -105,29 +105,6 @@ class TestSave(unittest.TestCase):
 
         ids = self.save_recover_service.saved_model_ids()
         self.assertEqual(ids, expected)
-
-    def test_save_and_restore(self):
-        model = TestNet()
-        model_id = self.save_recover_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
-
-        # TODO test restore also on other machine
-        restored_model = self.save_recover_service.recover_model(model_id)
-
-        self.assertTrue(model_equal(model, restored_model, imagenet_input))
-
-    def test_save_version_and_restore(self):
-        model = TestNet()
-        base_model_id = self.save_recover_service.save_model('test_model', model, './networks/mynets/test_net.py',
-                                                             './..')
-        model_version_id = self.save_recover_service.save_version(model, base_model_id)
-
-        # TODO test restore also on other machine
-        restored_base_model = self.save_recover_service.recover_model(base_model_id)
-        restored_model_version = self.save_recover_service.recover_model(model_version_id)
-
-        self.assertTrue(model_equal(model, restored_base_model, imagenet_input))
-        self.assertTrue(model_equal(model, restored_model_version, imagenet_input))
-        self.assertTrue(model_equal(restored_base_model, restored_model_version, imagenet_input))
 
     def test_model_save_size(self):
         model = TestNet()

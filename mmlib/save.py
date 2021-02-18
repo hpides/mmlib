@@ -8,7 +8,6 @@ from shutil import copyfile
 import torch
 
 from mmlib.persistence import AbstractPersistenceService
-from tests.networks.mynets.test_net import googlenet
 from util.helper import zip_dir, clean
 
 TMP_DIR = 'tmp-dir'
