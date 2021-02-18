@@ -46,6 +46,8 @@ class AbstractSaveRecoverService(metaclass=abc.ABCMeta):
                 callable(subclass.save_version) and
                 hasattr(subclass, 'recover_model') and
                 callable(subclass.recover_model) and
+                hasattr(subclass, 'saved_model_infos') and
+                callable(subclass.saved_model_infos) and
                 hasattr(subclass, 'saved_model_ids') and
                 callable(subclass.saved_model_ids) or
                 NotImplemented)
