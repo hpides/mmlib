@@ -102,4 +102,4 @@ class FileSystemMongoPS(AbstractPersistenceService):
 
     def get_all_dict_ids(self, represent_type: str) -> [str]:
         mongo_ids = self._mongo_service.get_ids(represent_type)
-        return list(map(lambda i: '{}{}'.format(DICT, str(i)), mongo_ids))
+        return ['{}{}'.format(DICT, str(i)) for i in mongo_ids]
