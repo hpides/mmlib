@@ -1,13 +1,13 @@
 import abc
 import os
 import sys
-import zipfile
 from enum import Enum
 
 import torch
 
 from mmlib.persistence import AbstractPersistenceService
-from util.helper import zip_dir, clean
+from util.helper import clean
+from util.zip import zip_path, unzip
 
 TMP_DIR = 'tmp-dir'
 
@@ -223,32 +223,11 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         return model
 
     def _recover_pickled_weights(self, weights_file, extract_path):
-        unpacked_path = self._unzip(weights_file, extract_path)
+        unpacked_path = unzip(weights_file, extract_path)
 
         pickle_path = os.path.join(unpacked_path, 'model_weights')
         state_dict = torch.load(pickle_path)
         return state_dict
-
-    def _zip(self, save_path):
-        path, name = os.path.split(save_path)
-        # temporarily change dict for zip process
-        owd = os.getcwd()
-        os.chdir(path)
-        zip_name = name + '.zip'
-        zip_dir(name, zip_name)
-        # change path back
-        os.chdir(owd)
-
-        return os.path.join(path, zip_name)
-
-    def _unzip(self, file_path, extract_path):
-        with zipfile.ZipFile(file_path, 'r') as zip_ref:
-            zip_ref.extractall(extract_path)
-
-        # remove .zip file ending
-        unpacked_path = file_path.split('.')[0]
-
-        return unpacked_path
 
     def _pickle_weights(self, model, save_path):
         # create directory to store in
@@ -259,7 +238,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         torch.save(model.state_dict(), os.path.join(abs_save_path, 'model_weights'))
 
         # zip everything
-        return self._zip(save_path)
+        return zip_path(save_path)
 
     def _init_model(self, code, generate_call):
         path, file = os.path.split(code)
