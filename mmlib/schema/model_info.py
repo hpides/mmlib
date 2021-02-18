@@ -24,7 +24,7 @@ class ModelInfo:
         self.derived_from = state_dict[DERIVED_FROM] if DERIVED_FROM in state_dict else None
         self.inference_info = state_dict[INFERENCE_INFO] if INFERENCE_INFO in state_dict else None
         self.train_info = state_dict[TRAIN_INFO] if TRAIN_INFO in state_dict else None
-        
+
     def to_dict(self):
         model_info = {
             STORE_TYPE: self.store_type,
@@ -41,4 +41,3 @@ class ModelInfo:
             model_info[TRAIN_INFO] = self.derived_from
 
         return model_info
-

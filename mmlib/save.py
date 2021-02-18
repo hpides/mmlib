@@ -195,6 +195,14 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
 
         return model
 
+    def _get_model_info(self, model_id):
+        model_info_dict = self._pers_service.recover_dict(model_id, MODEL_INFO)
+
+        model_info = ModelInfo()
+        model_info.load_dict(model_info_dict)
+
+        return model_info
+
     def _get_recover_info_t1(self, model_info):
         recover_info_id = model_info.recover_info
         recover_info_dict = self._pers_service.recover_dict(recover_info_id, RECOVER_T1)
@@ -230,11 +238,3 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         model = eval('{}()'.format(generate_call))
 
         return model
-
-    def _get_model_info(self, model_id):
-        model_info_dict = self._pers_service.recover_dict(model_id, MODEL_INFO)
-
-        model_info = ModelInfo()
-        model_info.load_dict(model_info_dict)
-
-        return model_info

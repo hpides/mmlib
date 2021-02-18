@@ -2,15 +2,12 @@ import os
 import shutil
 import unittest
 
-from bson import ObjectId
-
 from mmlib.deterministic import set_deterministic
 from mmlib.equal import model_equal
 from mmlib.helper import imagenet_input
 from mmlib.persistence import FileSystemMongoPS
 from mmlib.save import SimpleSaveRecoverService
 from tests.networks.mynets.resnet18 import resnet18
-from tests.networks.mynets.test_net import TestNet
 from util.mongo import MongoService
 
 MONGO_CONTAINER_NAME = 'mongo-test'
