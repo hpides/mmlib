@@ -8,6 +8,7 @@ from shutil import copyfile
 import torch
 
 from mmlib.persistence import AbstractPersistenceService
+from tests.networks.mynets.test_net import googlenet
 from util.helper import zip_dir, clean
 
 TMP_DIR = 'tmp-dir'
@@ -22,13 +23,13 @@ RECOVER_T1 = 'recover_t1'
 
 
 class SaveType(Enum):
-    PICKLED_MODEL = 1
-    ARCHITECTURE_AND_WEIGHTS = 2
+    PICKLED_WEIGHTS = 1
+    WEIGHT_UPDATES = 2
     PROVENANCE = 3
 
 
 class RecoverInfoT1(Enum):
-    PICKLED_MODEL = 'pickled_model'
+    WEIGHTS = 'weights'
     MODEL_CODE = 'model_code'
     IMPORT_ROOT = 'import_root'
     GENERATE_CALL = 'generate_call'
@@ -60,7 +61,7 @@ class AbstractSaveRecoverService(metaclass=abc.ABCMeta):
                 NotImplemented)
 
     @abc.abstractmethod
-    def save_model(self, name: str, generate_call: str, model: torch.nn.Module, code: str, import_root: str) -> str:
+    def save_model(self, name: str, generate_call: str, model: torch.nn.Module, code: str) -> str:
         """
         Saves a model as a pickle dump together with the given metadata.
         :param generate_call: TODO docs
@@ -117,12 +118,12 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         self._pers_service = persistence_service
         self._tmp_path = os.path.abspath(tmp_path)
 
-    def save_model(self, name: str, generate_call: str, model: torch.nn.Module, code: str, import_root: str) -> str:
-        recover_info_t1 = self._save_model_t1(code, generate_call, import_root, model)
+    def save_model(self, name: str, generate_call: str, model: torch.nn.Module, code: str) -> str:
+        recover_info_t1 = self._save_model_t1(code, generate_call, model)
         recover_info_id = self._pers_service.save_dict(recover_info_t1, RECOVER_T1)
 
         # TODO to implement other fields that are default None
-        model_id = self._save_model_info(name, SaveType.PICKLED_MODEL.value, recover_info_id)
+        model_id = self._save_model_info(name, SaveType.PICKLED_WEIGHTS.value, recover_info_id)
 
         return model_id
 
@@ -140,17 +141,18 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         model_id = self._pers_service.save_dict(model_dict, MODEL_INFO)
         return model_id
 
-    def _save_model_t1(self, code, generate_call, import_root, model):
+    def _save_model_t1(self, code, generate_call, model):
         dst_path = os.path.join(self._tmp_path, self._pers_service.generate_id())
-        zip_file = self._pickle_model(model, code, import_root, dst_path)
+
+        zip_file = self._pickle_weights(model, dst_path)
         zip_file_id = self._pers_service.save_file(zip_file)
         code_file_id = self._pers_service.save_file(code)
         clean(dst_path)
         clean(zip_file)
+
         recover_info_t1 = {
-            RecoverInfoT1.PICKLED_MODEL.value: zip_file_id,
+            RecoverInfoT1.WEIGHTS.value: zip_file_id,
             RecoverInfoT1.MODEL_CODE.value: code_file_id,
-            RecoverInfoT1.IMPORT_ROOT.value: import_root,  # TODO think about how to handle import root
             RecoverInfoT1.GENERATE_CALL.value: generate_call,
             RecoverInfoT1.RECOVER_VAL.value: None  # TODO to implement
         }
@@ -206,16 +208,22 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         model_info = self._pers_service.recover_dict(model_id, MODEL_INFO)
         recover_id = model_info[ModelInfo.RECOVER_INFO.value]
         recover_info = self._pers_service.recover_dict(recover_id, RECOVER_T1)
-        pickle_file_id = recover_info[RecoverInfoT1.PICKLED_MODEL.value]
+        weights_file_id = recover_info[RecoverInfoT1.WEIGHTS.value]
 
         tmp_path = os.path.abspath(os.path.join(self._tmp_path, TMP_DIR))
         os.mkdir(tmp_path)  # TODO maybe use with context
-        pickle_path = self._pers_service.recover_file(pickle_file_id, tmp_path)
-        recovered_model = self._recover_pickled_model(pickle_path, tmp_path)
+        code_id = recover_info[RecoverInfoT1.MODEL_CODE.value]
+        code = self._pers_service.recover_file(code_id, tmp_path)
+        generate_call = recover_info[RecoverInfoT1.GENERATE_CALL.value]
+        model = self._init_model(code, generate_call)
+
+        weights_file = self._pers_service.recover_file(weights_file_id, tmp_path)
+        s_dict = self._recover_pickled_weights(weights_file, tmp_path)
+        model.load_state_dict(s_dict)
 
         clean(tmp_path)
 
-        return recovered_model
+        return model
 
     def _recover_pickled_model(self, pickle_path, extract_path):
 
@@ -226,6 +234,13 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         pickle_path = os.path.join(unpacked_path, 'model')
         loaded_model = torch.load(pickle_path)
         return loaded_model
+
+    def _recover_pickled_weights(self, weights_file, extract_path):
+        unpacked_path = self._unzip(weights_file, extract_path)
+
+        pickle_path = os.path.join(unpacked_path, 'model_weights')
+        state_dict = torch.load(pickle_path)
+        return state_dict
 
     def _unzip(self, file_path, extract_path):
         with zipfile.ZipFile(file_path, 'r') as zip_ref:
@@ -267,6 +282,17 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         # zip everything
         return self._zip(save_path)
 
+    def _pickle_weights(self, model, save_path):
+        # create directory to store in
+        abs_save_path = os.path.abspath(save_path)
+        os.makedirs(abs_save_path)
+
+        # store pickle dump of model
+        torch.save(model.state_dict(), os.path.join(abs_save_path, 'model_weights'))
+
+        # zip everything
+        return self._zip(save_path)
+
     def _store_code(self, abs_save_path, code, import_root):
         code_abs_path = os.path.abspath(code)
         import_root_abs = os.path.abspath(import_root)
@@ -291,3 +317,12 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
     def _add_save_path(self, model_id, save_path):
         attribute = {SAVE_PATH: save_path}
         self._mongo_service.add_attribute(model_id, attribute)
+
+    def _init_model(self, code, generate_call):
+        path, file = os.path.split(code)
+        module = file.replace('.py', '')
+        sys.path.append(path)
+        exec('from {} import {}'.format(module, generate_call))
+        model = eval('{}()'.format(generate_call))
+
+        return model

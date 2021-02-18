@@ -3,14 +3,14 @@ import shutil
 import unittest
 
 from bson import ObjectId
-from torchvision import models
 
 from mmlib.deterministic import set_deterministic
 from mmlib.equal import model_equal
 from mmlib.helper import imagenet_input
 from mmlib.persistence import FileSystemMongoPS
 from mmlib.save import SimpleSaveRecoverService
-from tests.networks.mynets.test_net import TestNet
+from tests.networks.mynets.resnet18 import resnet18
+from tests.networks.mynets.test_net import TestNet, googlenet
 from util.mongo import MongoService
 
 MONGO_CONTAINER_NAME = 'mongo-test'
@@ -44,11 +44,21 @@ class TestSave(unittest.TestCase):
         if os.path.exists(self.abs_save_service_tmp):
             shutil.rmtree(self.abs_save_service_tmp)
 
-    def test_save_restore_model(self):
-        model = models.googlenet(pretrained=True)
+    # def test_save_restore_model(self):
+    #     model = googlenet()
+    #
+    #     model_id = self.save_recover_service.save_model('test_model', 'googlenet', model,
+    #                                                     './networks/mynets/test_net.py')
+    #
+    #     restored_model = self.save_recover_service.recover_model(model_id)
+    #
+    #     self.assertTrue(model_equal(model, restored_model, imagenet_input))
 
-        model_id = self.save_recover_service.save_model('test_model', 'googlenet', model,
-                                                        './networks/mynets/test_net.py', './..')
+    def test_save_restore_model(self):
+        model = resnet18(pretrained=True)
+
+        model_id = self.save_recover_service.save_model('test_model', 'resnet18', model,
+                                                        './networks/mynets/resnet18.py')
 
         restored_model = self.save_recover_service.recover_model(model_id)
 
@@ -56,16 +66,16 @@ class TestSave(unittest.TestCase):
 
     def test_save_restore_model_version(self):
         set_deterministic()
-        model = models.googlenet()
+        model = resnet18()
 
-        model_id = self.save_recover_service.save_model('test_model', 'googlenet', model,
-                                                        './networks/mynets/test_net.py', './..')
+        model_id = self.save_recover_service.save_model('test_model', 'resnet18', model,
+                                                        './networks/mynets/resnet18.py')
 
         set_deterministic()
-        model_version = models.googlenet()
+        model_version = resnet18()
         model_version1_id = self.save_recover_service.save_version(model_version, base_model_id=model_id)
 
-        model_version = models.googlenet(pretrained=True)
+        model_version = resnet18(pretrained=True)
         model_version2_id = self.save_recover_service.save_version(model_version, base_model_id=model_version1_id)
 
         restored_model = self.save_recover_service.recover_model(model_id)
