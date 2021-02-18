@@ -176,11 +176,6 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
 
         return model_id
 
-    def _get_recover_info(self, base_model_info):
-        recover_info_id = base_model_info[ModelInfo.RECOVER_INFO.value]
-        base_model_recover_info = self._pers_service.recover_dict(recover_info_id, RECOVER_T1)
-        return base_model_recover_info
-
     def saved_model_ids(self) -> [str]:
         pass
         # str_ids = list(map(str, self._mongo_service.get_ids()))
@@ -203,8 +198,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
 
     def recover_model(self, model_id: str) -> torch.nn.Module:
         model_info = self._pers_service.recover_dict(model_id, MODEL_INFO)
-        recover_id = model_info[ModelInfo.RECOVER_INFO.value]
-        recover_info = self._pers_service.recover_dict(recover_id, RECOVER_T1)
+        recover_info = self._get_recover_info(model_info)
         weights_file_id = recover_info[RecoverInfoT1.WEIGHTS.value]
 
         tmp_path = os.path.abspath(os.path.join(self._tmp_path, TMP_DIR))
@@ -224,9 +218,9 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
 
     def _recover_pickled_weights(self, weights_file, extract_path):
         unpacked_path = unzip(weights_file, extract_path)
-
         pickle_path = os.path.join(unpacked_path, 'model_weights')
         state_dict = torch.load(pickle_path)
+
         return state_dict
 
     def _pickle_weights(self, model, save_path):
@@ -248,3 +242,8 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         model = eval('{}()'.format(generate_call))
 
         return model
+
+    def _get_recover_info(self, model_info):
+        recover_info_id = model_info[ModelInfo.RECOVER_INFO.value]
+        recover_info = self._pers_service.recover_dict(recover_info_id, RECOVER_T1)
+        return recover_info
