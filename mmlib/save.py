@@ -31,12 +31,11 @@ class RecoverInfoT1(Enum):
     WEIGHTS = 'weights'
     MODEL_CODE = 'model_code'
     IMPORT_ROOT = 'import_root'
-    GENERATE_CALL = 'generate_call'
+    CODE_NAME = 'code_name'
     RECOVER_VAL = 'recover_val'
 
 
 class ModelInfo(Enum):
-    NAME = 'name'
     STORE_TYPE = 'store_type'
     RECOVER_INFO = 'recover_info'
     DERIVED_FROM = 'derived_from'
@@ -60,10 +59,10 @@ class AbstractSaveRecoverService(metaclass=abc.ABCMeta):
                 NotImplemented)
 
     @abc.abstractmethod
-    def save_model(self, name: str, generate_call: str, model: torch.nn.Module, code: str) -> str:
+    def save_model(self, model: torch.nn.Module, code: str, code_name: str, ) -> str:
         """
-        Saves a model as a pickle dump together with the given metadata.
-        :param generate_call: TODO docs
+        Saves a model together with the given metadata.
+        :param code_name: TODO docs
         :param name: The name of the model as a string. Used for easier identification.
         :param model: The model object.
         :param code: The path to the code of the model (is needed for recover process)
@@ -117,19 +116,17 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         self._pers_service = persistence_service
         self._tmp_path = os.path.abspath(tmp_path)
 
-    def save_model(self, name: str, generate_call: str, model: torch.nn.Module, code: str) -> str:
-        recover_info_t1 = self._save_model_t1(code, generate_call, model)
+    def save_model(self, model: torch.nn.Module, code: str, code_name: str, ) -> str:
+        recover_info_t1 = self._save_model_t1(code, code_name, model)
         recover_info_id = self._pers_service.save_dict(recover_info_t1, RECOVER_T1)
 
         # TODO to implement other fields that are default None
-        model_id = self._save_model_info(name, SaveType.PICKLED_WEIGHTS.value, recover_info_id)
+        model_id = self._save_model_info(SaveType.PICKLED_WEIGHTS.value, recover_info_id)
 
         return model_id
 
-    def _save_model_info(self, name, save_type, recover_info_id, derived_from=None, inference_info=None,
-                         train_info=None):
+    def _save_model_info(self, save_type, recover_info_id, derived_from=None, inference_info=None, train_info=None):
         model_dict = {
-            ModelInfo.NAME.value: name,
             ModelInfo.STORE_TYPE.value: save_type,
             ModelInfo.RECOVER_INFO.value: recover_info_id,
             ModelInfo.DERIVED_FROM.value: derived_from,
@@ -152,7 +149,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         recover_info_t1 = {
             RecoverInfoT1.WEIGHTS.value: zip_file_id,
             RecoverInfoT1.MODEL_CODE.value: code_file_id,
-            RecoverInfoT1.GENERATE_CALL.value: generate_call,
+            RecoverInfoT1.CODE_NAME.value: generate_call,
             RecoverInfoT1.RECOVER_VAL.value: None  # TODO to implement
         }
         return recover_info_t1
@@ -162,8 +159,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         base_model_recover_info = self._get_recover_info(base_model_info)
 
         # copy fields from previous model that will stay the same
-        name = base_model_info[ModelInfo.NAME.value]
-        generate_call = base_model_recover_info[RecoverInfoT1.GENERATE_CALL.value]
+        generate_call = base_model_recover_info[RecoverInfoT1.CODE_NAME.value]
 
         tmp_path = os.path.abspath(os.path.join(self._tmp_path, TMP_DIR))
         os.mkdir(tmp_path)  # TODO maybe use with context
@@ -175,8 +171,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         recover_info_id = self._pers_service.save_dict(recover_info_t1, RECOVER_T1)
 
         # TODO to implement other fields that are default None
-        model_id = self._save_model_info(name, SaveType.PICKLED_WEIGHTS.value, recover_info_id,
-                                         derived_from=base_model_id)
+        model_id = self._save_model_info(SaveType.PICKLED_WEIGHTS.value, recover_info_id, derived_from=base_model_id)
 
         return model_id
 
@@ -212,7 +207,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         os.mkdir(tmp_path)  # TODO maybe use with context
         code_id = recover_info[RecoverInfoT1.MODEL_CODE.value]
         code = self._pers_service.recover_file(code_id, tmp_path)
-        generate_call = recover_info[RecoverInfoT1.GENERATE_CALL.value]
+        generate_call = recover_info[RecoverInfoT1.CODE_NAME.value]
         model = self._init_model(code, generate_call)
 
         weights_file = self._pers_service.recover_file(weights_file_id, tmp_path)

@@ -57,8 +57,7 @@ class TestSave(unittest.TestCase):
     def test_save_restore_model(self):
         model = resnet18(pretrained=True)
 
-        model_id = self.save_recover_service.save_model('test_model', 'resnet18', model,
-                                                        './networks/mynets/resnet18.py')
+        model_id = self.save_recover_service.save_model(model, './networks/mynets/resnet18.py', 'resnet18')
 
         restored_model = self.save_recover_service.recover_model(model_id)
 
@@ -68,8 +67,7 @@ class TestSave(unittest.TestCase):
         set_deterministic()
         model = resnet18()
 
-        model_id = self.save_recover_service.save_model('test_model', 'resnet18', model,
-                                                        './networks/mynets/resnet18.py')
+        model_id = self.save_recover_service.save_model(model, './networks/mynets/resnet18.py', 'resnet18')
 
         set_deterministic()
         model_version = resnet18()
@@ -93,14 +91,14 @@ class TestSave(unittest.TestCase):
         self.assertEqual(ids, expected)
 
         model = models.resnet18(pretrained=True)
-        model_id = self.save_recover_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
+        model_id = self.save_recover_service.save_model(model, './networks/mynets/test_net.py', './..')
         expected.append(model_id)
 
         ids = self.save_recover_service.saved_model_ids()
         self.assertEqual(ids, expected)
 
         model = models.resnet18(pretrained=True)
-        model_id = self.save_recover_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
+        model_id = self.save_recover_service.save_model(model, './networks/mynets/test_net.py', './..')
         expected.append(model_id)
 
         ids = self.save_recover_service.saved_model_ids()
