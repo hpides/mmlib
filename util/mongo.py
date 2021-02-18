@@ -2,7 +2,8 @@ import bson
 from bson import ObjectId
 from pymongo import MongoClient
 
-ID = '_id'
+_ID = '_id'
+ID = 'id'
 SET = "$set"
 
 
@@ -23,10 +24,14 @@ class MongoService(object):
         """
         collection = self._get_collection(collection)
 
-        # if id is set use the id to save the dictionary
-        if id:
+        # if id filed is already set then use it as mongoID
+        if ID in insert_dict:
+            obj_id = ObjectId(insert_dict[ID])
+            insert_dict[_ID] = obj_id
+        # if id is given as parameter use it as mongoID
+        elif id:
             obj_id = ObjectId(id)
-            insert_dict[ID] = obj_id
+            insert_dict[_ID] = obj_id
 
         feedback = collection.insert_one(insert_dict)
 
@@ -43,7 +48,7 @@ class MongoService(object):
         """
         collection = self._get_collection(collection)
 
-        return collection.find({}).distinct(ID)
+        return collection.find({}).distinct(_ID)
 
     def get_dict(self, object_id: ObjectId, collection: str) -> dict:
         """
@@ -54,7 +59,7 @@ class MongoService(object):
         """
         collection = self._get_collection(collection)
 
-        return collection.find({ID: object_id})[0]
+        return collection.find({_ID: object_id})[0]
 
     def add_attribute(self, object_id: ObjectId, attribute, collection: str):
         """
@@ -65,7 +70,7 @@ class MongoService(object):
         """
         collection = self._get_collection(collection)
 
-        query = {ID: object_id}
+        query = {_ID: object_id}
         new_values = {SET: attribute}
 
         collection.update_one(query, new_values)
@@ -78,7 +83,7 @@ class MongoService(object):
         :return: The document size in bytes.
         """
         collection = self._get_collection(collection)
-        item = collection.find({ID: object_id})[0]
+        item = collection.find({_ID: object_id})[0]
         return len(bson.BSON.encode(item))
 
     def _get_collection(self, collection_name):
