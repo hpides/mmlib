@@ -165,19 +165,18 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         # copy fields from previous model that will stay the same
         name = base_model_info[ModelInfo.NAME.value]
         generate_call = base_model_recover_info[RecoverInfoT1.GENERATE_CALL.value]
-        import_root = base_model_recover_info[RecoverInfoT1.IMPORT_ROOT.value]
 
         tmp_path = os.path.abspath(os.path.join(self._tmp_path, TMP_DIR))
         os.mkdir(tmp_path)  # TODO maybe use with context
         code = self._pers_service.recover_file(base_model_recover_info[RecoverInfoT1.MODEL_CODE.value], tmp_path)
 
-        recover_info_t1 = self._save_model_t1(code, generate_call, import_root, model)
+        recover_info_t1 = self._save_model_t1(code, generate_call, model)
         clean(tmp_path)
 
         recover_info_id = self._pers_service.save_dict(recover_info_t1, RECOVER_T1)
 
         # TODO to implement other fields that are default None
-        model_id = self._save_model_info(name, SaveType.PICKLED_MODEL.value, recover_info_id,
+        model_id = self._save_model_info(name, SaveType.PICKLED_WEIGHTS.value, recover_info_id,
                                          derived_from=base_model_id)
 
         return model_id
