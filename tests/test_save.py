@@ -12,6 +12,7 @@ from mmlib.save import SimpleSaveRecoverService
 from mmlib.schema.model_info import RECOVER_INFO
 from mmlib.schema.schema_obj import SchemaObjType
 from tests.networks.mynets.resnet18 import resnet18
+from tests.networks.mynets.test_net import googlenet
 from util.mongo import MongoService
 
 MONGO_CONTAINER_NAME = 'mongo-test'
@@ -41,15 +42,14 @@ class TestSave(unittest.TestCase):
         if os.path.exists(self.abs_tmp_path):
             shutil.rmtree(self.abs_tmp_path)
 
-    # def test_save_restore_model(self):
-    #     model = googlenet()
-    #
-    #     model_id = self.save_recover_service.save_model('test_model', 'googlenet', model,
-    #                                                     './networks/mynets/test_net.py')
-    #
-    #     restored_model = self.save_recover_service.recover_model(model_id)
-    #
-    #     self.assertTrue(model_equal(model, restored_model, imagenet_input))
+    def test_save_restore_model_googlenet(self):
+        model = googlenet(aux_logits=True)
+
+        model_id = self.save_recover_service.save_model(model, './networks/mynets/test_net.py', 'googlenet')
+
+        restored_model = self.save_recover_service.recover_model(model_id)
+
+        self.assertTrue(model_equal(model, restored_model, imagenet_input))
 
     def test_save_restore_model(self):
         model = resnet18(pretrained=True)
@@ -120,7 +120,6 @@ class TestSave(unittest.TestCase):
         self.assertEqual(set(model_infos), expected)
 
     def test_model_save_size(self):
-
         model = resnet18(pretrained=True)
 
         model_id = self.save_recover_service.save_model(model, './networks/mynets/resnet18.py', 'resnet18')
