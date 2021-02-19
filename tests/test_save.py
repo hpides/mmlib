@@ -14,8 +14,6 @@ from mmlib.schema.schema_obj import SchemaObjType
 from tests.networks.mynets.googlenet import googlenet
 from tests.networks.mynets.mobilenet import mobilenet_v2
 from tests.networks.mynets.resnet18 import resnet18
-from tests.networks.mynets.resnet50 import resnet50
-from tests.networks.mynets.resnet152 import resnet152
 from util.mongo import MongoService
 
 MONGO_CONTAINER_NAME = 'mongo-test'
