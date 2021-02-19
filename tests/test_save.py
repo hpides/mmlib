@@ -10,7 +10,6 @@ from mmlib.helper import imagenet_input
 from mmlib.persistence import FileSystemMongoPS, DICT
 from mmlib.save import SimpleSaveRecoverService
 from mmlib.schema.model_info import RECOVER_INFO
-from mmlib.schema.recover_info_t1 import RecoverInfoT1
 from mmlib.schema.schema_obj import SchemaObjType
 from tests.networks.mynets.resnet18 import resnet18
 from util.mongo import MongoService
@@ -125,6 +124,7 @@ class TestSave(unittest.TestCase):
         self.assertEqual(set(model_infos), expected)
 
     def test_model_save_size(self):
+
         model = resnet18(pretrained=True)
 
         model_id = self.save_recover_service.save_model(model, './networks/mynets/resnet18.py', 'resnet18')

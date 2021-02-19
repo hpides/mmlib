@@ -28,20 +28,6 @@ class SaveType(Enum):
 # TODO if for experiments Python 3.8 is available, use protocol here
 class AbstractSaveRecoverService(metaclass=abc.ABCMeta):
 
-    @classmethod
-    def __subclasshook__(cls, subclass):
-        return (hasattr(subclass, 'save_model') and
-                callable(subclass.save_model) and
-                hasattr(subclass, 'save_version') and
-                callable(subclass.save_version) and
-                hasattr(subclass, 'recover_model') and
-                callable(subclass.recover_model) and
-                hasattr(subclass, 'saved_model_infos') and
-                callable(subclass.saved_model_infos) and
-                hasattr(subclass, 'saved_model_ids') and
-                callable(subclass.saved_model_ids) or
-                NotImplemented)
-
     @abc.abstractmethod
     def save_model(self, model: torch.nn.Module, code: str, code_name: str, ) -> str:
         """
@@ -248,7 +234,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         return recover_info
 
     def _recover_schema_obj(self, obj_id: str, obj_type: SchemaObjType):
-        s_obj = eval('{}()'.format(obj_type.value))
+        s_obj = eval('{}()'.format(obj_type.value))  # TODO think if eval is most elegant way or anti pattern
         state_dict = self._pers_service.recover_dict(obj_id, obj_type.value)
         s_obj.load_dict(state_dict)
 

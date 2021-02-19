@@ -138,7 +138,6 @@ class FileSystemMongoPS(AbstractPersistenceService):
         return ['{}{}'.format(DICT, str(i)) for i in mongo_ids]
 
     def get_dict_size(self, dict_id: str, represent_type: str) -> int:
-
         dict_id = self._to_mongo_dict_id(dict_id)
         return self._mongo_service.document_size(dict_id, represent_type)
 
