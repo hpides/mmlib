@@ -25,7 +25,7 @@ class SaveType(Enum):
     PROVENANCE = 3
 
 
-# TODO if for experiments Python 3.8 is available, use protocol here
+# Future work, se if it would make sense to use protocol here
 class AbstractSaveRecoverService(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
