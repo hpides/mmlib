@@ -10,7 +10,6 @@ from mmlib.persistence import AbstractPersistenceService
 from mmlib.schema.model_info import ModelInfo
 from mmlib.schema.recover_info_t1 import RecoverInfoT1
 from mmlib.schema.schema_obj import SchemaObjType, SchemaObj
-from util.helper import clean
 from util.zip import zip_path, unzip
 
 ID = '_id'
