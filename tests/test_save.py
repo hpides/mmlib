@@ -12,7 +12,10 @@ from mmlib.save import SimpleSaveRecoverService
 from mmlib.schema.model_info import RECOVER_INFO
 from mmlib.schema.schema_obj import SchemaObjType
 from tests.networks.mynets.googlenet import googlenet
+from tests.networks.mynets.mobilenet import mobilenet_v2
 from tests.networks.mynets.resnet18 import resnet18
+from tests.networks.mynets.resnet50 import resnet50
+from tests.networks.mynets.resnet152 import resnet152
 from util.mongo import MongoService
 
 MONGO_CONTAINER_NAME = 'mongo-test'
@@ -45,28 +48,31 @@ class TestSave(unittest.TestCase):
     def test_save_restore_model_googlenet(self):
         model = googlenet(aux_logits=True)
 
-        model_id = self.save_recover_service.save_model(model, './networks/mynets/googlenet.py', 'googlenet')
-
-        restored_model = self.save_recover_service.recover_model(model_id)
-
-        self.assertTrue(model_equal(model, restored_model, imagenet_input))
+        self._test_save_restore_model('./networks/mynets/googlenet.py', 'googlenet', model)
 
     def test_save_restore_model_pretrained(self):
-        model = resnet18(pretrained=True)
+        file_names = ['mobilenet', 'resnet18']
+        models = [mobilenet_v2, resnet18]
+        for file_name, model in zip(file_names, models):
+            code_name = model.__name__
+            model = model(pretrained=True)
+            code_file = './networks/mynets/{}.py'.format(file_name)
 
-        model_id = self.save_recover_service.save_model(model, './networks/mynets/resnet18.py', 'resnet18')
-
-        restored_model = self.save_recover_service.recover_model(model_id)
-
-        self.assertTrue(model_equal(model, restored_model, imagenet_input))
+            self._test_save_restore_model(code_file, code_name, model)
 
     def test_save_restore_model(self):
-        model = resnet18()
+        file_names = ['mobilenet', 'resnet18']
+        models = [mobilenet_v2, resnet18]
+        for file_name, model in zip(file_names, models):
+            code_name = model.__name__
+            model = model()
+            code_file = './networks/mynets/{}.py'.format(file_name)
 
-        model_id = self.save_recover_service.save_model(model, './networks/mynets/resnet18.py', 'resnet18')
+            self._test_save_restore_model(code_file, code_name, model)
 
+    def _test_save_restore_model(self, code_file, code_name, model):
+        model_id = self.save_recover_service.save_model(model, code_file, code_name)
         restored_model = self.save_recover_service.recover_model(model_id)
-
         self.assertTrue(model_equal(model, restored_model, imagenet_input))
 
     def test_save_restore_model_version(self):
