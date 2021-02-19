@@ -215,26 +215,14 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         return recover_info_t1
 
     def _get_model_info(self, model_id):
-        # TODO see if can be replaced by _recover_schema_obj
-        model_info_dict = self._pers_service.recover_dict(model_id, SchemaObjType.MODEL_INFO.value)
-
-        model_info = ModelInfo()
-        model_info.load_dict(model_info_dict)
-
-        return model_info
+        return self._recover_schema_obj(model_id, SchemaObjType.MODEL_INFO)
 
     def _get_recover_info_t1(self, model_info):
-        # TODO see if can be replaced by _recover_schema_obj
         recover_info_id = model_info.recover_info
-        recover_info_dict = self._pers_service.recover_dict(recover_info_id, SchemaObjType.RECOVER_T1.value)
-
-        recover_info = RecoverInfoT1()
-        recover_info.load_dict(recover_info_dict)
-
-        return recover_info
+        return self._recover_schema_obj(recover_info_id, SchemaObjType.RECOVER_T1)
 
     def _recover_schema_obj(self, obj_id: str, obj_type: SchemaObjType):
-        s_obj = eval('{}()'.format(obj_type.value))  # TODO think if eval is most elegant way or anti pattern
+        s_obj = eval('{}()'.format(obj_type.value))
         state_dict = self._pers_service.recover_dict(obj_id, obj_type.value)
         s_obj.load_dict(state_dict)
 
