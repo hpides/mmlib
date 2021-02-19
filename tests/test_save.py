@@ -22,8 +22,6 @@ class TestSave(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp_path = './filesystem-tmp'
         self.abs_tmp_path = os.path.abspath(self.tmp_path)
-        self.save_service_tmp = './saveservice-tmp'
-        self.abs_save_service_tmp = os.path.abspath(self.save_service_tmp)
 
         self.__clean_up()
         # run mongo DB locally in docker container
@@ -33,7 +31,7 @@ class TestSave(unittest.TestCase):
 
         os.mkdir(self.abs_tmp_path)
         pers_service = FileSystemMongoPS(self.tmp_path)
-        self.save_recover_service = SimpleSaveRecoverService(pers_service, self.save_service_tmp)
+        self.save_recover_service = SimpleSaveRecoverService(pers_service)
 
     def tearDown(self) -> None:
         self.__clean_up()
@@ -42,8 +40,6 @@ class TestSave(unittest.TestCase):
         os.system('docker kill %s' % MONGO_CONTAINER_NAME)
         if os.path.exists(self.abs_tmp_path):
             shutil.rmtree(self.abs_tmp_path)
-        if os.path.exists(self.abs_save_service_tmp):
-            shutil.rmtree(self.abs_save_service_tmp)
 
     # def test_save_restore_model(self):
     #     model = googlenet()
@@ -134,7 +130,7 @@ class TestSave(unittest.TestCase):
 
         # got from os (macOS finder info)
         code_file_size = 6802
-        pickled_weights_size = 46838049
+        pickled_weights_size = 46838023
 
         model_info_size = self.mongo_service.document_size(ObjectId(model_id), SchemaObjType.MODEL_INFO.value)
         model_info_dict = self.mongo_service.get_dict(ObjectId(model_id), SchemaObjType.MODEL_INFO.value)

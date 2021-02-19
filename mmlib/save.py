@@ -1,6 +1,7 @@
 import abc
 import os
 import sys
+import tempfile
 from enum import Enum
 
 import torch
@@ -14,7 +15,6 @@ from util.zip import zip_path, unzip
 
 ID = '_id'
 MODEL_WEIGHTS = 'model_weights'
-TMP_DIR = 'tmp-dir'
 NAME = 'name'
 MODELS = 'models'
 
@@ -80,19 +80,17 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
     """A Service that offers functionality to store PyTorch models by making use of a persistence service.
      The metadata is stored in JSON like dictionaries, files and weights are stored as files."""
 
-    def __init__(self, persistence_service: AbstractPersistenceService, tmp_path: str):
+    def __init__(self, persistence_service: AbstractPersistenceService):
         """
         :param persistence_service: An instance of AbstractPersistenceService that is used to store metadata and files.
-        :param tmp_path: A path/directory that can be used to store files temporarily.
         """
         self._pers_service = persistence_service
-        self._tmp_path = os.path.abspath(tmp_path)
 
     def save_model(self, model: torch.nn.Module, code: str, code_name: str, ) -> str:
         recover_info_t1 = self._save_model_t1(model, code, code_name)
         recover_info_id = self._pers_service.save_dict(recover_info_t1.to_dict(), SchemaObjType.RECOVER_T1.value)
 
-        # TODO to implement other fields that are default None
+        # TODO(future-work) to implement other fields that are default None
         model_id = self._save_model_info(SaveType.PICKLED_WEIGHTS.value, recover_info_id)
 
         return model_id
@@ -104,16 +102,13 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         # copy fields from previous model that will stay the same
         code_name = base_model_recover_info.code_name
 
-        tmp_path = os.path.abspath(os.path.join(self._tmp_path, TMP_DIR))
-        os.mkdir(tmp_path)  # TODO maybe use with context
-        code = self._pers_service.recover_file(base_model_recover_info.model_code, tmp_path)
-
-        recover_info_t1 = self._save_model_t1(model, code, code_name)
-        clean(tmp_path)
+        with tempfile.TemporaryDirectory() as tmp_path:
+            code = self._pers_service.recover_file(base_model_recover_info.model_code, tmp_path)
+            recover_info_t1 = self._save_model_t1(model, code, code_name)
 
         recover_info_id = self._pers_service.save_dict(recover_info_t1.to_dict(), SchemaObjType.RECOVER_T1.value)
 
-        # TODO to implement other fields that are default None
+        # TODO(future-work) to implement other fields that are default None
         model_id = self._save_model_info(SaveType.PICKLED_WEIGHTS.value, recover_info_id, derived_from=base_model_id)
 
         return model_id
@@ -134,18 +129,15 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         recover_info_t1 = self._get_recover_info_t1(model_info)
         weights_file_id = recover_info_t1.weights
 
-        tmp_path = os.path.abspath(os.path.join(self._tmp_path, TMP_DIR))
-        os.mkdir(tmp_path)  # TODO maybe use with context
-        code_id = recover_info_t1.model_code
-        code = self._pers_service.recover_file(code_id, tmp_path)
-        generate_call = recover_info_t1.code_name
-        model = self._init_model(code, generate_call)
+        with tempfile.TemporaryDirectory() as tmp_path:
+            code_id = recover_info_t1.model_code
+            code = self._pers_service.recover_file(code_id, tmp_path)
+            generate_call = recover_info_t1.code_name
+            model = self._init_model(code, generate_call)
 
-        weights_file = self._pers_service.recover_file(weights_file_id, tmp_path)
-        s_dict = self._recover_pickled_weights(weights_file, tmp_path)
-        model.load_state_dict(s_dict)
-
-        clean(tmp_path)
+            weights_file = self._pers_service.recover_file(weights_file_id, tmp_path)
+            s_dict = self._recover_pickled_weights(weights_file, tmp_path)
+            model.load_state_dict(s_dict)
 
         return model
 
@@ -163,7 +155,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         total_size += self._pers_service.get_dict_size(model_info.m_id, SchemaObjType.MODEL_INFO.value)
         # add size of all references
         model_info_dict = self._get_model_info(model_info.m_id).to_dict()
-        # TODO keep in mind that we dont want to include the size of "derived from"
+        # TODO(future-work) keep in mind that we dont want to include the size of "derived from"
 
         total_size += self._ref_objects_size(model_info)
 
@@ -202,13 +194,10 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
 
     def _save_model_t1(self, model, code, code_name):
         gen_id = self._pers_service.generate_id()
-        dst_path = os.path.join(self._tmp_path, gen_id)
-
-        zip_file = self._pickle_weights(model, dst_path)
-        zip_file_id = self._pers_service.save_file(zip_file)
-        code_file_id = self._pers_service.save_file(code)
-        clean(dst_path)
-        clean(zip_file)
+        with tempfile.TemporaryDirectory() as tmp_path:
+            zip_file = self._pickle_weights(model, tmp_path)
+            zip_file_id = self._pers_service.save_file(zip_file)
+            code_file_id = self._pers_service.save_file(code)
 
         recover_info_t1 = RecoverInfoT1(r_id=gen_id, weights=zip_file_id, model_code=code_file_id, code_name=code_name)
 
@@ -229,12 +218,8 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         return s_obj
 
     def _pickle_weights(self, model, save_path):
-        # create directory to store in
-        abs_save_path = os.path.abspath(save_path)
-        os.makedirs(abs_save_path)
-
         # store pickle dump of model
-        torch.save(model.state_dict(), os.path.join(abs_save_path, MODEL_WEIGHTS))
+        torch.save(model.state_dict(), os.path.join(save_path, MODEL_WEIGHTS))
 
         # zip everything
         return zip_path(save_path)
