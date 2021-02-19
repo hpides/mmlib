@@ -11,8 +11,8 @@ from mmlib.persistence import FileSystemMongoPS, DICT
 from mmlib.save import SimpleSaveRecoverService
 from mmlib.schema.model_info import RECOVER_INFO
 from mmlib.schema.schema_obj import SchemaObjType
+from tests.networks.mynets.googlenet import googlenet
 from tests.networks.mynets.resnet18 import resnet18
-from tests.networks.mynets.test_net import googlenet
 from util.mongo import MongoService
 
 MONGO_CONTAINER_NAME = 'mongo-test'
@@ -45,14 +45,23 @@ class TestSave(unittest.TestCase):
     def test_save_restore_model_googlenet(self):
         model = googlenet(aux_logits=True)
 
-        model_id = self.save_recover_service.save_model(model, './networks/mynets/test_net.py', 'googlenet')
+        model_id = self.save_recover_service.save_model(model, './networks/mynets/googlenet.py', 'googlenet')
+
+        restored_model = self.save_recover_service.recover_model(model_id)
+
+        self.assertTrue(model_equal(model, restored_model, imagenet_input))
+
+    def test_save_restore_model_pretrained(self):
+        model = resnet18(pretrained=True)
+
+        model_id = self.save_recover_service.save_model(model, './networks/mynets/resnet18.py', 'resnet18')
 
         restored_model = self.save_recover_service.recover_model(model_id)
 
         self.assertTrue(model_equal(model, restored_model, imagenet_input))
 
     def test_save_restore_model(self):
-        model = resnet18(pretrained=True)
+        model = resnet18()
 
         model_id = self.save_recover_service.save_model(model, './networks/mynets/resnet18.py', 'resnet18')
 
