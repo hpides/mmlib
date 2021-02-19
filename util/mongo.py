@@ -87,6 +87,7 @@ class MongoService(object):
         return len(bson.BSON.encode(item))
 
     def _get_collection(self, collection_name):
+        collection_name = collection_name.lower()
         db = self._mongo_client[self._db_name]
         collection = db[collection_name]
         return collection
