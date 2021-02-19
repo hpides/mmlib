@@ -7,9 +7,9 @@ from enum import Enum
 import torch
 
 from mmlib.persistence import AbstractPersistenceService
-from mmlib.schema.model_info import ModelInfo
-from mmlib.schema.recover_info_t1 import RecoverInfoT1
-from mmlib.schema.schema_obj import SchemaObjType, SchemaObj
+from schema.model_info import ModelInfo
+from schema.recover_info_t1 import RecoverInfoT1
+from schema.schema_obj import SchemaObjType, SchemaObj
 from util.zip import zip_path, unzip
 
 ID = '_id'

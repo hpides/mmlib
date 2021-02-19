@@ -9,8 +9,8 @@ from mmlib.equal import model_equal
 from mmlib.helper import imagenet_input
 from mmlib.persistence import FileSystemMongoPS, DICT
 from mmlib.save import SimpleSaveRecoverService
-from mmlib.schema.model_info import RECOVER_INFO
-from mmlib.schema.schema_obj import SchemaObjType
+from schema.model_info import RECOVER_INFO
+from schema.schema_obj import SchemaObjType
 from tests.networks.mynets.googlenet import googlenet
 from tests.networks.mynets.mobilenet import mobilenet_v2
 from tests.networks.mynets.resnet18 import resnet18

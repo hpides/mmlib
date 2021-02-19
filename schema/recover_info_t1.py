@@ -1,4 +1,4 @@
-from mmlib.schema.schema_obj import SchemaObj, SchemaObjType
+from schema.schema_obj import SchemaObj, SchemaObjType
 
 ID = 'id'
 WEIGHTS = 'weights'
