@@ -22,7 +22,7 @@ class SchemaObj(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def load_dict(self, state_dict: dict):
         """
-        Updtae the internal state based on the given dict.
+        Update the internal state based on the given dict.
         :param state_dict: The dict to load the state from.
         """
 
@@ -30,7 +30,7 @@ class SchemaObj(metaclass=abc.ABCMeta):
     def get_type(self, dict_key) -> SchemaObjType:
         """
         Maps a dict key to the type that is used to store it.
-        :param dict_key: The key of the idct to request the type for.
+        :param dict_key: The key of the dict to request the type for.
         :return: The type as an objet of SchemaObjType.
         """
 
