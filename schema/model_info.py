@@ -53,7 +53,7 @@ class ModelInfo(SchemaObj):
 
     def get_type(self, dict_key) -> SchemaObjType:
         if dict_key == RECOVER_INFO:
-            if self.store_type:
+            if self.store_type == '1':
                 return SchemaObjType.RECOVER_T1
             else:
                 assert False, 'not implemented yet'

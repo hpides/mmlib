@@ -19,9 +19,9 @@ MODELS = 'models'
 
 
 class SaveType(Enum):
-    PICKLED_WEIGHTS = 1
-    WEIGHT_UPDATES = 2
-    PROVENANCE = 3
+    PICKLED_WEIGHTS = '1'
+    WEIGHT_UPDATES = '2'
+    PROVENANCE = '3'
 
 
 # Future work, se if it would make sense to use protocol here
