@@ -3,12 +3,17 @@ import shutil
 import unittest
 
 from bson import ObjectId
-from torchvision import models
 
+from mmlib.deterministic import set_deterministic
 from mmlib.equal import model_equal
 from mmlib.helper import imagenet_input
-from mmlib.save import FileSystemMongoSaveRecoverService, SaveType
-from tests.networks.mynets.test_net import TestNet
+from mmlib.persistence import FileSystemMongoPS, DICT
+from mmlib.save import SimpleSaveRecoverService
+from schema.model_info import RECOVER_INFO
+from schema.schema_obj import SchemaObjType
+from tests.networks.mynets.googlenet import googlenet
+from tests.networks.mynets.mobilenet import mobilenet_v2
+from tests.networks.mynets.resnet18 import resnet18
 from util.mongo import MongoService
 
 MONGO_CONTAINER_NAME = 'mongo-test'
@@ -17,17 +22,18 @@ MONGO_CONTAINER_NAME = 'mongo-test'
 class TestSave(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.tmp_path = './tmp'
+        self.tmp_path = './filesystem-tmp'
         self.abs_tmp_path = os.path.abspath(self.tmp_path)
 
         self.__clean_up()
         # run mongo DB locally in docker container
         os.system('docker run --rm --name %s -it -p 27017:27017 -d  mongo:4.4.3 ' % MONGO_CONTAINER_NAME)
 
-        self.mongo_service = MongoService('127.0.0.1', 'mmlib', 'models')
+        self.mongo_service = MongoService('127.0.0.1', 'mmlib')
 
         os.mkdir(self.abs_tmp_path)
-        self.save_recover_service = FileSystemMongoSaveRecoverService(self.abs_tmp_path)
+        pers_service = FileSystemMongoPS(self.tmp_path)
+        self.save_recover_service = SimpleSaveRecoverService(pers_service)
 
     def tearDown(self) -> None:
         self.__clean_up()
@@ -37,119 +43,122 @@ class TestSave(unittest.TestCase):
         if os.path.exists(self.abs_tmp_path):
             shutil.rmtree(self.abs_tmp_path)
 
-    def test_save_json(self):
-        test_dict = {'test': 'test'}
-        model_id = self.mongo_service.save_dict(test_dict)
-        expected_dict = test_dict
-        expected_dict['_id'] = model_id
+    def test_save_restore_model_googlenet(self):
+        model = googlenet(aux_logits=True)
 
-        num_entries = len(self.mongo_service.get_ids())
-        retrieve = self.mongo_service.get_dict(object_id=model_id)
+        self._test_save_restore_model('./networks/mynets/googlenet.py', 'googlenet', model)
 
-        self.assertEqual(1, num_entries)
-        self.assertEqual(expected_dict, retrieve)
+    def test_save_restore_model_pretrained(self):
+        file_names = ['mobilenet', 'resnet18']
+        models = [mobilenet_v2, resnet18]
+        for file_name, model in zip(file_names, models):
+            code_name = model.__name__
+            model = model(pretrained=True)
+            code_file = './networks/mynets/{}.py'.format(file_name)
 
-    def test_add_attribute(self):
-        test_dict = {'test': 'test'}
-        model_id = self.mongo_service.save_dict(test_dict)
+            self._test_save_restore_model(code_file, code_name, model)
 
-        add = {'added': 'added'}
-        self.mongo_service.add_attribute(model_id, add)
+    def test_save_restore_model(self):
+        file_names = ['mobilenet', 'resnet18']
+        models = [mobilenet_v2, resnet18]
+        for file_name, model in zip(file_names, models):
+            code_name = model.__name__
+            model = model()
+            code_file = './networks/mynets/{}.py'.format(file_name)
 
-        expected_dict = test_dict
-        expected_dict['_id'] = model_id
-        expected_dict.update(add)
+            self._test_save_restore_model(code_file, code_name, model)
 
-        retrieve = self.mongo_service.get_dict(object_id=model_id)
+    def _test_save_restore_model(self, code_file, code_name, model):
+        model_id = self.save_recover_service.save_model(model, code_file, code_name)
+        restored_model = self.save_recover_service.recover_model(model_id)
+        self.assertTrue(model_equal(model, restored_model, imagenet_input))
 
-        self.assertEqual(expected_dict, retrieve)
+    def test_save_restore_model_version(self):
+        set_deterministic()
+        model = resnet18()
 
-    def test_save_model_version(self):
-        model = models.resnet18(pretrained=True)
+        model_id = self.save_recover_service.save_model(model, './networks/mynets/resnet18.py', 'resnet18')
 
-        model_id = self.save_recover_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
+        set_deterministic()
+        model_version = resnet18()
+        model_version1_id = self.save_recover_service.save_version(model_version, base_model_id=model_id)
 
-        model_version_id = self.save_recover_service.save_version(model, model_id)
-        obj_id = ObjectId(model_version_id)
+        model_version = resnet18(pretrained=True)
+        model_version2_id = self.save_recover_service.save_version(model_version, base_model_id=model_version1_id)
 
-        expected_dict = {
-            '_id': obj_id,
-            'name': 'test_model',
-            'save-type': SaveType.PICKLED_MODEL.value,
-            'save-path': os.path.join(self.save_recover_service._base_path, str(model_version_id) + '.zip')
-        }
+        restored_model = self.save_recover_service.recover_model(model_id)
+        restored_model_version1 = self.save_recover_service.recover_model(model_version1_id)
+        restored_model_version2 = self.save_recover_service.recover_model(model_version2_id)
 
-        retrieve = self.mongo_service.get_dict(object_id=obj_id)
-        self.assertEqual(expected_dict, retrieve)
-
-    def test_save_model(self):
-        model = models.resnet18(pretrained=True)
-
-        model_id = self.save_recover_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
-        obj_id = ObjectId(model_id)
-
-        expected_dict = {
-            '_id': obj_id,
-            'name': 'test_model',
-            'save-type': SaveType.PICKLED_MODEL.value,
-            'save-path': os.path.join(self.save_recover_service._base_path, str(model_id) + '.zip')
-        }
-
-        retrieve = self.mongo_service.get_dict(object_id=obj_id)
-        self.assertEqual(expected_dict, retrieve)
+        self.assertTrue(model_equal(model, restored_model, imagenet_input))
+        self.assertTrue(model_equal(model, restored_model_version1, imagenet_input))
+        self.assertFalse(model_equal(restored_model_version1, restored_model_version2, imagenet_input))
 
     def test_get_saved_ids(self):
         expected = []
+        model = resnet18()
 
         ids = self.save_recover_service.saved_model_ids()
         self.assertEqual(ids, expected)
 
-        model = models.resnet18(pretrained=True)
-        model_id = self.save_recover_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
+        model_id = self.save_recover_service.save_model(model, './networks/mynets/resnet18.py', 'resnet18')
         expected.append(model_id)
 
         ids = self.save_recover_service.saved_model_ids()
         self.assertEqual(ids, expected)
 
-        model = models.resnet18(pretrained=True)
-        model_id = self.save_recover_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
+        model_id = self.save_recover_service.save_model(model, './networks/mynets/resnet18.py', 'resnet18')
         expected.append(model_id)
 
         ids = self.save_recover_service.saved_model_ids()
         self.assertEqual(ids, expected)
 
-    def test_save_and_restore(self):
-        model = TestNet()
-        model_id = self.save_recover_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
+    def test_get_model_infos(self):
+        expected = set()
+        model = resnet18()
 
-        # TODO test restore also on other machine
-        restored_model = self.save_recover_service.recover_model(model_id)
+        model_infos = self.save_recover_service.saved_model_infos()
+        self.assertEqual(set(model_infos), expected)
 
-        self.assertTrue(model_equal(model, restored_model, imagenet_input))
+        model_id = self.save_recover_service.save_model(model, './networks/mynets/resnet18.py', 'resnet18')
+        expected.add(self.save_recover_service._get_model_info(model_id))
 
-    def test_save_version_and_restore(self):
-        model = TestNet()
-        base_model_id = self.save_recover_service.save_model('test_model', model, './networks/mynets/test_net.py',
-                                                             './..')
-        model_version_id = self.save_recover_service.save_version(model, base_model_id)
+        model_infos = self.save_recover_service.saved_model_infos()
+        self.assertEqual(set(model_infos), expected)
 
-        # TODO test restore also on other machine
-        restored_base_model = self.save_recover_service.recover_model(base_model_id)
-        restored_model_version = self.save_recover_service.recover_model(model_version_id)
+        model_id = self.save_recover_service.save_model(model, './networks/mynets/resnet18.py', 'resnet18')
+        expected.add(self.save_recover_service._get_model_info(model_id))
 
-        self.assertTrue(model_equal(model, restored_base_model, imagenet_input))
-        self.assertTrue(model_equal(model, restored_model_version, imagenet_input))
-        self.assertTrue(model_equal(restored_base_model, restored_model_version, imagenet_input))
+        model_infos = self.save_recover_service.saved_model_infos()
+        self.assertEqual(set(model_infos), expected)
 
     def test_model_save_size(self):
-        model = TestNet()
-        model_id = self.save_recover_service.save_model('test_model', model, './networks/mynets/test_net.py', './..')
+        model = resnet18(pretrained=True)
+
+        model_id = self.save_recover_service.save_model(model, './networks/mynets/resnet18.py', 'resnet18')
+        model_id = model_id.replace(DICT, '')
 
         save_size = self.save_recover_service.model_save_size(model_id)
 
-        # got number form mac os finder file size info
-        zip_size = 52242909
+        # got from os (macOS finder info)
+        code_file_size = 6802
+        pickled_weights_size = 46838023
 
-        met_data_size = self.mongo_service.document_size(ObjectId(model_id))
+        model_info_size = self.mongo_service.document_size(ObjectId(model_id), SchemaObjType.MODEL_INFO.value)
+        model_info_dict = self.mongo_service.get_dict(ObjectId(model_id), SchemaObjType.MODEL_INFO.value)
 
-        self.assertEqual(met_data_size + zip_size, save_size)
+        restore_info_id = model_info_dict[RECOVER_INFO].replace(DICT, '')
+        restore_dict_size = self.mongo_service.document_size(ObjectId(restore_info_id), SchemaObjType.RECOVER_T1.value)
+
+        # for now the size consists of
+        #   - dict for model modelInfo
+        #   - dict for restore info
+        #   - pickled weights
+        #   - code file
+        expected_size = \
+            code_file_size + \
+            pickled_weights_size + \
+            model_info_size + \
+            restore_dict_size
+
+        self.assertEqual(expected_size, save_size)

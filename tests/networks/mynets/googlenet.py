@@ -1,4 +1,3 @@
-# Copied From Torchvision
 import warnings
 from collections import namedtuple
 
@@ -9,7 +8,7 @@ from torch import Tensor
 from torch.hub import load_state_dict_from_url
 from torch.jit.annotations import Optional, Tuple
 
-__all__ = ['TestNet', 'googlenet', "GoogLeNetOutputs", "_GoogLeNetOutputs"]
+__all__ = ['GoogLeNet', 'googlenet', "GoogLeNetOutputs", "_GoogLeNetOutputs"]
 
 model_urls = {
     # GoogLeNet ported from TensorFlow
@@ -48,7 +47,7 @@ def googlenet(pretrained=False, progress=True, **kwargs):
         original_aux_logits = kwargs['aux_logits']
         kwargs['aux_logits'] = True
         kwargs['init_weights'] = False
-        model = TestNet(**kwargs)
+        model = GoogLeNet(**kwargs)
         state_dict = load_state_dict_from_url(model_urls['googlenet'],
                                               progress=progress)
         model.load_state_dict(state_dict)
@@ -58,15 +57,15 @@ def googlenet(pretrained=False, progress=True, **kwargs):
             model.aux2 = None
         return model
 
-    return TestNet(**kwargs)
+    return GoogLeNet(**kwargs)
 
 
-class TestNet(nn.Module):
+class GoogLeNet(nn.Module):
     __constants__ = ['aux_logits', 'transform_input']
 
     def __init__(self, num_classes=1000, aux_logits=True, transform_input=False, init_weights=None,
                  blocks=None):
-        super(TestNet, self).__init__()
+        super(GoogLeNet, self).__init__()
         if blocks is None:
             blocks = [BasicConv2d, Inception, InceptionAux]
         if init_weights is None:
