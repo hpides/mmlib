@@ -44,4 +44,4 @@ class Dataset(SchemaObj):
         self.raw_data_size = state_dict[RAW_DATA_SIZE]
 
     def get_type(self, dict_key) -> SchemaObjType:
-        pass
+        return self._type_mapping[dict_key]
