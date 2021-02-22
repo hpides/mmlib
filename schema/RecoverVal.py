@@ -13,6 +13,12 @@ class RecoverVal(SchemaObj):
         self.weights_hash = weights_hash
         self.inference_hash = inference_hash
         self.inference_data = inference_data
+        self._type_mapping = {
+            ID: SchemaObjType.STRING,
+            WEIGHTS_HASH: SchemaObjType.STRING,
+            INFERENCE_HASH: SchemaObjType.STRING,
+            INFERENCE_DATA: SchemaObjType.STRING,
+        }
 
     def to_dict(self) -> dict:
         recover_val = {
@@ -31,7 +37,6 @@ class RecoverVal(SchemaObj):
         self.weights_hash = state_dict[WEIGHTS_HASH]
         self.inference_hash = state_dict[INFERENCE_HASH]
         self.inference_data = state_dict[INFERENCE_DATA]
-
 
     def get_type(self, dict_key) -> SchemaObjType:
         pass
