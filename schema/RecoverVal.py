@@ -27,7 +27,11 @@ class RecoverVal(SchemaObj):
         return recover_val
 
     def load_dict(self, state_dict: dict):
-        pass
+        self.r_id = state_dict[ID] if ID in state_dict else None
+        self.weights_hash = state_dict[WEIGHTS_HASH]
+        self.inference_hash = state_dict[INFERENCE_HASH]
+        self.inference_data = state_dict[INFERENCE_DATA]
+
 
     def get_type(self, dict_key) -> SchemaObjType:
         pass
