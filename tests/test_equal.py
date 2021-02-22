@@ -4,7 +4,7 @@ import torch
 from torchvision import models
 
 from mmlib.deterministic import set_deterministic
-from mmlib.equal import state_dict_equal, model_equal, state_dict_hash
+from mmlib.equal import state_dict_equal, model_equal, state_dict_hash, tensor_hash
 from mmlib.helper import imagenet_input
 
 
@@ -163,3 +163,73 @@ class TestModelEqual(unittest.TestCase):
 
         # because of deterministic weight initialization we should get the same weight dicts and thus the same hashes
         self.assertEqual(hash1, hash2)
+
+    def test_resnet152_state_dict_hash(self):
+        set_deterministic()
+        mod1 = models.resnet152()
+        mod1_dict = mod1.state_dict()
+        hash1 = state_dict_hash(mod1_dict)
+
+        set_deterministic()
+        mod2 = models.resnet152()
+        mod2_dict = mod2.state_dict()
+        hash2 = state_dict_hash(mod2_dict)
+
+        # because of deterministic weight initialization we should get the same weight dicts and thus the same hashes
+        self.assertEqual(hash1, hash2)
+
+    def test_mobilenet_state_dict_hash(self):
+        set_deterministic()
+        mod1 = models.mobilenet_v2()
+        mod1_dict = mod1.state_dict()
+        hash1 = state_dict_hash(mod1_dict)
+
+        set_deterministic()
+        mod2 = models.mobilenet_v2()
+        mod2_dict = mod2.state_dict()
+        hash2 = state_dict_hash(mod2_dict)
+
+        # because of deterministic weight initialization we should get the same weight dicts and thus the same hashes
+        self.assertEqual(hash1, hash2)
+
+    def test_mobilenet_state_dict_hash_diff(self):
+        mod1 = models.mobilenet_v2()
+        mod1_dict = mod1.state_dict()
+        hash1 = state_dict_hash(mod1_dict)
+
+        mod2 = models.mobilenet_v2()
+        mod2_dict = mod2.state_dict()
+        hash2 = state_dict_hash(mod2_dict)
+
+        # we expect different results, because wight initialization is random
+        # and we don't ensure deterministic execution
+        self.assertNotEqual(hash1, hash2)
+
+    def test_googlenet_state_dict_hash(self):
+        set_deterministic()
+        mod1 = models.googlenet()
+        mod1_dict = mod1.state_dict()
+        hash1 = state_dict_hash(mod1_dict)
+
+        set_deterministic()
+        mod2 = models.googlenet()
+        mod2_dict = mod2.state_dict()
+        hash2 = state_dict_hash(mod2_dict)
+
+        # because of deterministic weight initialization we should get the same weight dicts and thus the same hashes
+        self.assertEqual(hash1, hash2)
+
+    def test_hash_tensor(self):
+        set_deterministic()
+        t1 = torch.rand(100, 100, 100)
+        set_deterministic()
+        t2 = torch.rand(100, 100, 100)
+        t3 = torch.rand(100, 100, 100)
+
+        t1_hash = tensor_hash(t1)
+        t2_hash = tensor_hash(t2)
+        t3_hash = tensor_hash(t3)
+
+        self.assertEqual(t1_hash, t2_hash)
+        self.assertNotEqual(t1_hash, t3_hash)
+        self.assertNotEqual(t2_hash, t3_hash)
