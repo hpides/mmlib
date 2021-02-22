@@ -9,7 +9,8 @@ RAW_DATA_SIZE = 'raw_data_size'
 
 class Dataset(SchemaObj):
 
-    def __init__(self, d_id: str, dataset_code: str, generate_call: str, raw_data: str, raw_data_size: str):
+    def __init__(self, d_id: str = None, dataset_code: str = None, generate_call: str = None, raw_data: str = None,
+                 raw_data_size: str = None):
         self.d_id = d_id
         self.dataset_code = dataset_code
         self.generate_call = generate_call
