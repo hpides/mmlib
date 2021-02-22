@@ -24,7 +24,17 @@ class Dataset(SchemaObj):
         }
 
     def to_dict(self) -> dict:
-        pass
+        dataset = {
+            DATASET_CODE: self.dataset_code,
+            GENERATE_CALL: self.generate_call,
+            RAW_DATA: self.raw_data,
+            RAW_DATA_SIZE: self.raw_data_size,
+        }
+
+        if self.d_id:
+            dataset[ID] = self.d_id
+
+        return dataset
 
     def load_dict(self, state_dict: dict):
         pass
