@@ -102,6 +102,24 @@ def state_dict_hash(state_dict: dict, device: torch.device = None) -> str:
     return md5.hexdigest()
 
 
+def tensor_hash(tensor: torch.tensor, device: torch.device = None) -> str:
+    """
+    Calculates a md5 hash of the given tensor.
+    :param tensor: The tensor to hash.
+    :param device: The device to execute on.
+    :return: The md5 hash as a string.
+    """
+    md5 = hashlib.md5()
+
+    device = get_device(device)
+
+    tensor = tensor.to(device)
+    numpy_data = tensor.numpy().data
+    md5.update(numpy_data)
+
+    return md5.hexdigest()
+
+
 def model_equal(m1: torch.nn.Module, m2: torch.nn.Module, produce_input: Callable[[], torch.tensor],
                 device: torch.device = None) -> bool:
     """
