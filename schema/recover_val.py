@@ -8,7 +8,8 @@ INFERENCE_DATA = 'inference_data'
 
 class RecoverVal(SchemaObj):
 
-    def __init__(self, r_id: str, weights_hash: str, inference_hash: str, inference_data: str):
+    def __init__(self, r_id: str = None, weights_hash: str = None, inference_hash: str = None,
+                 inference_data: str = None):
         self.r_id = r_id
         self.weights_hash = weights_hash
         self.inference_hash = inference_hash
