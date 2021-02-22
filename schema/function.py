@@ -26,7 +26,7 @@ class Function(SchemaObj):
         }
 
     def to_dict(self) -> dict:
-        dataset = {
+        function = {
             FUNCTION_CODE: self.function_code,
             CALL_NAME: self.call_name,
             FUNCTION_ARGS: self.function_args,
@@ -34,9 +34,9 @@ class Function(SchemaObj):
         }
 
         if self.f_id:
-            dataset[ID] = self.f_id
+            function[ID] = self.f_id
 
-        return dataset
+        return function
 
     def load_dict(self, state_dict: dict):
         self.f_id = state_dict[ID] if ID in state_dict else None
