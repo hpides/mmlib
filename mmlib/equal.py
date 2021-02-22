@@ -114,7 +114,7 @@ def tensor_hash(tensor: torch.tensor, device: torch.device = None) -> str:
     device = get_device(device)
 
     tensor = tensor.to(device)
-    numpy_data = tensor.numpy().data
+    numpy_data = tensor.detach().numpy().data
     md5.update(numpy_data)
 
     return md5.hexdigest()

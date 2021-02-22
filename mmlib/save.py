@@ -46,7 +46,7 @@ class AbstractSaveRecoverService(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def save_version(self, model: torch.nn.Module, base_model_id: str, recover_val: bool = False,
-                     dummy_input_func: Function = None) -> str:
+                     dummy_input_shape: Function = None) -> str:
         """
         TODO docs + impl
         Saves a new model version by referring to the base_model.
@@ -95,13 +95,12 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         self._pers_service = persistence_service
 
     def save_model(self, model: torch.nn.Module, code: str, code_name: str, recover_val: bool = False,
-                   dummy_input_func: Function = None) -> str:
+                   dummy_input_shape: [int] = None) -> str:
         if recover_val:
-            assert dummy_input_func, 'to store recover_val information a dummy input function needs to be provided'
-            rec_val = self._save_recover_val(model, dummy_input_func)
-            # TODO implement
+            assert dummy_input_shape, 'to store recover_val information a dummy input function needs to be provided'
 
-        recover_info_t1 = self._save_model_t1(model, code, code_name)
+        rec_val_id = self._save_recover_val(model, dummy_input_shape)
+        recover_info_t1 = self._save_model_t1(model, code, code_name, rec_val_id)
         recover_info_id = self._pers_service.save_dict(recover_info_t1.to_dict(), SchemaObjType.RECOVER_T1.value)
 
         # TODO(future-work) to implement other fields that are default None
@@ -209,14 +208,15 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         model_id = self._pers_service.save_dict(model_info.to_dict(), SchemaObjType.MODEL_INFO.value)
         return model_id
 
-    def _save_model_t1(self, model, code, code_name):
+    def _save_model_t1(self, model, code, code_name, recover_val_id=None):
         gen_id = self._pers_service.generate_id()
         with tempfile.TemporaryDirectory() as tmp_path:
             zip_file = self._pickle_weights(model, tmp_path)
             zip_file_id = self._pers_service.save_file(zip_file)
             code_file_id = self._pers_service.save_file(code)
 
-        recover_info_t1 = RecoverInfoT1(r_id=gen_id, weights=zip_file_id, model_code=code_file_id, code_name=code_name)
+        recover_info_t1 = RecoverInfoT1(r_id=gen_id, weights=zip_file_id, model_code=code_file_id, code_name=code_name,
+                                        recover_validation=recover_val_id)
 
         return recover_info_t1
 
@@ -257,16 +257,17 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
 
         return model
 
-    def _save_recover_val(self, model, dummy_input_func):
+    def _save_recover_val(self, model, dummy_input_shape):
         weights_hash = state_dict_hash(model.state_dict())
 
         set_deterministic()
-        dummy_input = self._gen_dummy_inpute(dummy_input_func)
+        dummy_input = torch.rand(dummy_input_shape)
         dummy_output = model(dummy_input)
         inference_hash = tensor_hash(dummy_output)
 
-        recover_val = RecoverVal(weights_hash=weights_hash, inference_hash=inference_hash, dum)
+        recover_val = RecoverVal(weights_hash=weights_hash, inference_hash=inference_hash,
+                                 dummy_input_shape=dummy_input_shape)
 
-        recover_val_id = self._pers_service.save_dict(model_info.to_dict(), SchemaObjType.MODEL_INFO.value)
+        recover_val_id = self._pers_service.save_dict(recover_val.to_dict(), SchemaObjType.RECOVER_VAL.value)
 
         return recover_val_id

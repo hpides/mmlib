@@ -9,7 +9,7 @@ class SchemaObjType(Enum):
     PARAM_LIST = 'parameter_list'
     MODEL_INFO = 'ModelInfo'
     RECOVER_T1 = 'RecoverInfoT1'
-    RECOVER_Val = 'RecoverVal'
+    RECOVER_VAL = 'RecoverVal'
     DATASET = 'Dataset'
 
 

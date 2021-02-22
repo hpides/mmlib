@@ -8,9 +8,7 @@ from mmlib.deterministic import set_deterministic
 from mmlib.equal import model_equal
 from mmlib.persistence import FileSystemMongoPS, DICT
 from mmlib.save import SimpleSaveRecoverService
-from schema.function import Function
 from schema.model_info import RECOVER_INFO
-from schema.parameter import Parameter
 from schema.schema_obj import SchemaObjType
 from tests.networks.mynets.googlenet import googlenet
 from tests.networks.mynets.mobilenet import mobilenet_v2
@@ -100,30 +98,12 @@ class TestSave(unittest.TestCase):
         set_deterministic()
         model = resnet18()
 
-        function = Function(
-            function_code='./../util/dummy_data.py',
-            call_name='imagenet_input',
-            function_args=[],
-            function_kwargs=[Parameter(name='batch_size', param_type='int', value='32', default='false')]
-        )
         model_id = self.save_recover_service.save_model(
-            model, './networks/mynets/resnet18.py', 'resnet18', recover_val=True, dummy_input_func=function
+            model, './networks/mynets/resnet18.py', 'resnet18', recover_val=True, dummy_input_shape=[10, 3, 300, 400]
         )
 
-        # set_deterministic()
-        # model_version = resnet18()
-        # model_version1_id = self.save_recover_service.save_version(model_version, base_model_id=model_id)
-        #
-        # model_version = resnet18(pretrained=True)
-        # model_version2_id = self.save_recover_service.save_version(model_version, base_model_id=model_version1_id)
-        #
-        # restored_model = self.save_recover_service.recover_model(model_id)
-        # restored_model_version1 = self.save_recover_service.recover_model(model_version1_id)
-        # restored_model_version2 = self.save_recover_service.recover_model(model_version2_id)
-        #
-        # self.assertTrue(model_equal(model, restored_model, imagenet_input))
-        # self.assertTrue(model_equal(model, restored_model_version1, imagenet_input))
-        # self.assertFalse(model_equal(restored_model_version1, restored_model_version2, imagenet_input))
+        restored_model = self.save_recover_service.recover_model(model_id)
+        self.assertTrue(model_equal(model, restored_model, imagenet_input))
 
     def test_get_saved_ids(self):
         expected = []
