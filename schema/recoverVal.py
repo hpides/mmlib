@@ -17,7 +17,7 @@ class RecoverVal(SchemaObj):
             ID: SchemaObjType.STRING,
             WEIGHTS_HASH: SchemaObjType.STRING,
             INFERENCE_HASH: SchemaObjType.STRING,
-            INFERENCE_DATA: SchemaObjType.STRING,
+            INFERENCE_DATA: SchemaObjType.DATASET,
         }
 
     def to_dict(self) -> dict:
