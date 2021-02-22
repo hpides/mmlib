@@ -37,7 +37,11 @@ class Dataset(SchemaObj):
         return dataset
 
     def load_dict(self, state_dict: dict):
-        pass
+        self.d_id = state_dict[ID] if ID in state_dict else None
+        self.dataset_code = state_dict[DATASET_CODE]
+        self.generate_call = state_dict[GENERATE_CALL]
+        self.raw_data = state_dict[RAW_DATA]
+        self.raw_data_size = state_dict[RAW_DATA_SIZE]
 
     def get_type(self, dict_key) -> SchemaObjType:
         pass
