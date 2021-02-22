@@ -1,5 +1,10 @@
 from schema.schema_obj import SchemaObj, SchemaObjType
 
+ID = 'id'
+WEIGHTS_HASH = 'weights_hash'
+INFERENCE_HASH = 'inference_hash'
+INFERENCE_DATA = 'inference_data'
+
 
 class RecoverVal(SchemaObj):
 
@@ -10,7 +15,16 @@ class RecoverVal(SchemaObj):
         self.inference_data = inference_data
 
     def to_dict(self) -> dict:
-        pass
+        recover_val = {
+            WEIGHTS_HASH: self.weights_hash,
+            INFERENCE_HASH: self.inference_hash,
+            INFERENCE_DATA: self.inference_data,
+        }
+
+        if self.r_id:
+            recover_val[ID] = self.r_id
+
+        return recover_val
 
     def load_dict(self, state_dict: dict):
         pass
