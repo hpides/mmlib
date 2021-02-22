@@ -1,3 +1,4 @@
+import hashlib
 from typing import Callable
 
 import torch
@@ -79,6 +80,21 @@ def state_dict_equal(d1: dict, d2: dict, device: torch.device = None) -> bool:
             return False
 
     return True
+
+
+def state_dict_hash(state_dict: dict, device: torch.device = None) -> str:
+    md5 = hashlib.md5()
+
+    device = get_device(device)
+
+    # TODO also include keys in hash
+
+    for layer_name, weight_tensor in state_dict.items():
+        weight_tensor = weight_tensor.to(device)
+        numpy_data = weight_tensor.numpy().data
+        md5.update(numpy_data)
+
+    return md5.hexdigest()
 
 
 def model_equal(m1: torch.nn.Module, m2: torch.nn.Module, produce_input: Callable[[], torch.tensor],

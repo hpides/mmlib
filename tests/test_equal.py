@@ -4,7 +4,7 @@ import torch
 from torchvision import models
 
 from mmlib.deterministic import set_deterministic
-from mmlib.equal import state_dict_equal, model_equal
+from mmlib.equal import state_dict_equal, model_equal, state_dict_hash
 from mmlib.helper import imagenet_input
 
 
@@ -149,3 +149,17 @@ class TestModelEqual(unittest.TestCase):
 
         self.assertTrue(model_equal(alex1, alex2, imagenet_input))
         self.assertTrue(model_equal(resnet1, resnet2, imagenet_input))
+
+    def test_resnet18_state_dict_hash(self):
+        set_deterministic()
+        mod1 = models.resnet18()
+        mod1_dict = mod1.state_dict()
+        hash1 = state_dict_hash(mod1_dict)
+
+        set_deterministic()
+        mod2 = models.resnet18()
+        mod2_dict = mod2.state_dict()
+        hash2 = state_dict_hash(mod2_dict)
+
+        # because of deterministic weight initialization we should get the same weight dicts and thus the same hashes
+        self.assertEqual(hash1, hash2)
