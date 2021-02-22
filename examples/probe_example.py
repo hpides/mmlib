@@ -4,7 +4,7 @@ from torchvision import models
 
 from mmlib.deterministic import set_deterministic
 from mmlib.equal import model_equal, blackbox_model_equal, whitebox_model_equal
-from mmlib.helper import imagenet_input, imagenet_target
+from util.dummy_data import imagenet_input, imagenet_target
 from mmlib.probe import ProbeInfo, probe_inference, probe_training
 
 MODEL = models.googlenet

@@ -6,9 +6,13 @@ from enum import Enum
 
 import torch
 
+from mmlib.deterministic import set_deterministic
+from mmlib.equal import state_dict_hash, tensor_hash
 from mmlib.persistence import AbstractPersistenceService
+from schema.function import Function
 from schema.model_info import ModelInfo
 from schema.recover_info_t1 import RecoverInfoT1
+from schema.recover_val import RecoverVal
 from schema.schema_obj import SchemaObjType, SchemaObj
 from util.zip import zip_path, unzip
 
@@ -28,8 +32,10 @@ class SaveType(Enum):
 class AbstractSaveRecoverService(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def save_model(self, model: torch.nn.Module, code: str, code_name: str, ) -> str:
+    def save_model(self, model: torch.nn.Module, code: str, code_name: str, recover_val: bool = False,
+                   dummy_input_func: Function = None) -> str:
         """
+        TODO docs
         Saves a model together with the given metadata.
         :param model: The actual model to save as an instance of torch.nn.Module.
         :param code: The path to the code of the model (is needed for recover process).
@@ -39,8 +45,10 @@ class AbstractSaveRecoverService(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def save_version(self, model: torch.nn.Module, base_model_id: str) -> str:
+    def save_version(self, model: torch.nn.Module, base_model_id: str, recover_val: bool = False,
+                     dummy_input_func: Function = None) -> str:
         """
+        TODO docs + impl
         Saves a new model version by referring to the base_model.
         :param model: The actual model to save as an instance of torch.nn.Module.
         :param base_model_id: the model id of the base_model.
@@ -58,8 +66,9 @@ class AbstractSaveRecoverService(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def recover_model(self, model_id: str) -> torch.nn.Module:
+    def recover_model(self, model_id: str, check_recover_val=True) -> torch.nn.Module:
         """
+        TODO docs
         Recovers a the model identified by the given model id.
         :param model_id: The id to identify the model with.
         :return: The recovered model as an object of type torch.nn.Module.
@@ -85,7 +94,13 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         """
         self._pers_service = persistence_service
 
-    def save_model(self, model: torch.nn.Module, code: str, code_name: str, ) -> str:
+    def save_model(self, model: torch.nn.Module, code: str, code_name: str, recover_val: bool = False,
+                   dummy_input_func: Function = None) -> str:
+        if recover_val:
+            assert dummy_input_func, 'to store recover_val information a dummy input function needs to be provided'
+            rec_val = self._save_recover_val(model, dummy_input_func)
+            # TODO implement
+
         recover_info_t1 = self._save_model_t1(model, code, code_name)
         recover_info_id = self._pers_service.save_dict(recover_info_t1.to_dict(), SchemaObjType.RECOVER_T1.value)
 
@@ -94,7 +109,9 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
 
         return model_id
 
-    def save_version(self, model: torch.nn.Module, base_model_id: str) -> str:
+    def save_version(self, model: torch.nn.Module, base_model_id: str, recover_val: bool = False,
+                     dummy_input_func: Function = None) -> str:
+        # TODO impl
         base_model_info = self._get_model_info(base_model_id)
         base_model_recover_info = self._get_recover_info_t1(base_model_info)
 
@@ -123,7 +140,8 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         model_info = self._get_model_info(model_id)
         return self._get_save_size(model_info)
 
-    def recover_model(self, model_id: str) -> torch.nn.Module:
+    def recover_model(self, model_id: str, check_recover_val=True) -> torch.nn.Module:
+        # TODO impl
         model_info = self._get_model_info(model_id)
         recover_info_t1 = self._get_recover_info_t1(model_info)
         weights_file_id = recover_info_t1.weights
@@ -238,3 +256,17 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         model = eval('{}()'.format(generate_call))
 
         return model
+
+    def _save_recover_val(self, model, dummy_input_func):
+        weights_hash = state_dict_hash(model.state_dict())
+
+        set_deterministic()
+        dummy_input = self._gen_dummy_inpute(dummy_input_func)
+        dummy_output = model(dummy_input)
+        inference_hash = tensor_hash(dummy_output)
+
+        recover_val = RecoverVal(weights_hash=weights_hash, inference_hash=inference_hash, dum)
+
+        recover_val_id = self._pers_service.save_dict(model_info.to_dict(), SchemaObjType.MODEL_INFO.value)
+
+        return recover_val_id

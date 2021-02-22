@@ -26,6 +26,8 @@ class Function(SchemaObj):
         }
 
     def to_dict(self) -> dict:
+        func_args
+
         function = {
             FUNCTION_CODE: self.function_code,
             CALL_NAME: self.call_name,

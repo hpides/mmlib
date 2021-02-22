@@ -1,3 +1,4 @@
+from schema.function import Function
 from schema.schema_obj import SchemaObj, SchemaObjType
 
 ID = 'id'
@@ -9,11 +10,11 @@ INFERENCE_DATA = 'inference_data'
 class RecoverVal(SchemaObj):
 
     def __init__(self, r_id: str = None, weights_hash: str = None, inference_hash: str = None,
-                 inference_data: str = None):
+                 dummy_input_func: Function = None):
         self.r_id = r_id
         self.weights_hash = weights_hash
         self.inference_hash = inference_hash
-        self.inference_data = inference_data
+        self.inference_data = dummy_input_func
         self._type_mapping = {
             ID: SchemaObjType.STRING,
             WEIGHTS_HASH: SchemaObjType.STRING,
