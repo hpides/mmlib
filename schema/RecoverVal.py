@@ -39,4 +39,4 @@ class RecoverVal(SchemaObj):
         self.inference_data = state_dict[INFERENCE_DATA]
 
     def get_type(self, dict_key) -> SchemaObjType:
-        pass
+        return self._type_mapping[dict_key]
