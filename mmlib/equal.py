@@ -87,11 +87,10 @@ def state_dict_hash(state_dict: dict, device: torch.device = None) -> str:
 
     device = get_device(device)
 
-    # TODO also include keys in hash
-
     for layer_name, weight_tensor in state_dict.items():
         weight_tensor = weight_tensor.to(device)
         numpy_data = weight_tensor.numpy().data
+        md5.update(bytes(layer_name, 'utf-8'))
         md5.update(numpy_data)
 
     return md5.hexdigest()
