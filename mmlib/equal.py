@@ -63,7 +63,7 @@ def state_dict_equal(d1: dict, d2: dict, device: torch.device = None) -> bool:
     Compares two given state dicts.
     :param d1: The first state dict.
     :param d2: The first state dict.
-    :param device: The device to execute on
+    :param device: The device to execute on.
     :return: Returns if the given state dicts are equal.
     """
 
@@ -83,6 +83,12 @@ def state_dict_equal(d1: dict, d2: dict, device: torch.device = None) -> bool:
 
 
 def state_dict_hash(state_dict: dict, device: torch.device = None) -> str:
+    """
+    Calculates a md5 hash of a state dict dependent on the layer names and the corresponding weight tensors.
+    :param state_dict: The state dict to create the hash from.
+    :param device: The device to execute on.
+    :return: The md5 hash as a string.
+    """
     md5 = hashlib.md5()
 
     device = get_device(device)
