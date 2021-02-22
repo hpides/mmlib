@@ -8,6 +8,7 @@ class SchemaObjType(Enum):
     FILE = 'file'
     MODEL_INFO = 'ModelInfo'
     RECOVER_T1 = 'RecoverInfoT1'
+    RECOVER_Val = 'RecoverVal'
 
 
 class SchemaObj(metaclass=abc.ABCMeta):
