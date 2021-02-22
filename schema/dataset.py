@@ -15,7 +15,7 @@ class Dataset(SchemaObj):
         self.generate_call = generate_call
         self.raw_data = raw_data
         self.raw_data_size = raw_data_size
-        self.type_mapping = {
+        self._type_mapping = {
             ID: SchemaObjType.STRING,
             DATASET_CODE: SchemaObjType.FILE,
             GENERATE_CALL: SchemaObjType.STRING,
