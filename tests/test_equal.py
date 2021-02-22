@@ -153,11 +153,12 @@ class TestModelEqual(unittest.TestCase):
     def test_resnet18_state_dict_hash(self):
         set_deterministic()
         mod1 = models.resnet18()
+        set_deterministic()
+        mod2 = models.resnet18()
+
         mod1_dict = mod1.state_dict()
         hash1 = state_dict_hash(mod1_dict)
 
-        set_deterministic()
-        mod2 = models.resnet18()
         mod2_dict = mod2.state_dict()
         hash2 = state_dict_hash(mod2_dict)
 

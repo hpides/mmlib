@@ -2,6 +2,7 @@ import abc
 import os
 import sys
 import tempfile
+import warnings
 from enum import Enum
 
 import torch
@@ -110,7 +111,6 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
 
     def save_version(self, model: torch.nn.Module, base_model_id: str, recover_val: bool = False,
                      dummy_input_func: Function = None) -> str:
-        # TODO impl
         base_model_info = self._get_model_info(base_model_id)
         base_model_recover_info = self._get_recover_info_t1(base_model_info)
 
@@ -139,8 +139,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         model_info = self._get_model_info(model_id)
         return self._get_save_size(model_info)
 
-    def recover_model(self, model_id: str, check_recover_val=True) -> torch.nn.Module:
-        # TODO impl
+    def recover_model(self, model_id: str, check_recover_val=False) -> torch.nn.Module:
         model_info = self._get_model_info(model_id)
         recover_info_t1 = self._get_recover_info_t1(model_info)
         weights_file_id = recover_info_t1.weights
@@ -154,6 +153,20 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
             weights_file = self._pers_service.recover_file(weights_file_id, tmp_path)
             s_dict = self._recover_pickled_weights(weights_file, tmp_path)
             model.load_state_dict(s_dict)
+
+        if check_recover_val:
+            if recover_info_t1.recover_validation is None:
+                warnings.warn('check recoverVal not possible - no recover validation info available')
+            else:
+                rec_val = self._get_recover_val(recover_info_t1.recover_validation)
+
+                weights_hash = state_dict_hash(model.state_dict())
+                assert weights_hash == rec_val.weights_hash, 'check weight hash failed'
+
+                inp_shape = rec_val.dummy_input_shape
+                inference_hash = self._get_inference_hash(model, inp_shape)
+                assert inference_hash == rec_val.inference_hash, 'check inference hash failed'
+
 
         return model
 
@@ -227,6 +240,9 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         recover_info_id = model_info.recover_info
         return self._recover_schema_obj(recover_info_id, SchemaObjType.RECOVER_T1)
 
+    def _get_recover_val(self, recover_val_id):
+        return self._recover_schema_obj(recover_val_id, SchemaObjType.RECOVER_VAL)
+
     def _recover_schema_obj(self, obj_id: str, obj_type: SchemaObjType):
         s_obj = eval('{}()'.format(obj_type.value))
         state_dict = self._pers_service.recover_dict(obj_id, obj_type.value)
@@ -260,10 +276,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
     def _save_recover_val(self, model, dummy_input_shape):
         weights_hash = state_dict_hash(model.state_dict())
 
-        set_deterministic()
-        dummy_input = torch.rand(dummy_input_shape)
-        dummy_output = model(dummy_input)
-        inference_hash = tensor_hash(dummy_output)
+        inference_hash = self._get_inference_hash(model, dummy_input_shape)
 
         recover_val = RecoverVal(weights_hash=weights_hash, inference_hash=inference_hash,
                                  dummy_input_shape=dummy_input_shape)
@@ -271,3 +284,11 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         recover_val_id = self._pers_service.save_dict(recover_val.to_dict(), SchemaObjType.RECOVER_VAL.value)
 
         return recover_val_id
+
+    def _get_inference_hash(self, model, dummy_input_shape):
+        set_deterministic()
+        model.eval()
+        dummy_input = torch.rand(dummy_input_shape)
+        dummy_output = model(dummy_input)
+        inference_hash = tensor_hash(dummy_output)
+        return inference_hash

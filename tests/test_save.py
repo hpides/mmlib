@@ -102,7 +102,8 @@ class TestSave(unittest.TestCase):
             model, './networks/mynets/resnet18.py', 'resnet18', recover_val=True, dummy_input_shape=[10, 3, 300, 400]
         )
 
-        restored_model = self.save_recover_service.recover_model(model_id)
+        restored_model = self.save_recover_service.recover_model(model_id, check_recover_val=True)
+
         self.assertTrue(model_equal(model, restored_model, imagenet_input))
 
     def test_get_saved_ids(self):
