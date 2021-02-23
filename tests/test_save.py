@@ -106,6 +106,34 @@ class TestSave(unittest.TestCase):
 
         self.assertTrue(model_equal(model, restored_model, imagenet_input))
 
+    def test_save_restore_model_version_and_recover_val(self):
+        set_deterministic()
+        model = resnet18()
+
+        model_id = self.save_recover_service.save_model(
+            model, './networks/mynets/resnet18.py', 'resnet18', recover_val=False
+        )
+
+        set_deterministic()
+        model_version = resnet18()
+        model_version1_id = self.save_recover_service.save_version(
+            model_version, base_model_id=model_id, recover_val=True, dummy_input_shape=[10, 3, 300, 400]
+        )
+
+        model_version = resnet18(pretrained=True)
+        # dummy_input_shape should be inferred form base model
+        model_version2_id = self.save_recover_service.save_version(
+            model_version, base_model_id=model_version1_id, recover_val=True
+        )
+
+        restored_model = self.save_recover_service.recover_model(model_id)
+        restored_model_version1 = self.save_recover_service.recover_model(model_version1_id, check_recover_val=True)
+        restored_model_version2 = self.save_recover_service.recover_model(model_version2_id, check_recover_val=True)
+
+        self.assertTrue(model_equal(model, restored_model, imagenet_input))
+        self.assertTrue(model_equal(model, restored_model_version1, imagenet_input))
+        self.assertFalse(model_equal(restored_model_version1, restored_model_version2, imagenet_input))
+
     def test_get_saved_ids(self):
         expected = []
         model = resnet18()

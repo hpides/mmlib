@@ -10,7 +10,6 @@ import torch
 from mmlib.deterministic import set_deterministic
 from mmlib.equal import state_dict_hash, tensor_hash
 from mmlib.persistence import AbstractPersistenceService
-from schema.function import Function
 from schema.model_info import ModelInfo
 from schema.recover_info_t1 import RecoverInfoT1
 from schema.recover_val import RecoverVal
@@ -57,7 +56,8 @@ class AbstractSaveRecoverService(metaclass=abc.ABCMeta):
         :param base_model_id: the model id of the base_model.
         :param recover_val: Indicates if along with the model itself also information is stored to later validate that
         restoring the model lead to the exact same model. It is checked by comparing the model weights and the inference
-        result on dummy input. If this flag is true, a dummy_input_shape has to be provided.
+        result on dummy input. If this flag is true, the dummy_input_shape is copied form the base model, if there is no
+        recover_val stored for the base model it must be given as a parameter.
         :param dummy_input_shape: The shape of the dummy input that should be used to produce an inference result.
         :return: Returns the ID that was used to store the new model version data in the MongoDB.
         """
@@ -106,8 +106,11 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         if recover_val:
             assert dummy_input_shape, 'to store recover_val information a dummy input function needs to be provided'
 
-        rec_val_id = self._save_recover_val(model, dummy_input_shape)
-        recover_info_t1 = self._save_model_t1(model, code, code_name, rec_val_id)
+        rec_val_id = None
+        if recover_val:
+            rec_val_id = self._save_recover_val(model, dummy_input_shape)
+
+        recover_info_t1 = self._save_model_t1(model, code, code_name, recover_val_id=rec_val_id)
         recover_info_id = self._pers_service.save_dict(recover_info_t1.to_dict(), SchemaObjType.RECOVER_T1.value)
 
         # TODO(future-work) to implement other fields that are default None
@@ -116,17 +119,27 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         return model_id
 
     def save_version(self, model: torch.nn.Module, base_model_id: str, recover_val: bool = False,
-                     dummy_input_func: Function = None) -> str:
-        # TODO impl
+                     dummy_input_shape: [int] = None) -> str:
+
         base_model_info = self._get_model_info(base_model_id)
         base_model_recover_info = self._get_recover_info_t1(base_model_info)
+
+        rec_val_id = None
+        if recover_val:
+            if not dummy_input_shape:
+                assert base_model_recover_info.recover_validation, \
+                    'neither recover_val for the base model is stored nor a dummy_input_shape is given'
+                rec_val = self._get_recover_val(base_model_recover_info.recover_validation)
+                dummy_input_shape = rec_val.dummy_input_shape
+
+            rec_val_id = self._save_recover_val(model, dummy_input_shape)
 
         # copy fields from previous model that will stay the same
         code_name = base_model_recover_info.code_name
 
         with tempfile.TemporaryDirectory() as tmp_path:
             code = self._pers_service.recover_file(base_model_recover_info.model_code, tmp_path)
-            recover_info_t1 = self._save_model_t1(model, code, code_name)
+            recover_info_t1 = self._save_model_t1(model, code, code_name, recover_val_id=rec_val_id)
 
         recover_info_id = self._pers_service.save_dict(recover_info_t1.to_dict(), SchemaObjType.RECOVER_T1.value)
 
@@ -173,7 +186,6 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
                 inp_shape = rec_val.dummy_input_shape
                 inference_hash = self._get_inference_hash(model, inp_shape)
                 assert inference_hash == rec_val.inference_hash, 'check inference hash failed'
-
 
         return model
 
