@@ -34,25 +34,31 @@ class AbstractSaveRecoverService(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def save_model(self, model: torch.nn.Module, code: str, code_name: str, recover_val: bool = False,
-                   dummy_input_func: Function = None) -> str:
+                   dummy_input_shape: [int] = None) -> str:
         """
-        TODO docs
         Saves a model together with the given metadata.
         :param model: The actual model to save as an instance of torch.nn.Module.
         :param code: The path to the code of the model (is needed for recover process).
         :param code_name: The name of the model, i.e. the model constructor (is needed for recover process).
+        :param recover_val: Indicates if along with the model itself also information is stored to later validate that
+        restoring the model lead to the exact same model. It is checked by comparing the model weights and the inference
+        result on dummy input. If this flag is true, a dummy_input_shape has to be provided.
+        :param dummy_input_shape: The shape of the dummy input that should be used to produce an inference result.
         :return: Returns the id that was used to store the model.
         """
         raise NotImplementedError
 
     @abc.abstractmethod
     def save_version(self, model: torch.nn.Module, base_model_id: str, recover_val: bool = False,
-                     dummy_input_shape: Function = None) -> str:
+                     dummy_input_shape: [int] = None) -> str:
         """
-        TODO docs + impl
         Saves a new model version by referring to the base_model.
         :param model: The actual model to save as an instance of torch.nn.Module.
         :param base_model_id: the model id of the base_model.
+        :param recover_val: Indicates if along with the model itself also information is stored to later validate that
+        restoring the model lead to the exact same model. It is checked by comparing the model weights and the inference
+        result on dummy input. If this flag is true, a dummy_input_shape has to be provided.
+        :param dummy_input_shape: The shape of the dummy input that should be used to produce an inference result.
         :return: Returns the ID that was used to store the new model version data in the MongoDB.
         """
 
@@ -111,6 +117,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
 
     def save_version(self, model: torch.nn.Module, base_model_id: str, recover_val: bool = False,
                      dummy_input_func: Function = None) -> str:
+        # TODO impl
         base_model_info = self._get_model_info(base_model_id)
         base_model_recover_info = self._get_recover_info_t1(base_model_info)
 
