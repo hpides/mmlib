@@ -9,6 +9,7 @@ from mmlib.equal import model_equal
 from mmlib.persistence import FileSystemMongoPS, DICT
 from mmlib.save import SimpleSaveRecoverService
 from schema.model_info import RECOVER_INFO
+from schema.recover_info_t1 import RECOVER_VAL
 from schema.schema_obj import SchemaObjType
 from tests.networks.mynets.googlenet import googlenet
 from tests.networks.mynets.mobilenet import mobilenet_v2
@@ -189,11 +190,21 @@ class TestSave(unittest.TestCase):
         self.assertEqual(set(model_infos), expected)
 
     def test_model_save_size(self):
+        self._test_model_save_size()
+
+    def test_model_save_size_recover_val(self):
+        self._test_model_save_size(recover_val=True)
+
+    def _test_model_save_size(self, recover_val=False):
         model = resnet18(pretrained=True)
+        if recover_val:
+            model_id = self.save_recover_service.save_model(
+                model, './networks/mynets/resnet18.py', 'resnet18', recover_val=True,
+                dummy_input_shape=[10, 3, 300, 400])
+        else:
+            model_id = self.save_recover_service.save_model(model, './networks/mynets/resnet18.py', 'resnet18')
 
-        model_id = self.save_recover_service.save_model(model, './networks/mynets/resnet18.py', 'resnet18')
         model_id = model_id.replace(DICT, '')
-
         save_size = self.save_recover_service.model_save_size(model_id)
 
         # got from os (macOS finder info)
@@ -202,13 +213,13 @@ class TestSave(unittest.TestCase):
 
         model_info_size = self.mongo_service.document_size(ObjectId(model_id), SchemaObjType.MODEL_INFO.value)
         model_info_dict = self.mongo_service.get_dict(ObjectId(model_id), SchemaObjType.MODEL_INFO.value)
-
         restore_info_id = model_info_dict[RECOVER_INFO].replace(DICT, '')
         restore_dict_size = self.mongo_service.document_size(ObjectId(restore_info_id), SchemaObjType.RECOVER_T1.value)
 
         # for now the size consists of
         #   - dict for model modelInfo
         #   - dict for restore info
+        #   - dict for recoverVal info (ONLY IF SET)
         #   - pickled weights
         #   - code file
         expected_size = \
@@ -216,5 +227,11 @@ class TestSave(unittest.TestCase):
             pickled_weights_size + \
             model_info_size + \
             restore_dict_size
+
+        if recover_val:
+            restore_info = self.mongo_service.get_dict(ObjectId(restore_info_id), SchemaObjType.RECOVER_T1.value)
+            recover_val_id = restore_info[RECOVER_VAL].replace(DICT, '')
+            val_dict_size = self.mongo_service.document_size(ObjectId(recover_val_id), SchemaObjType.RECOVER_VAL.value)
+            expected_size += val_dict_size
 
         self.assertEqual(expected_size, save_size)

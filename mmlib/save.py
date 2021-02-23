@@ -194,6 +194,8 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
             return self._get_model_info_size(obj)
         elif isinstance(obj, RecoverInfoT1):
             return self._get_rec_info_t1_size(obj)
+        elif isinstance(obj, RecoverVal):
+            return self._get_rec_val_size(obj)
         else:
             assert False, 'not implemented'
 
@@ -228,8 +230,14 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         # add size of the metadata (dict) itself
         total_size += self._pers_service.get_dict_size(rec_info.r_id, SchemaObjType.RECOVER_T1.value)
         # add size of all references
-
         total_size += self._ref_objects_size(rec_info)
+
+        return total_size
+
+    def _get_rec_val_size(self, rec_val: RecoverVal):
+        total_size = 0
+        # add size of the metadata (dict) itself, RecoVal does not contain any references
+        total_size += self._pers_service.get_dict_size(rec_val.r_id, SchemaObjType.RECOVER_VAL.value)
 
         return total_size
 
@@ -293,11 +301,12 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         return model
 
     def _save_recover_val(self, model, dummy_input_shape):
+        gen_id = self._pers_service.generate_id()
         weights_hash = state_dict_hash(model.state_dict())
 
         inference_hash = self._get_inference_hash(model, dummy_input_shape)
 
-        recover_val = RecoverVal(weights_hash=weights_hash, inference_hash=inference_hash,
+        recover_val = RecoverVal(r_id=gen_id, weights_hash=weights_hash, inference_hash=inference_hash,
                                  dummy_input_shape=dummy_input_shape)
 
         recover_val_id = self._pers_service.save_dict(recover_val.to_dict(), SchemaObjType.RECOVER_VAL.value)
