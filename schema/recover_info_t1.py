@@ -37,7 +37,6 @@ class RecoverInfoT1(SchemaObj):
             WEIGHTS: self.weights,
             MODEL_CODE: self.model_code,
             CODE_NAME: self.code_name,
-            RECOVER_VAL: self.recover_validation
         }
 
         if self.r_id:
