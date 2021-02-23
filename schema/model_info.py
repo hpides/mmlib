@@ -21,7 +21,7 @@ class ModelInfo(SchemaObj):
         self._type_mapping = {
             ID: SchemaObjType.STRING,
             STORE_TYPE: SchemaObjType.STRING,
-            DERIVED_FROM: SchemaObjType.STRING,  # TODO to specify
+            DERIVED_FROM: SchemaObjType.MODEL_INFO,
             INFERENCE_INFO: SchemaObjType.STRING,  # TODO to specify
             TRAIN_INFO: SchemaObjType.STRING,  # TODO to specify
         }
