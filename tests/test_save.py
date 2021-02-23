@@ -134,6 +134,22 @@ class TestSave(unittest.TestCase):
         self.assertTrue(model_equal(model, restored_model_version1, imagenet_input))
         self.assertFalse(model_equal(restored_model_version1, restored_model_version2, imagenet_input))
 
+    def test_save_restore_model_version_and_recover_val_assert_false(self):
+        set_deterministic()
+        model = resnet18()
+
+        model_id = self.save_recover_service.save_model(
+            model, './networks/mynets/resnet18.py', 'resnet18', recover_val=False
+        )
+
+        set_deterministic()
+        model_version = resnet18()
+        # we expect an exception because the dummy_input_shape is not given and can also not be inferred
+        with self.assertRaises(Exception) as context:
+            model_version1_id = self.save_recover_service.save_version(
+                model_version, base_model_id=model_id, recover_val=True
+            )
+
     def test_get_saved_ids(self):
         expected = []
         model = resnet18()
