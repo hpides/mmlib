@@ -6,7 +6,6 @@ from enum import Enum
 class SchemaObjType(Enum):
     STRING = 'string'
     FILE = 'file'
-    PARAM_LIST = 'parameter_list'
     MODEL_INFO = 'ModelInfo'
     RECOVER_T1 = 'RecoverInfoT1'
     RECOVER_VAL = 'RecoverVal'
