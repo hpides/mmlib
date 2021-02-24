@@ -6,14 +6,15 @@ from bson import ObjectId
 
 from mmlib.deterministic import set_deterministic
 from mmlib.equal import model_equal
-from mmlib.helper import imagenet_input
 from mmlib.persistence import FileSystemMongoPS, DICT
 from mmlib.save import SimpleSaveRecoverService
 from schema.model_info import RECOVER_INFO
+from schema.recover_info_t1 import RECOVER_VAL
 from schema.schema_obj import SchemaObjType
 from tests.networks.mynets.googlenet import googlenet
 from tests.networks.mynets.mobilenet import mobilenet_v2
 from tests.networks.mynets.resnet18 import resnet18
+from util.dummy_data import imagenet_input
 from util.mongo import MongoService
 
 MONGO_CONTAINER_NAME = 'mongo-test'
@@ -94,6 +95,62 @@ class TestSave(unittest.TestCase):
         self.assertTrue(model_equal(model, restored_model_version1, imagenet_input))
         self.assertFalse(model_equal(restored_model_version1, restored_model_version2, imagenet_input))
 
+    def test_save_restore_model_and_recover_val(self):
+        set_deterministic()
+        model = resnet18()
+
+        model_id = self.save_recover_service.save_model(
+            model, './networks/mynets/resnet18.py', 'resnet18', recover_val=True, dummy_input_shape=[10, 3, 300, 400]
+        )
+
+        restored_model = self.save_recover_service.recover_model(model_id, check_recover_val=True)
+
+        self.assertTrue(model_equal(model, restored_model, imagenet_input))
+
+    def test_save_restore_model_version_and_recover_val(self):
+        set_deterministic()
+        model = resnet18()
+
+        model_id = self.save_recover_service.save_model(
+            model, './networks/mynets/resnet18.py', 'resnet18', recover_val=False
+        )
+
+        set_deterministic()
+        model_version = resnet18()
+        model_version1_id = self.save_recover_service.save_version(
+            model_version, base_model_id=model_id, recover_val=True, dummy_input_shape=[10, 3, 300, 400]
+        )
+
+        model_version = resnet18(pretrained=True)
+        # dummy_input_shape should be inferred form base model
+        model_version2_id = self.save_recover_service.save_version(
+            model_version, base_model_id=model_version1_id, recover_val=True
+        )
+
+        restored_model = self.save_recover_service.recover_model(model_id)
+        restored_model_version1 = self.save_recover_service.recover_model(model_version1_id, check_recover_val=True)
+        restored_model_version2 = self.save_recover_service.recover_model(model_version2_id, check_recover_val=True)
+
+        self.assertTrue(model_equal(model, restored_model, imagenet_input))
+        self.assertTrue(model_equal(model, restored_model_version1, imagenet_input))
+        self.assertFalse(model_equal(restored_model_version1, restored_model_version2, imagenet_input))
+
+    def test_save_restore_model_version_and_recover_val_assert_false(self):
+        set_deterministic()
+        model = resnet18()
+
+        model_id = self.save_recover_service.save_model(
+            model, './networks/mynets/resnet18.py', 'resnet18', recover_val=False
+        )
+
+        set_deterministic()
+        model_version = resnet18()
+        # we expect an exception because the dummy_input_shape is not given and can also not be inferred
+        with self.assertRaises(Exception) as context:
+            model_version1_id = self.save_recover_service.save_version(
+                model_version, base_model_id=model_id, recover_val=True
+            )
+
     def test_get_saved_ids(self):
         expected = []
         model = resnet18()
@@ -133,11 +190,21 @@ class TestSave(unittest.TestCase):
         self.assertEqual(set(model_infos), expected)
 
     def test_model_save_size(self):
+        self._test_model_save_size()
+
+    def test_model_save_size_recover_val(self):
+        self._test_model_save_size(recover_val=True)
+
+    def _test_model_save_size(self, recover_val=False):
         model = resnet18(pretrained=True)
+        if recover_val:
+            model_id = self.save_recover_service.save_model(
+                model, './networks/mynets/resnet18.py', 'resnet18', recover_val=True,
+                dummy_input_shape=[10, 3, 300, 400])
+        else:
+            model_id = self.save_recover_service.save_model(model, './networks/mynets/resnet18.py', 'resnet18')
 
-        model_id = self.save_recover_service.save_model(model, './networks/mynets/resnet18.py', 'resnet18')
         model_id = model_id.replace(DICT, '')
-
         save_size = self.save_recover_service.model_save_size(model_id)
 
         # got from os (macOS finder info)
@@ -146,13 +213,13 @@ class TestSave(unittest.TestCase):
 
         model_info_size = self.mongo_service.document_size(ObjectId(model_id), SchemaObjType.MODEL_INFO.value)
         model_info_dict = self.mongo_service.get_dict(ObjectId(model_id), SchemaObjType.MODEL_INFO.value)
-
         restore_info_id = model_info_dict[RECOVER_INFO].replace(DICT, '')
         restore_dict_size = self.mongo_service.document_size(ObjectId(restore_info_id), SchemaObjType.RECOVER_T1.value)
 
         # for now the size consists of
         #   - dict for model modelInfo
         #   - dict for restore info
+        #   - dict for recoverVal info (ONLY IF SET)
         #   - pickled weights
         #   - code file
         expected_size = \
@@ -160,5 +227,11 @@ class TestSave(unittest.TestCase):
             pickled_weights_size + \
             model_info_size + \
             restore_dict_size
+
+        if recover_val:
+            restore_info = self.mongo_service.get_dict(ObjectId(restore_info_id), SchemaObjType.RECOVER_T1.value)
+            recover_val_id = restore_info[RECOVER_VAL].replace(DICT, '')
+            val_dict_size = self.mongo_service.document_size(ObjectId(recover_val_id), SchemaObjType.RECOVER_VAL.value)
+            expected_size += val_dict_size
 
         self.assertEqual(expected_size, save_size)

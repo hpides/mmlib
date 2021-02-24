@@ -21,7 +21,7 @@ class RecoverInfoT1(SchemaObj):
             WEIGHTS: SchemaObjType.FILE,
             MODEL_CODE: SchemaObjType.FILE,
             CODE_NAME: SchemaObjType.STRING,
-            RECOVER_VAL: SchemaObjType.STRING,  # TODO to specify
+            RECOVER_VAL: SchemaObjType.RECOVER_VAL,
         }
 
     def load_dict(self, state_dict):
@@ -37,7 +37,6 @@ class RecoverInfoT1(SchemaObj):
             WEIGHTS: self.weights,
             MODEL_CODE: self.model_code,
             CODE_NAME: self.code_name,
-            RECOVER_VAL: self.recover_validation  # TODO needs implementation
         }
 
         if self.r_id:
