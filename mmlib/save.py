@@ -73,11 +73,12 @@ class AbstractSaveRecoverService(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def recover_model(self, model_id: str, check_recover_val=True) -> torch.nn.Module:
+    def recover_model(self, model_id: str, check_recover_val=False) -> torch.nn.Module:
         """
-        TODO docs
         Recovers a the model identified by the given model id.
         :param model_id: The id to identify the model with.
+        :param check_recover_val: The flag that indicates if the recover validation data (if there) is used to validate
+        the restored model.
         :return: The recovered model as an object of type torch.nn.Module.
         """
 
