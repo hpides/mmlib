@@ -11,6 +11,8 @@ class SchemaObjType(Enum):
     RECOVER_VAL = 'RecoverVal'
     DATASET = 'Dataset'
     TRAIN_INFO = 'TrainInfo'
+    RESTORABLE_OBJ = 'restorable_obj'
+    ENVIRONMENT = 'environment'
 
 
 class SchemaObj(metaclass=abc.ABCMeta):
