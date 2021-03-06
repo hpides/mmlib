@@ -13,6 +13,7 @@ class SchemaObjType(Enum):
     TRAIN_INFO = 'TrainInfo'
     RESTORABLE_OBJ = 'restorable_obj'
     ENVIRONMENT = 'environment'
+    FUNCTION = 'function'
 
 
 class SchemaObj(metaclass=abc.ABCMeta):
