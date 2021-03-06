@@ -7,7 +7,7 @@ DEFAULT = 'default'
 
 
 class Parameter(SchemaObj):
-    def __init__(self, name: str, param_type: str, value: str, default: str):
+    def __init__(self, name: str = None, param_type: str = None, value: str = None, default: str = None):
         self.name = name
         self.param_type = param_type
         self.value = value
