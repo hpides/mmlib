@@ -10,6 +10,7 @@ class SchemaObjType(Enum):
     RECOVER_T1 = 'RecoverInfoT1'
     RECOVER_VAL = 'RecoverVal'
     DATASET = 'Dataset'
+    TRAIN_INFO = 'TrainInfo'
 
 
 class SchemaObj(metaclass=abc.ABCMeta):
