@@ -1,22 +1,30 @@
 import torch
 
 
-class FullModelSafeInfo:
+class RecoverValInfo:
+
+    def __init__(self, recover_val: bool = False, dummy_input_shape: [int] = None):
+        self.recover_val = recover_val
+        self.dummy_input_shape = dummy_input_shape
+
+
+class FullModelSafeInfo(RecoverValInfo):
 
     def __init__(self, model: torch.nn.Module, code: str, code_name: str, recover_val: bool = False,
                  dummy_input_shape: [int] = None):
+        super().__init__(recover_val, dummy_input_shape)
         self.model = model
         self.code = code
         self.code_name = code_name
-        self.recover_val = recover_val
-        self.dummy_input_shape = dummy_input_shape
+
         # TODO need to add inference and train info etc.
 
 
-class FullModelVersionSafeInfo:
+class FullModelVersionSafeInfo(RecoverValInfo):
 
     def __init__(self, model: torch.nn.Module, base_model_id: str, recover_val: bool = False,
                  dummy_input_shape: [int] = None):
+        super().__init__(recover_val, dummy_input_shape)
         self.model = model
         self.base_model_id = base_model_id
         self.recover_val = recover_val
