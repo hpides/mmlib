@@ -3,14 +3,28 @@ import torch
 from mmlib.save_info import FullModelSafeInfo
 
 
-class FullModelSafeInfoBuilder:
+class RecoverValInfoBuilder:
 
     def __init__(self):
+        self.recover_val = False
+        self.dummy_input_shape = None
+
+    def add_recover_val(self, dummy_input_shape: [int] = None):
+        """
+        Indicates that recover validation info should be saved and adds the required info.
+        :param dummy_input_shape: The shape of the dummy input that should be used to produce an inference result.
+        """
+        self.recover_val = True
+        self.dummy_input_shape = dummy_input_shape
+
+
+class FullModelSafeInfoBuilder(RecoverValInfoBuilder):
+
+    def __init__(self):
+        super().__init__()
         self.model = None
         self.code = None
         self.code_name = None
-        self.recover_val = False
-        self.dummy_input_shape = None
 
     def add_model_info(self, model: torch.nn.Module, code: str, code_name: str):
         """
@@ -22,14 +36,6 @@ class FullModelSafeInfoBuilder:
         self.model = model
         self.code = code
         self.code_name = code_name
-
-    def add_recover_val(self, dummy_input_shape: [int] = None):
-        """
-        Indicates that recover validation info should be saved and adds the required info.
-        :param dummy_input_shape: The shape of the dummy input that should be used to produce an inference result.
-        """
-        self.recover_val = True
-        self.dummy_input_shape = dummy_input_shape
 
     def build_full_model_save_info(self) -> FullModelSafeInfo:
         # TODO check if all info is available
