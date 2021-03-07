@@ -10,7 +10,7 @@ from mmlib.persistence import MongoDictPersistenceService, FileSystemPersistence
 from mmlib.save import SimpleSaveRecoverService
 from schema.model_info import RECOVER_INFO
 from schema.recover_info_t1 import RECOVER_VAL
-from schema.save_info_builder import FullModelSafeInfoBuilder
+from schema.save_info_builder import FullModelSafeInfoBuilder, FullModelVersionSafeInfoBuilder
 from schema.schema_obj import SchemaObjType
 from tests.networks.mynets.googlenet import googlenet
 from tests.networks.mynets.mobilenet import mobilenet_v2
@@ -74,7 +74,7 @@ class TestSave(unittest.TestCase):
     def _test_save_restore_model(self, code_file, code_name, model):
         save_info_builder = FullModelSafeInfoBuilder()
         save_info_builder.add_model_info(model, code_file, code_name)
-        save_info = save_info_builder.build_full_model_save_info()
+        save_info = save_info_builder.build()
 
         model_id = self.save_recover_service.save_model(save_info)
         restored_model = self.save_recover_service.recover_model(model_id)
@@ -86,15 +86,22 @@ class TestSave(unittest.TestCase):
 
         save_info_builder = FullModelSafeInfoBuilder()
         save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
-        save_info = save_info_builder.build_full_model_save_info()
+        save_info = save_info_builder.build()
         model_id = self.save_recover_service.save_model(save_info)
 
         set_deterministic()
         model_version = resnet18()
-        model_version1_id = self.save_recover_service.save_version(model_version, base_model_id=model_id)
+        save_version_info_builder = FullModelVersionSafeInfoBuilder()
+        save_version_info_builder.add_model_version_info(model_version, base_model_id=model_id)
+        save_version_info = save_version_info_builder.build()
+
+        model_version1_id = self.save_recover_service.save_version(save_version_info)
 
         model_version = resnet18(pretrained=True)
-        model_version2_id = self.save_recover_service.save_version(model_version, base_model_id=model_version1_id)
+        save_version_info_builder = FullModelVersionSafeInfoBuilder()
+        save_version_info_builder.add_model_version_info(model_version, base_model_id=model_version1_id)
+        save_version_info = save_version_info_builder.build()
+        model_version2_id = self.save_recover_service.save_version(save_version_info)
 
         restored_model = self.save_recover_service.recover_model(model_id)
         restored_model_version1 = self.save_recover_service.recover_model(model_version1_id)
@@ -111,7 +118,7 @@ class TestSave(unittest.TestCase):
         save_info_builder = FullModelSafeInfoBuilder()
         save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
         save_info_builder.add_recover_val(dummy_input_shape=[10, 3, 300, 400])
-        save_info = save_info_builder.build_full_model_save_info()
+        save_info = save_info_builder.build()
 
         model_id = self.save_recover_service.save_model(save_info)
 
@@ -125,20 +132,26 @@ class TestSave(unittest.TestCase):
 
         save_info_builder = FullModelSafeInfoBuilder()
         save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
-        save_info = save_info_builder.build_full_model_save_info()
+        save_info = save_info_builder.build()
         model_id = self.save_recover_service.save_model(save_info)
 
         set_deterministic()
         model_version = resnet18()
-        model_version1_id = self.save_recover_service.save_version(
-            model_version, base_model_id=model_id, recover_val=True, dummy_input_shape=[10, 3, 300, 400]
-        )
+
+        save_version_info_builder = FullModelVersionSafeInfoBuilder()
+        save_version_info_builder.add_model_version_info(model_version, base_model_id=model_id)
+        save_version_info_builder.add_recover_val(dummy_input_shape=[10, 3, 300, 400])
+        save_version_info = save_version_info_builder.build()
+        model_version1_id = self.save_recover_service.save_version(save_version_info)
 
         model_version = resnet18(pretrained=True)
-        # dummy_input_shape should be inferred form base model
-        model_version2_id = self.save_recover_service.save_version(
-            model_version, base_model_id=model_version1_id, recover_val=True
-        )
+
+        save_version_info_builder = FullModelVersionSafeInfoBuilder()
+        save_version_info_builder.add_model_version_info(model_version, base_model_id=model_version1_id)
+        # TODO dummy_input_shape should be inferred form base model
+        save_version_info_builder.add_recover_val(dummy_input_shape=[10, 3, 300, 400])
+        save_version_info = save_version_info_builder.build()
+        model_version2_id = self.save_recover_service.save_version(save_version_info)
 
         restored_model = self.save_recover_service.recover_model(model_id)
         restored_model_version1 = self.save_recover_service.recover_model(model_version1_id, check_recover_val=True)
@@ -154,7 +167,7 @@ class TestSave(unittest.TestCase):
 
         save_info_builder = FullModelSafeInfoBuilder()
         save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
-        save_info = save_info_builder.build_full_model_save_info()
+        save_info = save_info_builder.build()
         model_id = self.save_recover_service.save_model(save_info)
 
         set_deterministic()
@@ -174,7 +187,7 @@ class TestSave(unittest.TestCase):
 
         save_info_builder = FullModelSafeInfoBuilder()
         save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
-        save_info = save_info_builder.build_full_model_save_info()
+        save_info = save_info_builder.build()
         model_id = self.save_recover_service.save_model(save_info)
         expected.append(model_id)
 
@@ -183,7 +196,7 @@ class TestSave(unittest.TestCase):
 
         save_info_builder = FullModelSafeInfoBuilder()
         save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
-        save_info = save_info_builder.build_full_model_save_info()
+        save_info = save_info_builder.build()
         model_id = self.save_recover_service.save_model(save_info)
         expected.append(model_id)
 
@@ -199,7 +212,7 @@ class TestSave(unittest.TestCase):
 
         save_info_builder = FullModelSafeInfoBuilder()
         save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
-        save_info = save_info_builder.build_full_model_save_info()
+        save_info = save_info_builder.build()
         model_id = self.save_recover_service.save_model(save_info)
         expected.add(self.save_recover_service._get_model_info(model_id))
 
@@ -208,7 +221,7 @@ class TestSave(unittest.TestCase):
 
         save_info_builder = FullModelSafeInfoBuilder()
         save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
-        save_info = save_info_builder.build_full_model_save_info()
+        save_info = save_info_builder.build()
         model_id = self.save_recover_service.save_model(save_info)
         expected.add(self.save_recover_service._get_model_info(model_id))
 
@@ -227,12 +240,12 @@ class TestSave(unittest.TestCase):
             save_info_builder = FullModelSafeInfoBuilder()
             save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
             save_info_builder.add_recover_val(dummy_input_shape=[10, 3, 300, 400])
-            save_info = save_info_builder.build_full_model_save_info()
+            save_info = save_info_builder.build()
             model_id = self.save_recover_service.save_model(save_info)
         else:
             save_info_builder = FullModelSafeInfoBuilder()
             save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
-            save_info = save_info_builder.build_full_model_save_info()
+            save_info = save_info_builder.build()
             model_id = self.save_recover_service.save_model(save_info)
 
         model_id = model_id.replace(DICT, '')

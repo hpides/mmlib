@@ -11,7 +11,7 @@ from mmlib.deterministic import set_deterministic
 from mmlib.equal import state_dict_hash, tensor_hash
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from mmlib.persistence import AbstractPersistenceService
-from mmlib.save_info import FullModelSafeInfo
+from mmlib.save_info import FullModelSafeInfo, FullModelVersionSafeInfo
 from schema.model_info import ModelInfo
 from schema.recover_info_t1 import RecoverInfoT1
 from schema.recover_val import RecoverVal
@@ -43,18 +43,12 @@ class AbstractSaveRecoverService(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def save_version(self, model: torch.nn.Module, base_model_id: str, recover_val: bool = False,
-                     dummy_input_shape: [int] = None) -> str:
+    def save_version(self, model_version_info: FullModelVersionSafeInfo) -> str:
         """
         Saves a new model version by referring to the base_model.
-        :param model: The actual model to save as an instance of torch.nn.Module.
-        :param base_model_id: the model id of the base_model.
-        :param recover_val: Indicates if along with the model itself also information is stored to later validate that
-        restoring the model lead to the exact same model. It is checked by comparing the model weights and the inference
-        result on dummy input. If this flag is true, the dummy_input_shape is copied form the base model, if there is no
-        recover_val stored for the base model it must be given as a parameter.
-        :param dummy_input_shape: The shape of the dummy input that should be used to produce an inference result.
-        :return: Returns the ID that was used to store the new model version data in the MongoDB.
+        :param model_version_info: An instance of FullModelVersionSafeInfo providing all info needed to save a full
+        version of a model.
+        :return: Returns the ID that was used to store the new model version.
         """
 
     @abc.abstractmethod
@@ -117,33 +111,33 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
 
         return model_id
 
-    def save_version(self, model: torch.nn.Module, base_model_id: str, recover_val: bool = False,
-                     dummy_input_shape: [int] = None) -> str:
+    def save_version(self, model_version_info: FullModelVersionSafeInfo) -> str:
 
-        base_model_info = self._get_model_info(base_model_id)
+        base_model_info = self._get_model_info(model_version_info.base_model_id)
         base_model_recover_info = self._get_recover_info_t1(base_model_info)
 
         rec_val_id = None
-        if recover_val:
-            if not dummy_input_shape:
+        if model_version_info.recover_val:
+            if not model_version_info.dummy_input_shape:
                 assert base_model_recover_info.recover_validation, \
                     'neither recover_val for the base model is stored nor a dummy_input_shape is given'
                 rec_val = self._get_recover_val(base_model_recover_info.recover_validation)
                 dummy_input_shape = rec_val.dummy_input_shape
 
-            rec_val_id = self._save_recover_val(model, dummy_input_shape)
+            rec_val_id = self._save_recover_val(model_version_info.model, model_version_info.dummy_input_shape)
 
         # copy fields from previous model that will stay the same
         code_name = base_model_recover_info.code_name
 
         with tempfile.TemporaryDirectory() as tmp_path:
             code = self._file_pers_service.recover_file(base_model_recover_info.model_code, tmp_path)
-            recover_info_t1 = self._save_model_t1(model, code, code_name, recover_val_id=rec_val_id)
+            recover_info_t1 = self._save_model_t1(model_version_info.model, code, code_name, recover_val_id=rec_val_id)
 
         recover_info_id = self._dict_pers_service.save_dict(recover_info_t1.to_dict(), SchemaObjType.RECOVER_T1.value)
 
         # TODO(future-work) to implement other fields that are default None
-        model_id = self._save_model_info(SaveType.PICKLED_WEIGHTS.value, recover_info_id, derived_from=base_model_id)
+        model_id = self._save_model_info(SaveType.PICKLED_WEIGHTS.value, recover_info_id,
+                                         derived_from=model_version_info.base_model_id)
 
         return model_id
 
