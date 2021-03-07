@@ -10,6 +10,8 @@ import torch
 from mmlib.deterministic import set_deterministic
 from mmlib.equal import state_dict_hash, tensor_hash
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
+from mmlib.persistence import AbstractPersistenceService
+from mmlib.save_info import FullModelSafeInfo
 from schema.model_info import ModelInfo
 from schema.recover_info_t1 import RecoverInfoT1
 from schema.recover_val import RecoverVal
@@ -32,17 +34,10 @@ class SaveType(Enum):
 class AbstractSaveRecoverService(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def save_model(self, model: torch.nn.Module, code: str, code_name: str, recover_val: bool = False,
-                   dummy_input_shape: [int] = None) -> str:
+    def save_model(self, model_safe_info: FullModelSafeInfo) -> str:
         """
         Saves a model together with the given metadata.
-        :param model: The actual model to save as an instance of torch.nn.Module.
-        :param code: The path to the code of the model (is needed for recover process).
-        :param code_name: The name of the model, i.e. the model constructor (is needed for recover process).
-        :param recover_val: Indicates if along with the model itself also information is stored to later validate that
-        restoring the model lead to the exact same model. It is checked by comparing the model weights and the inference
-        result on dummy input. If this flag is true, a dummy_input_shape has to be provided.
-        :param dummy_input_shape: The shape of the dummy input that should be used to produce an inference result.
+        :param model_safe_info: An instance of FullModelSafeInfo providing all the info needed to save the full model.
         :return: Returns the id that was used to store the model.
         """
         raise NotImplementedError
@@ -105,16 +100,16 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         self._file_pers_service = file_pers_service
         self._dict_pers_service = dict_pers_service
 
-    def save_model(self, model: torch.nn.Module, code: str, code_name: str, recover_val: bool = False,
-                   dummy_input_shape: [int] = None) -> str:
-        if recover_val:
-            assert dummy_input_shape, 'to store recover_val information a dummy input function needs to be provided'
+    def save_model(self, model_safe_info: FullModelSafeInfo) -> str:
+        if model_safe_info.recover_val:
+            assert model_safe_info.dummy_input_shape, 'to store recover_val information a dummy input function needs to be provided'
 
         rec_val_id = None
-        if recover_val:
-            rec_val_id = self._save_recover_val(model, dummy_input_shape)
+        if model_safe_info.recover_val:
+            rec_val_id = self._save_recover_val(model_safe_info.model, model_safe_info.dummy_input_shape)
 
-        recover_info_t1 = self._save_model_t1(model, code, code_name, recover_val_id=rec_val_id)
+        recover_info_t1 = self._save_model_t1(model_safe_info.model, model_safe_info.code, model_safe_info.code_name,
+                                              recover_val_id=rec_val_id)
         recover_info_id = self._dict_pers_service.save_dict(recover_info_t1.to_dict(), SchemaObjType.RECOVER_T1.value)
 
         # TODO(future-work) to implement other fields that are default None
