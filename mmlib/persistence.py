@@ -15,6 +15,31 @@ DICT = 'dict-'
 class AbstractPersistenceService(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
+    def generate_id(self) -> str:
+        """
+        Generates an id as a string.
+        :return: The generated id.
+        """
+
+    @abc.abstractmethod
+    def get_all_ids(self) -> [str]:
+        """
+        Returns all ids that are in use.
+        :return: ids as a list of strings.
+        """
+
+    @abc.abstractmethod
+    def is_valid_id(self, pers_id: str) -> bool:
+        """
+        Checks if the given id is a valid id for the PersistenceService.
+        :param pers_id: The type of the collection to get the ids for.
+        :return: True if the pers_id is valid.
+        """
+
+
+class AbstractDictPersistenceService(AbstractPersistenceService, metaclass=abc.ABCMeta):
+
+    @abc.abstractmethod
     def save_dict(self, insert_dict: dict, represent_type: str) -> str:
         """
         Persists a python dictionary.
@@ -31,6 +56,26 @@ class AbstractPersistenceService(metaclass=abc.ABCMeta):
         :param represent_type: The type of the dict to recover.
         :return: The recovered python dictionary.
         """
+
+    @abc.abstractmethod
+    def dict_size(self, dict_id: str, represent_type: str) -> int:
+        """
+        Calculates and returns the size of a dict in bytes.
+        :param dict_id: The id to identify the dict.
+        :param represent_type: The type of the collection to get the ids for.
+        :return: The dict size in bytes.
+        """
+
+    @abc.abstractmethod
+    def all_ids_for_type(self, represent_type: str) -> [str]:
+        """
+        Returns all ids for a given type.
+        :param represent_type: The type of the collection to get the ids for.
+        :return: all ids as a list of strings
+        """
+
+
+class AbstractFilePersistenceService(AbstractPersistenceService, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def save_file(self, file_path: str) -> str:
@@ -50,51 +95,11 @@ class AbstractPersistenceService(metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def generate_id(self) -> str:
-        """
-        Generates an id as a string.
-        :return: The generated id.
-        """
-
-    @abc.abstractmethod
-    def get_all_dict_ids(self, represent_type: str) -> [str]:
-        """
-        Returns all ids for a given type.
-        :param represent_type: The type of the collection to get the ids for.
-        :return: all ids as a list of strings
-        """
-
-    @abc.abstractmethod
-    def get_dict_size(self, dict_id: str, represent_type: str) -> int:
-        """
-        Calculates and returns the size of a dict in bytes.
-        :param dict_id: The id to identify the dict.
-        :param represent_type: The type of the collection to get the ids for.
-        :return: The dict size in bytes.
-        """
-
-    @abc.abstractmethod
     def get_file_size(self, file_id: str) -> int:
         """
         Calculates and returns the size of a file in bytes.
         :param file_id: The id to identify the file.
         :return: The file size in bytes.
-        """
-
-    @abc.abstractmethod
-    def is_dict_ref(self, field: str) -> bool:
-        """
-        Checks if the given field is a reference to a dictionary.
-        :param field: The field potentially referencing a dict.
-        :return: True if the field is referencing a dict.
-        """
-
-    @abc.abstractmethod
-    def is_file_ref(self, field: str) -> bool:
-        """
-        Checks if the given field is a reference to a file.
-        :param field: The field potentially referencing a file.
-        :return: True if the field is referencing a file.
         """
 
 
