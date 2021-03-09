@@ -1,0 +1,2 @@
+class RestorableObject:
+    pass

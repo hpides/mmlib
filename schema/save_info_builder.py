@@ -1,6 +1,6 @@
 import torch
 
-from mmlib.save_info import FullModelSafeInfo, FullModelVersionSafeInfo
+from mmlib.save_info import FullModelSaveInfo, FullModelVersionSaveInfo
 
 
 class RecoverValInfoBuilder:
@@ -37,9 +37,9 @@ class FullModelSafeInfoBuilder(RecoverValInfoBuilder):
         self._code = code
         self._code_name = code_name
 
-    def build(self) -> FullModelSafeInfo:
+    def build(self) -> FullModelSaveInfo:
         # TODO check if all info is available
-        safe_info = FullModelSafeInfo(self._model, self._code, self._code_name, self._recover_val,
+        safe_info = FullModelSaveInfo(self._model, self._code, self._code_name, self._recover_val,
                                       self._dummy_input_shape)
         return safe_info
 
@@ -59,7 +59,61 @@ class FullModelVersionSafeInfoBuilder(RecoverValInfoBuilder):
         self._model = model
         self._base_model_id = base_model_id
 
-    def build(self) -> FullModelVersionSafeInfo:
-        version_info = FullModelVersionSafeInfo(self._model, self._base_model_id, self._recover_val,
+    def build(self) -> FullModelVersionSaveInfo:
+        version_info = FullModelVersionSaveInfo(self._model, self._base_model_id, self._recover_val,
                                                 self._dummy_input_shape)
         return version_info
+
+
+class DataLoaderSaveInfo:
+
+    def __init__(self):
+        self.data_loader_code = None
+        self.data_loader_class_name = None
+        self.data_loader_state = None
+
+    def add_data_loader_info(self, code: str, class_name: str, state: str):
+        self.data_loader_code = code
+        self.data_loader_class_name = class_name
+        self.data_loader_state = state
+
+
+class PreProcessorSaveInfo:
+
+    def __init__(self):
+        self.pre_processor_code = None
+        self.pre_processor_class_name = None
+        self.pre_processor_state = None
+
+    def add_data_loader_info(self, code: str, class_name: str, state: str):
+        self.pre_processor_code = code
+        self.pre_processor_class_name = class_name
+        self.pre_processor_state = state
+
+
+class DatasetSaveInfo:
+
+    def __init__(self):
+        self.dataset_code = None
+        self.dataset_class_name = None
+        self.dataset_raw_data = None
+        self.dataset_raw_data_size = None
+
+    def add_dataset_save_info(self, dataset_code: str, dataset_class_name: str, dataset_raw_data: str,
+                              dataset_raw_data_size: str):
+        self.dataset_code = dataset_code
+        self.dataset_class_name = dataset_class_name
+        self.dataset_raw_data = dataset_raw_data
+        self.dataset_raw_data_size = dataset_raw_data_size
+
+
+class TrainInfoSaveInfo(DataLoaderSaveInfo, PreProcessorSaveInfo, DatasetSaveInfo):
+
+    def __init__(self):
+        DataLoaderSaveInfo.__init__(self)
+        PreProcessorSaveInfo.__init__(self)
+        DatasetSaveInfo.__init__(self)
+
+
+class ProvenanceVersionSafeInfoBuilder(RecoverValInfoBuilder):
+    pass

@@ -11,7 +11,7 @@ from mmlib.deterministic import set_deterministic
 from mmlib.equal import state_dict_hash, tensor_hash
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from mmlib.persistence import AbstractPersistenceService
-from mmlib.save_info import FullModelSafeInfo, FullModelVersionSafeInfo
+from mmlib.save_info import FullModelSaveInfo, FullModelVersionSaveInfo
 from schema.model_info import ModelInfo
 from schema.recover_info_t1 import RecoverInfoT1
 from schema.recover_val import RecoverVal
@@ -34,7 +34,7 @@ class SaveType(Enum):
 class AbstractSaveRecoverService(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def save_model(self, model_safe_info: FullModelSafeInfo) -> str:
+    def save_model(self, model_safe_info: FullModelSaveInfo) -> str:
         """
         Saves a model together with the given metadata.
         :param model_safe_info: An instance of FullModelSafeInfo providing all the info needed to save the full model.
@@ -43,7 +43,7 @@ class AbstractSaveRecoverService(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def save_version(self, model_version_info: FullModelVersionSafeInfo) -> str:
+    def save_version(self, model_version_info: FullModelVersionSaveInfo) -> str:
         """
         Saves a new model version by referring to the base_model.
         :param model_version_info: An instance of FullModelVersionSafeInfo providing all info needed to save a full
@@ -94,7 +94,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         self._file_pers_service = file_pers_service
         self._dict_pers_service = dict_pers_service
 
-    def save_model(self, model_safe_info: FullModelSafeInfo) -> str:
+    def save_model(self, model_safe_info: FullModelSaveInfo) -> str:
         if model_safe_info.recover_val:
             assert model_safe_info.dummy_input_shape, 'to store recover_val information a dummy input function needs to be provided'
 
@@ -111,7 +111,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
 
         return model_id
 
-    def save_version(self, model_version_info: FullModelVersionSafeInfo) -> str:
+    def save_version(self, model_version_info: FullModelVersionSaveInfo) -> str:
 
         base_model_info = self._get_model_info(model_version_info.base_model_id)
         base_model_recover_info = self._get_recover_info_t1(base_model_info)
