@@ -136,6 +136,9 @@ class FileSystemPersistenceService(AbstractFilePersistenceService):
     def generate_id(self) -> str:
         return '{}{}'.format(FILE, str(ObjectId()))
 
+    def is_file_ref(self, field: str) -> bool:
+        return field.startswith(FILE)
+
     def get_all_ids(self) -> [str]:
         # TODO
         pass
@@ -143,9 +146,6 @@ class FileSystemPersistenceService(AbstractFilePersistenceService):
     def is_valid_id(self, pers_id: str) -> bool:
         # TODO
         pass
-
-    def is_file_ref(self, field: str) -> bool:
-        return field.startswith(FILE)
 
     def _to_internal_file_id(self, file_id):
         return file_id.replace(FILE, '')
@@ -182,6 +182,9 @@ class MongoDictPersistenceService(AbstractDictPersistenceService):
         dict_id = self._to_mongo_dict_id(dict_id)
         return self._mongo_service.document_size(dict_id, represent_type)
 
+    def is_dict_ref(self, field: str) -> bool:
+        return field.startswith(DICT)
+
     def get_all_ids(self) -> [str]:
         # TODO
         pass
@@ -189,9 +192,6 @@ class MongoDictPersistenceService(AbstractDictPersistenceService):
     def is_valid_id(self, pers_id: str) -> bool:
         # TODO
         pass
-
-    def is_dict_ref(self, field: str) -> bool:
-        return field.startswith(DICT)
 
     def _to_mongo_dict_id(self, dict_id):
         return ObjectId(dict_id.replace(DICT, ''))
