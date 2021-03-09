@@ -134,7 +134,7 @@ class FileSystemPersistenceService(AbstractFilePersistenceService):
         return os.path.getsize(file)
 
     def generate_id(self) -> str:
-        return '{}{}'.format(FILE, str(ObjectId()))
+        return str(ObjectId())
 
     def is_file_ref(self, field: str) -> bool:
         return field.startswith(FILE)
@@ -164,7 +164,7 @@ class MongoDictPersistenceService(AbstractDictPersistenceService):
         self._mongo_service = MongoService(host, MMLIB)
 
     def generate_id(self) -> str:
-        return '{}{}'.format(DICT, str(ObjectId()))
+        return str(ObjectId())
 
     def save_dict(self, insert_dict: dict, represent_type: str) -> str:
         mongo_id = self._mongo_service.save_dict(insert_dict, collection=represent_type)

@@ -6,7 +6,7 @@ from bson import ObjectId
 
 from mmlib.deterministic import set_deterministic
 from mmlib.equal import model_equal
-from mmlib.persistence import FileSystemMongoPS, DICT
+from mmlib.persistence import MongoDictPersistenceService, FileSystemPersistenceService, DICT
 from mmlib.save import SimpleSaveRecoverService
 from schema.model_info import RECOVER_INFO
 from schema.recover_info_t1 import RECOVER_VAL
@@ -33,8 +33,9 @@ class TestSave(unittest.TestCase):
         self.mongo_service = MongoService('127.0.0.1', 'mmlib')
 
         os.mkdir(self.abs_tmp_path)
-        pers_service = FileSystemMongoPS(self.tmp_path)
-        self.save_recover_service = SimpleSaveRecoverService(pers_service)
+        file_pers_service = FileSystemPersistenceService(self.tmp_path)
+        dict_pers_service = MongoDictPersistenceService()
+        self.save_recover_service = SimpleSaveRecoverService(file_pers_service, dict_pers_service)
 
     def tearDown(self) -> None:
         self.__clean_up()
