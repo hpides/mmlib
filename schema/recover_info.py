@@ -20,6 +20,7 @@ REPRESENT_TYPE = 'recover_info'
 
 class FullModelRecoverInfo(AbstractRecoverInfo):
 
+
     def __init__(self, weights_file_path: str, model_code_file_path, model_class_name: str,
                  store_id: str = None, recover_validation: RecoverVal = None):
         self.store_id = store_id
@@ -54,16 +55,16 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService):
+             dict_pers_service: AbstractDictPersistenceService, restore_root: str):
 
         restored_dict = dict_pers_service.recover_dict(obj_id, REPRESENT_TYPE)
 
         store_id = restored_dict[ID]
         weights_file_id = restored_dict[WEIGHTS]
         # TODO think about where to store files
-        weights_file_path = file_pers_service.recover_file(weights_file_id)
+        weights_file_path = file_pers_service.recover_file(weights_file_id, restore_root)
         model_code_file_id = restored_dict[MODEL_CODE]
-        model_code_file_path = file_pers_service.recover_file(model_code_file_id)
+        model_code_file_path = file_pers_service.recover_file(model_code_file_id, restore_root)
         model_class_name = restored_dict[MODEL_CLASS_NAME]
 
         recover_validation = None

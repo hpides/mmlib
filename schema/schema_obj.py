@@ -31,12 +31,13 @@ class SchemaObj(metaclass=abc.ABCMeta):
     @classmethod
     @abc.abstractmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService):
+             dict_pers_service: AbstractDictPersistenceService, restore_root: str):
         """
         Loads the schema object from database/disk.
         :param obj_id: The identifier for the SchemaObj in the database/disk.
         :param file_pers_service: An instance of AbstractFilePersistenceService that is used to store files.
         :param dict_pers_service: An instance of AbstractDictPersistenceService that is used to store metadata as dicts.
+        :param restore_root: The path where restored files are stored to.
         """
         pass
 

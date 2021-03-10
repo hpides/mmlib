@@ -35,7 +35,7 @@ class RecoverVal(SchemaObj):
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService):
+             dict_pers_service: AbstractDictPersistenceService, restore_root: str):
         restored_dict = dict_pers_service.recover_dict(obj_id, REPRESENT_TYPE)
         store_id = restored_dict[ID]
         weights_hash = restored_dict[WEIGHTS_HASH]

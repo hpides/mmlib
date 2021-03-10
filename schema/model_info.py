@@ -54,7 +54,7 @@ class ModelInfo(SchemaObj):
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService):
+             dict_pers_service: AbstractDictPersistenceService, restore_root: str):
 
         restored_dict = dict_pers_service.recover_dict(obj_id, REPRESENT_TYPE)
 
@@ -62,7 +62,7 @@ class ModelInfo(SchemaObj):
         store_type = restored_dict[STORE_TYPE]
 
         recover_info_id = restored_dict[RECOVER_INFO_ID]
-        recover_info = AbstractRecoverInfo.load(recover_info_id, file_pers_service, dict_pers_service)
+        recover_info = AbstractRecoverInfo.load(recover_info_id, file_pers_service, dict_pers_service, restore_root)
 
         # optional fields
         derived_from_id = restored_dict[DERIVED_FROM] if DERIVED_FROM in restored_dict else None
@@ -71,11 +71,11 @@ class ModelInfo(SchemaObj):
 
         if INFERENCE_INFO_ID in restored_dict:
             inference_info_id = restored_dict[INFERENCE_INFO_ID]
-            inference_info = InferenceInfo.load(inference_info_id, file_pers_service, dict_pers_service)
+            inference_info = InferenceInfo.load(inference_info_id, file_pers_service, dict_pers_service, restore_root)
 
         if TRAIN_INFO_ID in restored_dict:
             train_info_id = restored_dict[TRAIN_INFO_ID]
-            train_info = TrainInfo.load(train_info_id, file_pers_service, dict_pers_service)
+            train_info = TrainInfo.load(train_info_id, file_pers_service, dict_pers_service, restore_root)
 
         return cls(store_type=store_type, recover_info=recover_info, store_id=obj_id, derived_from_id=derived_from_id,
                    inference_info=inference_info, train_info=train_info)
