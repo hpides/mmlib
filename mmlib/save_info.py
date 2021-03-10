@@ -1,5 +1,6 @@
 import torch
 
+from schema.RestorableObject import RestorableObject
 from schema.dataset import Dataset
 
 
@@ -12,10 +13,11 @@ class RecoverValInfo:
 
 class RestorableObjectSaveInfo:
 
-    def __init__(self, code: str, class_name:str, state:str):
+    def __init__(self, code: str, class_name: str, state: str):
         self.code = code
         self.class_name = class_name
         self.state = state
+
 
 class DataLoaderSavaInfo(RestorableObjectSaveInfo):
 
@@ -25,12 +27,11 @@ class DataLoaderSavaInfo(RestorableObjectSaveInfo):
 
 class TrainInfo:
 
-    def __init__(self, data_loader_code: str, data_loader
-                 pre_processor: RestorableObject, dataset:Dataset):
+    def __init__(self, data_loader_code: str, data_loader,
+                 pre_processor: RestorableObject, dataset: Dataset):
         # TODO fix adding info for schema objects
         self.data_loader = data_loader
         self.pre_processor = pre_processor
-
 
 
 class FullModelSaveInfo(RecoverValInfo):
