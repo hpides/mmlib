@@ -39,9 +39,9 @@ class FullModelSafeInfoBuilder(RecoverValInfoBuilder):
 
     def build(self) -> FullModelSaveInfo:
         # TODO check if all info is available
-        safe_info = FullModelSaveInfo(self._model, self._code, self._code_name, self._recover_val,
+        save_info = FullModelSaveInfo(self._model, self._code, self._code_name, self._recover_val,
                                       self._dummy_input_shape)
-        return safe_info
+        return save_info
 
 
 class FullModelVersionSafeInfoBuilder(RecoverValInfoBuilder):
