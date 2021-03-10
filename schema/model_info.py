@@ -48,6 +48,9 @@ class ModelInfo(SchemaObj):
         if self.train_info:
             dict_representation[TRAIN_INFO_ID] = self.derived_from
 
+        dict_id = dict_pers_service.save_dict(dict_representation, REPRESENT_TYPE)
+        assert dict_id == self.store_id, 'ids should be the same'
+
         return self.store_id
 
     @classmethod
