@@ -12,7 +12,7 @@ class AbstractRecoverInfo(SchemaObj, metaclass=abc.ABCMeta):
 ID = 'id'
 WEIGHTS = 'weights'
 MODEL_CODE = 'model_code'
-CODE_NAME = 'code_name'
+MODEL_CLASS_NAME = 'model_class_name'
 RECOVER_VAL = 'recover_val'
 
 REPRESENT_TYPE = 'recover_info'
@@ -20,7 +20,7 @@ REPRESENT_TYPE = 'recover_info'
 
 class FullModelRecoverInfo(AbstractRecoverInfo):
 
-    def __init__(self, weights_file_path: str = None, model_code_file_path: str = None, model_class_name: str = None,
+    def __init__(self, weights_file_path: str, model_code_file_path, model_class_name: str,
                  store_id: str = None, recover_validation: RecoverVal = None):
         self.store_id = store_id
         self.weights_file_path = weights_file_path
@@ -42,7 +42,7 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
             ID: self.store_id,
             WEIGHTS: weights_id,
             MODEL_CODE: model_code_id,
-            CODE_NAME: recover_val_id,
+            MODEL_CLASS_NAME: recover_val_id,
         }
 
         if self.recover_validation:
@@ -56,4 +56,21 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
              dict_pers_service: AbstractDictPersistenceService):
-        pass
+
+        restored_dict = dict_pers_service.recover_dict(obj_id, REPRESENT_TYPE)
+
+        store_id = restored_dict[ID]
+        weights_file_id = restored_dict[WEIGHTS]
+        # TODO think about where to store files
+        weights_file_path = file_pers_service.recover_file(weights_file_id)
+        model_code_file_id = restored_dict[MODEL_CODE]
+        model_code_file_path = file_pers_service.recover_file(model_code_file_id)
+        model_class_name = restored_dict[MODEL_CLASS_NAME]
+
+        recover_validation = None
+        if RECOVER_VAL in restored_dict:
+            recover_val_id = restored_dict[RECOVER_VAL]
+            recover_validation = RecoverVal.load(recover_val_id, file_pers_service, dict_pers_service)
+
+        return cls(weights_file_path=weights_file_path, model_code_file_path=model_code_file_path,
+                   model_class_name=model_class_name, store_id=store_id, recover_validation=recover_validation)
