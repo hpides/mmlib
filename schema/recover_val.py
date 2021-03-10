@@ -1,44 +1,27 @@
-from schema.function import Function
-from schema.schema_obj import SchemaObj, SchemaObjType
+from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
+from schema.schema_obj import SchemaObj
 
 ID = 'id'
 WEIGHTS_HASH = 'weights_hash'
 INFERENCE_HASH = 'inference_hash'
 DUMMY_INPUT_SHAPE = 'dummy_input_shape'
 
+REPRESENT_TYPE = 'recover_val'
+
 
 class RecoverVal(SchemaObj):
 
-    def __init__(self, r_id: str = None, weights_hash: str = None, inference_hash: str = None,
-                 dummy_input_shape: [int] = None):
-        self.r_id = r_id
+    def __init__(self, weights_hash: str, inference_hash:, dummy_input_shape: [int], store_id: str = None):
+        self.store_id = store_id
         self.weights_hash = weights_hash
         self.inference_hash = inference_hash
         self.dummy_input_shape = dummy_input_shape
-        self._type_mapping = {
-            ID: SchemaObjType.STRING,
-            WEIGHTS_HASH: SchemaObjType.STRING,
-            INFERENCE_HASH: SchemaObjType.STRING,
-            DUMMY_INPUT_SHAPE: SchemaObjType.STRING,
-        }
 
-    def to_dict(self) -> dict:
-        recover_val = {
-            WEIGHTS_HASH: self.weights_hash,
-            INFERENCE_HASH: self.inference_hash,
-            DUMMY_INPUT_SHAPE: self.dummy_input_shape,
-        }
+    def persist(self, file_pers_service: AbstractFilePersistenceService,
+                dict_pers_service: AbstractDictPersistenceService) -> str:
+        pass
 
-        if self.r_id:
-            recover_val[ID] = self.r_id
-
-        return recover_val
-
-    def load_dict(self, state_dict: dict):
-        self.r_id = state_dict[ID] if ID in state_dict else None
-        self.weights_hash = state_dict[WEIGHTS_HASH]
-        self.inference_hash = state_dict[INFERENCE_HASH]
-        self.dummy_input_shape = state_dict[DUMMY_INPUT_SHAPE]
-
-    def get_type(self, dict_key) -> SchemaObjType:
-        return self._type_mapping[dict_key]
+    @classmethod
+    def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
+             dict_pers_service: AbstractDictPersistenceService):
+        pass
