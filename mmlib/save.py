@@ -9,7 +9,7 @@ import torch
 
 from mmlib.deterministic import set_deterministic
 from mmlib.equal import state_dict_hash, tensor_hash
-from mmlib.persistence import AbstractPersistenceService
+from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.model_info import ModelInfo
 from schema.recover_info_t1 import RecoverInfoT1
 from schema.recover_val import RecoverVal
@@ -96,11 +96,14 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
     """A Service that offers functionality to store PyTorch models by making use of a persistence service.
      The metadata is stored in JSON like dictionaries, files and weights are stored as files."""
 
-    def __init__(self, persistence_service: AbstractPersistenceService):
+    def __init__(self, file_pers_service: AbstractFilePersistenceService,
+                 dict_pers_service: AbstractDictPersistenceService):
         """
-        :param persistence_service: An instance of AbstractPersistenceService that is used to store metadata and files.
+        :param file_pers_service: An instance of AbstractFilePersistenceService that is used to store files.
+        :param dict_pers_service: An instance of AbstractDictPersistenceService that is used to store metadata as dicts.
         """
-        self._pers_service = persistence_service
+        self._file_pers_service = file_pers_service
+        self._dict_pers_service = dict_pers_service
 
     def save_model(self, model: torch.nn.Module, code: str, code_name: str, recover_val: bool = False,
                    dummy_input_shape: [int] = None) -> str:
@@ -112,7 +115,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
             rec_val_id = self._save_recover_val(model, dummy_input_shape)
 
         recover_info_t1 = self._save_model_t1(model, code, code_name, recover_val_id=rec_val_id)
-        recover_info_id = self._pers_service.save_dict(recover_info_t1.to_dict(), SchemaObjType.RECOVER_T1.value)
+        recover_info_id = self._dict_pers_service.save_dict(recover_info_t1.to_dict(), SchemaObjType.RECOVER_T1.value)
 
         # TODO(future-work) to implement other fields that are default None
         model_id = self._save_model_info(SaveType.PICKLED_WEIGHTS.value, recover_info_id)
@@ -139,10 +142,10 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         code_name = base_model_recover_info.code_name
 
         with tempfile.TemporaryDirectory() as tmp_path:
-            code = self._pers_service.recover_file(base_model_recover_info.model_code, tmp_path)
+            code = self._file_pers_service.recover_file(base_model_recover_info.model_code, tmp_path)
             recover_info_t1 = self._save_model_t1(model, code, code_name, recover_val_id=rec_val_id)
 
-        recover_info_id = self._pers_service.save_dict(recover_info_t1.to_dict(), SchemaObjType.RECOVER_T1.value)
+        recover_info_id = self._dict_pers_service.save_dict(recover_info_t1.to_dict(), SchemaObjType.RECOVER_T1.value)
 
         # TODO(future-work) to implement other fields that are default None
         model_id = self._save_model_info(SaveType.PICKLED_WEIGHTS.value, recover_info_id, derived_from=base_model_id)
@@ -150,7 +153,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         return model_id
 
     def saved_model_ids(self) -> [str]:
-        return self._pers_service.get_all_dict_ids(SchemaObjType.MODEL_INFO.value)
+        return self._dict_pers_service.all_ids_for_type(SchemaObjType.MODEL_INFO.value)
 
     def saved_model_infos(self) -> [dict]:
         model_ids = self.saved_model_ids()
@@ -167,11 +170,11 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
 
         with tempfile.TemporaryDirectory() as tmp_path:
             code_id = recover_info_t1.model_code
-            code = self._pers_service.recover_file(code_id, tmp_path)
+            code = self._file_pers_service.recover_file(code_id, tmp_path)
             generate_call = recover_info_t1.code_name
             model = self._init_model(code, generate_call)
 
-            weights_file = self._pers_service.recover_file(weights_file_id, tmp_path)
+            weights_file = self._file_pers_service.recover_file(weights_file_id, tmp_path)
             s_dict = self._recover_pickled_weights(weights_file, tmp_path)
             model.load_state_dict(s_dict)
 
@@ -203,7 +206,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
     def _get_model_info_size(self, model_info: ModelInfo):
         total_size = 0
         # add size of the metadata (dict) itself
-        total_size += self._pers_service.get_dict_size(model_info.m_id, SchemaObjType.MODEL_INFO.value)
+        total_size += self._dict_pers_service.dict_size(model_info.m_id, SchemaObjType.MODEL_INFO.value)
         # add size of all references
         model_info_dict = self._get_model_info(model_info.m_id).to_dict()
         # TODO(future-work) keep in mind that we dont want to include the size of "derived from"
@@ -219,7 +222,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
             k_type = root_object.get_type(k)
             if not k_type == SchemaObjType.STRING:
                 if k_type == SchemaObjType.FILE:
-                    total_size += self._pers_service.get_file_size(v)
+                    total_size += self._file_pers_service.file_size(v)
                 else:
                     schema_obj = self._recover_schema_obj(v, k_type)
                     total_size += self._get_save_size(schema_obj)
@@ -229,7 +232,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
     def _get_rec_info_t1_size(self, rec_info: RecoverInfoT1):
         total_size = 0
         # add size of the metadata (dict) itself
-        total_size += self._pers_service.get_dict_size(rec_info.r_id, SchemaObjType.RECOVER_T1.value)
+        total_size += self._dict_pers_service.dict_size(rec_info.r_id, SchemaObjType.RECOVER_T1.value)
         # add size of all references
         total_size += self._ref_objects_size(rec_info)
 
@@ -238,23 +241,23 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
     def _get_rec_val_size(self, rec_val: RecoverVal):
         total_size = 0
         # add size of the metadata (dict) itself, RecoVal does not contain any references
-        total_size += self._pers_service.get_dict_size(rec_val.r_id, SchemaObjType.RECOVER_VAL.value)
+        total_size += self._dict_pers_service.dict_size(rec_val.r_id, SchemaObjType.RECOVER_VAL.value)
 
         return total_size
 
     def _save_model_info(self, store_type, recover_info_id, derived_from=None, inference_info=None, train_info=None):
-        gen_id = self._pers_service.generate_id()
+        gen_id = self._dict_pers_service.generate_id()
         model_info = ModelInfo(m_id=gen_id, store_type=store_type, recover_info=recover_info_id,
                                derived_from=derived_from, inference_info=inference_info, train_info=train_info)
-        model_id = self._pers_service.save_dict(model_info.to_dict(), SchemaObjType.MODEL_INFO.value)
+        model_id = self._dict_pers_service.save_dict(model_info.to_dict(), SchemaObjType.MODEL_INFO.value)
         return model_id
 
     def _save_model_t1(self, model, code, code_name, recover_val_id=None):
-        gen_id = self._pers_service.generate_id()
+        gen_id = self._dict_pers_service.generate_id()
         with tempfile.TemporaryDirectory() as tmp_path:
             zip_file = self._pickle_weights(model, tmp_path)
-            zip_file_id = self._pers_service.save_file(zip_file)
-            code_file_id = self._pers_service.save_file(code)
+            zip_file_id = self._file_pers_service.save_file(zip_file)
+            code_file_id = self._file_pers_service.save_file(code)
 
         recover_info_t1 = RecoverInfoT1(r_id=gen_id, weights=zip_file_id, model_code=code_file_id, code_name=code_name,
                                         recover_validation=recover_val_id)
@@ -273,7 +276,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
 
     def _recover_schema_obj(self, obj_id: str, obj_type: SchemaObjType):
         s_obj = eval('{}()'.format(obj_type.value))
-        state_dict = self._pers_service.recover_dict(obj_id, obj_type.value)
+        state_dict = self._dict_pers_service.recover_dict(obj_id, obj_type.value)
         s_obj.load_dict(state_dict)
 
         return s_obj
@@ -302,7 +305,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         return model
 
     def _save_recover_val(self, model, dummy_input_shape):
-        gen_id = self._pers_service.generate_id()
+        gen_id = self._dict_pers_service.generate_id()
         weights_hash = state_dict_hash(model.state_dict())
 
         inference_hash = self._get_inference_hash(model, dummy_input_shape)
@@ -310,7 +313,7 @@ class SimpleSaveRecoverService(AbstractSaveRecoverService):
         recover_val = RecoverVal(r_id=gen_id, weights_hash=weights_hash, inference_hash=inference_hash,
                                  dummy_input_shape=dummy_input_shape)
 
-        recover_val_id = self._pers_service.save_dict(recover_val.to_dict(), SchemaObjType.RECOVER_VAL.value)
+        recover_val_id = self._dict_pers_service.save_dict(recover_val.to_dict(), SchemaObjType.RECOVER_VAL.value)
 
         return recover_val_id
 
