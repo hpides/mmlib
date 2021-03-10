@@ -1,61 +1,79 @@
-from schema.schema_obj import SchemaObj, SchemaObjType
+from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
+from mmlib.save_info import TrainInfo
+from schema.inference_info import InferenceInfo
+from schema.recover_info import AbstractRecoverInfo
+from schema.schema_obj import SchemaObj
 
 ID = 'id'
 STORE_TYPE = 'store_type'
-RECOVER_INFO = 'recover_info'
+RECOVER_INFO_ID = 'recover_info_id'
 DERIVED_FROM = 'derived_from'
-INFERENCE_INFO = 'inference_info'
-TRAIN_INFO = 'train_info'
+INFERENCE_INFO_ID = 'inference_info_id'
+TRAIN_INFO_ID = 'train_info_id'
+
+REPRESENT_TYPE = 'model_info'
 
 
 class ModelInfo(SchemaObj):
 
-    def __init__(self, m_id: str = None, store_type: str = None, recover_info: str = None, derived_from: str = None,
-                 inference_info: str = None, train_info: str = None):
-        self.m_id = m_id
+    def __init__(self, store_type: str, recover_info: AbstractRecoverInfo, store_id: str = None,
+                 derived_from_id: str = None, inference_info: str = None, train_info: str = None):
+        self.store_id = store_id
         self.store_type = store_type
         self.recover_info = recover_info
-        self.derived_from = derived_from
+        self.derived_from = derived_from_id
         self.inference_info = inference_info
         self.train_info = train_info
-        self._type_mapping = {
-            ID: SchemaObjType.STRING,
-            STORE_TYPE: SchemaObjType.STRING,
-            DERIVED_FROM: SchemaObjType.MODEL_INFO,
-            INFERENCE_INFO: SchemaObjType.STRING,  # TODO to specify
-            TRAIN_INFO: SchemaObjType.STRING,  # TODO to specify
-        }
 
-    def load_dict(self, state_dict):
-        self.m_id = state_dict[ID] if ID in state_dict else None
-        self.store_type = state_dict[STORE_TYPE]
-        self.recover_info = state_dict[RECOVER_INFO]
-        self.derived_from = state_dict[DERIVED_FROM] if DERIVED_FROM in state_dict else None
-        self.inference_info = state_dict[INFERENCE_INFO] if INFERENCE_INFO in state_dict else None
-        self.train_info = state_dict[TRAIN_INFO] if TRAIN_INFO in state_dict else None
+    def persist(self, file_pers_service: AbstractFilePersistenceService,
+                dict_pers_service: AbstractDictPersistenceService) -> str:
 
-    def to_dict(self):
-        model_info = {
+        if not self.store_id:
+            self.store_id = dict_pers_service.generate_id()
+
+        recover_info_id = self.recover_info.persist(file_pers_service, dict_pers_service)
+
+        # add mandatory fields
+        dict_representation = {
+            ID: self.store_id,
             STORE_TYPE: self.store_type,
-            RECOVER_INFO: self.recover_info,
+            RECOVER_INFO_ID: recover_info_id,
         }
 
-        if self.m_id:
-            model_info[ID] = self.m_id
+        # add optional fields if set
         if self.derived_from:
-            model_info[DERIVED_FROM] = self.derived_from
+            dict_representation[DERIVED_FROM] = self.derived_from
         if self.inference_info:
-            model_info[INFERENCE_INFO] = self.derived_from
+            dict_representation[INFERENCE_INFO_ID] = self.derived_from
         if self.train_info:
-            model_info[TRAIN_INFO] = self.derived_from
+            dict_representation[TRAIN_INFO_ID] = self.derived_from
 
-        return model_info
+        return self.store_id
 
-    def get_type(self, dict_key) -> SchemaObjType:
-        if dict_key == RECOVER_INFO:
-            if self.store_type == '1':
-                return SchemaObjType.RECOVER_T1
-            else:
-                assert False, 'not implemented yet'
-        else:
-            return self._type_mapping[dict_key]
+    @classmethod
+    def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
+             dict_pers_service: AbstractDictPersistenceService):
+
+        restored_dict = dict_pers_service.recover_dict(obj_id, REPRESENT_TYPE)
+
+        # mandatory fields
+        store_type = restored_dict[STORE_TYPE]
+
+        recover_info_id = restored_dict[RECOVER_INFO_ID]
+        recover_info = AbstractRecoverInfo.load(recover_info_id, file_pers_service, dict_pers_service)
+
+        # optional fields
+        derived_from_id = restored_dict[DERIVED_FROM] if DERIVED_FROM in restored_dict else None
+        inference_info = None
+        train_info = None
+
+        if INFERENCE_INFO_ID in restored_dict:
+            inference_info_id = restored_dict[INFERENCE_INFO_ID]
+            inference_info = InferenceInfo.load(inference_info_id, file_pers_service, dict_pers_service)
+
+        if TRAIN_INFO_ID in restored_dict:
+            train_info_id = restored_dict[TRAIN_INFO_ID]
+            train_info = TrainInfo.load(train_info_id, file_pers_service, dict_pers_service)
+
+        return cls(store_type=store_type, recover_info=recover_info, store_id=obj_id, derived_from_id=derived_from_id,
+                   inference_info=inference_info, train_info=train_info)
