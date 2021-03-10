@@ -4,6 +4,13 @@ from schema.RestorableObject import RestorableObject
 from schema.dataset import Dataset
 
 
+class ModelSaveInfo:
+    pass
+
+class ModelRestoreInfo:
+    pass
+
+
 class RecoverValInfo:
 
     def __init__(self, recover_val: bool = False, dummy_input_shape: [int] = None):
