@@ -83,7 +83,9 @@ class BaselineSaveService(AbstractSaveService):
             s_dict = self._recover_pickled_weights(recover_info.weights_file_path)
             model.load_state_dict(s_dict)
 
-        return model
+            restored_model_info = RestoredModelInfo(model)
+
+        return restored_model_info
 
     def _check_consistency(self, model_save_info):
         if model_save_info.recover_val:

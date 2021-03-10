@@ -76,8 +76,8 @@ class TestSave(unittest.TestCase):
         save_info = save_info_builder.build()
 
         model_id = self.save_recover_service.save_model(save_info)
-        restored_model = self.save_recover_service.recover_model(model_id)
-        self.assertTrue(model_equal(model, restored_model, imagenet_input))
+        restored_model_info = self.save_recover_service.recover_model(model_id)
+        self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
 
     def test_save_restore_model_version(self):
         set_deterministic()
@@ -90,14 +90,14 @@ class TestSave(unittest.TestCase):
 
         set_deterministic()
         model_version = resnet18()
-        save_version_info_builder = FullModelVersionSafeInfoBuilder()
-        save_version_info_builder.add_model_version_info(model_version, base_model_id=model_id)
+        save_version_info_builder = ModelSaveInfoBuilder()
+        save_version_info_builder.add_model_info(model_version, base_model_id=)
         save_version_info = save_version_info_builder.build()
 
         model_version1_id = self.save_recover_service.save_version(save_version_info)
 
         model_version = resnet18(pretrained=True)
-        save_version_info_builder = FullModelVersionSafeInfoBuilder()
+        save_version_info_builder = ModelSaveInfoBuilder()
         save_version_info_builder.add_model_version_info(model_version, base_model_id=model_version1_id)
         save_version_info = save_version_info_builder.build()
         model_version2_id = self.save_recover_service.save_version(save_version_info)
