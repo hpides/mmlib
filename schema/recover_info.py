@@ -20,7 +20,6 @@ REPRESENT_TYPE = 'recover_info'
 
 class FullModelRecoverInfo(AbstractRecoverInfo):
 
-
     def __init__(self, weights_file_path: str, model_code_file_path, model_class_name: str,
                  store_id: str = None, recover_validation: RecoverVal = None):
         self.store_id = store_id
@@ -37,16 +36,16 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
 
         weights_id = file_pers_service.save_file(self.weights_file_path)
         model_code_id = file_pers_service.save_file(self.model_code_file_path)
-        recover_val_id = self.recover_validation.persist(file_pers_service, dict_pers_service)
 
         dict_representation = {
             ID: self.store_id,
             WEIGHTS: weights_id,
             MODEL_CODE: model_code_id,
-            MODEL_CLASS_NAME: recover_val_id,
+            MODEL_CLASS_NAME: self.model_class_name
         }
 
         if self.recover_validation:
+            recover_val_id = self.recover_validation.persist(file_pers_service, dict_pers_service)
             dict_representation[RECOVER_VAL] = recover_val_id
 
         dict_pers_service.save_dict(dict_representation, REPRESENT_TYPE)

@@ -1,8 +1,8 @@
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
-from mmlib.save_info import TrainInfo
 from schema.inference_info import InferenceInfo
-from schema.recover_info import AbstractRecoverInfo
+from schema.recover_info import AbstractRecoverInfo, FullModelRecoverInfo
 from schema.schema_obj import SchemaObj
+from schema.store_type import ModelStoreType
 
 ID = 'id'
 STORE_TYPE = 'store_type'
@@ -16,7 +16,7 @@ REPRESENT_TYPE = 'model_info'
 
 class ModelInfo(SchemaObj):
 
-    def __init__(self, store_type: str, recover_info: AbstractRecoverInfo, store_id: str = None,
+    def __init__(self, store_type: ModelStoreType, recover_info: AbstractRecoverInfo, store_id: str = None,
                  derived_from_id: str = None, inference_info: str = None, train_info: str = None):
         self.store_id = store_id
         self.store_type = store_type
@@ -36,7 +36,7 @@ class ModelInfo(SchemaObj):
         # add mandatory fields
         dict_representation = {
             ID: self.store_id,
-            STORE_TYPE: self.store_type,
+            STORE_TYPE: self.store_type.value,
             RECOVER_INFO_ID: recover_info_id,
         }
 
@@ -59,10 +59,15 @@ class ModelInfo(SchemaObj):
         restored_dict = dict_pers_service.recover_dict(obj_id, REPRESENT_TYPE)
 
         # mandatory fields
-        store_type = restored_dict[STORE_TYPE]
+        store_type = ModelStoreType(restored_dict[STORE_TYPE])
 
         recover_info_id = restored_dict[RECOVER_INFO_ID]
-        recover_info = AbstractRecoverInfo.load(recover_info_id, file_pers_service, dict_pers_service, restore_root)
+
+        recover_info = None
+        if store_type == ModelStoreType.PICKLED_WEIGHTS:
+            recover_info = FullModelRecoverInfo.load(recover_info_id, file_pers_service, dict_pers_service, restore_root)
+        else:
+            assert 'Not implemented yet'
 
         # optional fields
         derived_from_id = restored_dict[DERIVED_FROM] if DERIVED_FROM in restored_dict else None

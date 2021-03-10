@@ -7,10 +7,9 @@ from bson import ObjectId
 from mmlib.deterministic import set_deterministic
 from mmlib.equal import model_equal
 from mmlib.persistence import MongoDictPersistenceService, FileSystemPersistenceService, DICT
-from mmlib.save import SimpleSaveRecoverService
-from schema.model_info import RECOVER_INFO
-from schema.recover_info_t1 import RECOVER_VAL
-from schema.save_info_builder import FullModelSafeInfoBuilder, FullModelVersionSafeInfoBuilder
+from mmlib.save import BaselineSaveService
+from schema.model_info import RECOVER_INFO_ID
+from schema.save_info_builder import ModelSaveInfoBuilder
 from schema.schema_obj import SchemaObjType
 from tests.networks.mynets.googlenet import googlenet
 from tests.networks.mynets.mobilenet import mobilenet_v2
@@ -36,7 +35,7 @@ class TestSave(unittest.TestCase):
         os.mkdir(self.abs_tmp_path)
         file_pers_service = FileSystemPersistenceService(self.tmp_path)
         dict_pers_service = MongoDictPersistenceService()
-        self.save_recover_service = SimpleSaveRecoverService(file_pers_service, dict_pers_service)
+        self.save_recover_service = BaselineSaveService(file_pers_service, dict_pers_service)
 
     def tearDown(self) -> None:
         self.__clean_up()
@@ -72,7 +71,7 @@ class TestSave(unittest.TestCase):
             self._test_save_restore_model(code_file, code_name, model)
 
     def _test_save_restore_model(self, code_file, code_name, model):
-        save_info_builder = FullModelSafeInfoBuilder()
+        save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(model, code_file, code_name)
         save_info = save_info_builder.build()
 
@@ -84,7 +83,7 @@ class TestSave(unittest.TestCase):
         set_deterministic()
         model = resnet18()
 
-        save_info_builder = FullModelSafeInfoBuilder()
+        save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
         save_info = save_info_builder.build()
         model_id = self.save_recover_service.save_model(save_info)
@@ -115,7 +114,7 @@ class TestSave(unittest.TestCase):
         set_deterministic()
         model = resnet18()
 
-        save_info_builder = FullModelSafeInfoBuilder()
+        save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
         save_info_builder.add_recover_val(dummy_input_shape=[10, 3, 300, 400])
         save_info = save_info_builder.build()
@@ -130,7 +129,7 @@ class TestSave(unittest.TestCase):
         set_deterministic()
         model = resnet18()
 
-        save_info_builder = FullModelSafeInfoBuilder()
+        save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
         save_info = save_info_builder.build()
         model_id = self.save_recover_service.save_model(save_info)
@@ -165,7 +164,7 @@ class TestSave(unittest.TestCase):
         set_deterministic()
         model = resnet18()
 
-        save_info_builder = FullModelSafeInfoBuilder()
+        save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
         save_info = save_info_builder.build()
         model_id = self.save_recover_service.save_model(save_info)
@@ -185,7 +184,7 @@ class TestSave(unittest.TestCase):
         ids = self.save_recover_service.saved_model_ids()
         self.assertEqual(ids, expected)
 
-        save_info_builder = FullModelSafeInfoBuilder()
+        save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
         save_info = save_info_builder.build()
         model_id = self.save_recover_service.save_model(save_info)
@@ -194,7 +193,7 @@ class TestSave(unittest.TestCase):
         ids = self.save_recover_service.saved_model_ids()
         self.assertEqual(ids, expected)
 
-        save_info_builder = FullModelSafeInfoBuilder()
+        save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
         save_info = save_info_builder.build()
         model_id = self.save_recover_service.save_model(save_info)
@@ -210,7 +209,7 @@ class TestSave(unittest.TestCase):
         model_infos = self.save_recover_service.saved_model_infos()
         self.assertEqual(set(model_infos), expected)
 
-        save_info_builder = FullModelSafeInfoBuilder()
+        save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
         save_info = save_info_builder.build()
         model_id = self.save_recover_service.save_model(save_info)
@@ -219,7 +218,7 @@ class TestSave(unittest.TestCase):
         model_infos = self.save_recover_service.saved_model_infos()
         self.assertEqual(set(model_infos), expected)
 
-        save_info_builder = FullModelSafeInfoBuilder()
+        save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
         save_info = save_info_builder.build()
         model_id = self.save_recover_service.save_model(save_info)
@@ -237,13 +236,13 @@ class TestSave(unittest.TestCase):
     def _test_model_save_size(self, recover_val=False):
         model = resnet18(pretrained=True)
         if recover_val:
-            save_info_builder = FullModelSafeInfoBuilder()
+            save_info_builder = ModelSaveInfoBuilder()
             save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
             save_info_builder.add_recover_val(dummy_input_shape=[10, 3, 300, 400])
             save_info = save_info_builder.build()
             model_id = self.save_recover_service.save_model(save_info)
         else:
-            save_info_builder = FullModelSafeInfoBuilder()
+            save_info_builder = ModelSaveInfoBuilder()
             save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
             save_info = save_info_builder.build()
             model_id = self.save_recover_service.save_model(save_info)
@@ -257,7 +256,7 @@ class TestSave(unittest.TestCase):
 
         model_info_size = self.mongo_service.document_size(ObjectId(model_id), SchemaObjType.MODEL_INFO.value)
         model_info_dict = self.mongo_service.get_dict(ObjectId(model_id), SchemaObjType.MODEL_INFO.value)
-        restore_info_id = model_info_dict[RECOVER_INFO].replace(DICT, '')
+        restore_info_id = model_info_dict[RECOVER_INFO_ID].replace(DICT, '')
         restore_dict_size = self.mongo_service.document_size(ObjectId(restore_info_id), SchemaObjType.RECOVER_T1.value)
 
         # for now the size consists of

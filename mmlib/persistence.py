@@ -168,7 +168,7 @@ class MongoDictPersistenceService(AbstractDictPersistenceService):
 
     def save_dict(self, insert_dict: dict, represent_type: str) -> str:
         mongo_id = self._mongo_service.save_dict(insert_dict, collection=represent_type)
-        return DICT + str(mongo_id)
+        return str(mongo_id)
 
     def recover_dict(self, dict_id: str, represent_type: str) -> dict:
         mongo_dict_id = self._to_mongo_dict_id(dict_id)
