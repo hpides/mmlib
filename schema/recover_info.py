@@ -48,8 +48,7 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
         if self.recover_validation:
             dict_representation[RECOVER_VAL] = recover_val_id
 
-        dict_id = dict_pers_service.save_dict(dict_representation, REPRESENT_TYPE)
-        assert dict_id == self.store_id, 'ids should be the same'
+        dict_pers_service.save_dict(dict_representation, REPRESENT_TYPE)
 
         return self.store_id
 
