@@ -2,7 +2,6 @@ import abc
 import os
 import sys
 import tempfile
-from enum import Enum
 
 import torch
 
@@ -14,9 +13,6 @@ from schema.recover_info import FullModelRecoverInfo
 from schema.store_type import ModelStoreType
 
 MODEL_WEIGHTS = 'model_weights'
-
-
-
 
 
 class RestoredModelInfo:
@@ -100,11 +96,22 @@ class BaselineSaveService(AbstractSaveService):
         with tempfile.TemporaryDirectory() as tmp_path:
             weights_path = self._pickle_weights(model_save_info.model, tmp_path)
 
+            derived_from = model_save_info.base_model if model_save_info.base_model else None
+
+            if derived_from and not(model_save_info.code or model_save_info.class_name):
+                model_info = ModelInfo.load(derived_from, self._file_pers_service, self._dict_pers_service, tmp_path)
+                recover_info: FullModelRecoverInfo = model_info.recover_info
+
+                model_save_info.code = recover_info.model_code_file_path
+                model_save_info.class_name = recover_info.model_class_name
+
+            # if the model to store is not derived from another model code and class name have to me defined
             recover_info = FullModelRecoverInfo(weights_file_path=weights_path,
                                                 model_code_file_path=model_save_info.code,
                                                 model_class_name=model_save_info.class_name)
 
-            model_info = ModelInfo(store_type=ModelStoreType.PICKLED_WEIGHTS, recover_info=recover_info)
+            model_info = ModelInfo(store_type=ModelStoreType.PICKLED_WEIGHTS, recover_info=recover_info,
+                                   derived_from_id=derived_from)
 
             model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
 
