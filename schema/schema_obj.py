@@ -43,9 +43,13 @@ class SchemaObj(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def size_in_bytes(self) -> int:
+    def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
+                      dict_pers_service: AbstractDictPersistenceService) -> int:
         """
         Calculates and returns the size of the SchemaObj in bytes.
+        :param file_pers_service: An instance of AbstractFilePersistenceService that is used to store and load files.
+        :param dict_pers_service: An instance of AbstractDictPersistenceService that is used to store and load metadata
+         as dicts.
         :return: The size in bytes.
         """
         pass
