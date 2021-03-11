@@ -44,3 +44,7 @@ class RecoverVal(SchemaObj):
 
         return cls(weights_hash=weights_hash, inference_hash=inference_hash, dummy_input_shape=dummy_input_shape,
                    store_id=store_id)
+
+    def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
+                      dict_pers_service: AbstractDictPersistenceService) -> int:
+        return dict_pers_service.dict_size(self.store_id, REPRESENT_TYPE)
