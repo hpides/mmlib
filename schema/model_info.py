@@ -3,6 +3,7 @@ from schema.inference_info import InferenceInfo
 from schema.recover_info import AbstractRecoverInfo, FullModelRecoverInfo
 from schema.schema_obj import SchemaObj
 from schema.store_type import ModelStoreType
+from schema.train_info import TrainInfo
 
 ID = 'id'
 STORE_TYPE = 'store_type'
@@ -17,7 +18,7 @@ REPRESENT_TYPE = 'model_info'
 class ModelInfo(SchemaObj):
 
     def __init__(self, store_type: ModelStoreType, recover_info: AbstractRecoverInfo, store_id: str = None,
-                 derived_from_id: str = None, inference_info: str = None, train_info: str = None):
+                 derived_from_id: str = None, inference_info: InferenceInfo = None, train_info: TrainInfo = None):
         self.store_id = store_id
         self.store_type = store_type
         self.recover_info = recover_info
@@ -65,7 +66,8 @@ class ModelInfo(SchemaObj):
 
         recover_info = None
         if store_type == ModelStoreType.PICKLED_WEIGHTS:
-            recover_info = FullModelRecoverInfo.load(recover_info_id, file_pers_service, dict_pers_service, restore_root)
+            recover_info = FullModelRecoverInfo.load(recover_info_id, file_pers_service, dict_pers_service,
+                                                     restore_root)
         else:
             assert 'Not implemented yet'
 
@@ -84,3 +86,18 @@ class ModelInfo(SchemaObj):
 
         return cls(store_type=store_type, recover_info=recover_info, store_id=obj_id, derived_from_id=derived_from_id,
                    inference_info=inference_info, train_info=train_info)
+
+    def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
+                      dict_pers_service: AbstractDictPersistenceService) -> int:
+        result = 0
+
+        # size of the dict
+        result += dict_pers_service.dict_size(self.store_id, REPRESENT_TYPE)
+
+        # size of all referenced files/objects
+        # for now we leave out the size of the base model, we might have to implement this later
+        result += self.recover_info.size_in_bytes(file_pers_service, dict_pers_service)
+        result += self.inference_info.size_in_bytes(file_pers_service, dict_pers_service)
+        result += self.train_info.size_in_bytes(file_pers_service, dict_pers_service)
+
+        return result
