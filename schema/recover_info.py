@@ -87,3 +87,5 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
         result += file_pers_service.file_size(restored_dict[WEIGHTS])
         result += file_pers_service.file_size(restored_dict[MODEL_CODE])
         result += self.recover_validation.size_in_bytes(file_pers_service, dict_pers_service)
+
+        return result
