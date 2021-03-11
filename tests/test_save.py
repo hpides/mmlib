@@ -138,28 +138,31 @@ class TestSave(unittest.TestCase):
         set_deterministic()
         model_version = resnet18()
 
-        save_version_info_builder = FullModelVersionSafeInfoBuilder()
-        save_version_info_builder.add_model_version_info(model_version, base_model_id=model_id)
+        save_version_info_builder = ModelSaveInfoBuilder()
+        save_version_info_builder.add_model_info(model_version, base_model_id=model_id)
         save_version_info_builder.add_recover_val(dummy_input_shape=[10, 3, 300, 400])
         save_version_info = save_version_info_builder.build()
-        model_version1_id = self.save_recover_service.save_version(save_version_info)
+        model_version1_id = self.save_recover_service.save_model(save_version_info)
 
         model_version = resnet18(pretrained=True)
 
-        save_version_info_builder = FullModelVersionSafeInfoBuilder()
-        save_version_info_builder.add_model_version_info(model_version, base_model_id=model_version1_id)
+        save_version_info_builder = ModelSaveInfoBuilder()
+        save_version_info_builder.add_model_info(model_version, base_model_id=model_version1_id)
         # TODO dummy_input_shape should be inferred form base model
         save_version_info_builder.add_recover_val(dummy_input_shape=[10, 3, 300, 400])
         save_version_info = save_version_info_builder.build()
-        model_version2_id = self.save_recover_service.save_version(save_version_info)
+        model_version2_id = self.save_recover_service.save_model(save_version_info)
 
-        restored_model = self.save_recover_service.recover_model(model_id)
-        restored_model_version1 = self.save_recover_service.recover_model(model_version1_id, check_recover_val=True)
-        restored_model_version2 = self.save_recover_service.recover_model(model_version2_id, check_recover_val=True)
+        restored_model_info = self.save_recover_service.recover_model(model_id)
+        restored_model_version1_info = self.save_recover_service.recover_model(model_version1_id,
+                                                                               check_recover_val=True)
+        restored_model_version2_info = self.save_recover_service.recover_model(model_version2_id,
+                                                                               check_recover_val=True)
 
-        self.assertTrue(model_equal(model, restored_model, imagenet_input))
-        self.assertTrue(model_equal(model, restored_model_version1, imagenet_input))
-        self.assertFalse(model_equal(restored_model_version1, restored_model_version2, imagenet_input))
+        self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
+        self.assertTrue(model_equal(model, restored_model_version1_info.model, imagenet_input))
+        self.assertFalse(
+            model_equal(restored_model_version1_info.model, restored_model_version2_info.model, imagenet_input))
 
     def test_save_restore_model_version_and_recover_val_assert_false(self):
         set_deterministic()
