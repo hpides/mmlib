@@ -6,7 +6,7 @@ from mmlib.deterministic import set_deterministic
 from util.helper import get_device
 
 
-def inference_hash(model, dummy_input_shape):
+def inference_hash(model: torch.nn.Module, dummy_input_shape: [int]):
     """
     Calculates the hash of an inference produced by the given model.
     :param model: The model that is used for inference.
