@@ -22,19 +22,18 @@ class InferenceInfo(SchemaObj):
 
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
-
         if not self.store_id:
             self.store_id = dict_pers_service.generate_id()
 
         dataloader_id = self.dataloader.persist(file_pers_service, dict_pers_service)
         pre_processor_id = self.pre_processor.persist(file_pers_service, dict_pers_service)
-        environment = self.environment.persist(file_pers_service, dict_pers_service)
+        environment_id = self.environment.persist(file_pers_service, dict_pers_service)
 
         dict_representation = {
             ID: self.store_id,
             DATA_LOADER: dataloader_id,
             PRE_PROCESSOR: pre_processor_id,
-            ENVIRONMENT: environment
+            ENVIRONMENT: environment_id
         }
 
         dict_pers_service.save_dict(dict_representation, INFERENCE_INFO)
@@ -42,7 +41,17 @@ class InferenceInfo(SchemaObj):
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
              dict_pers_service: AbstractDictPersistenceService, restore_root: str):
-        pass
+        restored_dict = dict_pers_service.recover_dict(obj_id, INFERENCE_INFO)
+
+        store_id = restored_dict[ID]
+        dataloader_id = restored_dict[DATA_LOADER]
+        dataloader = RestorableObject.load(dataloader_id, file_pers_service, dict_pers_service, restore_root)
+        pre_processor_id = restored_dict[PRE_PROCESSOR]
+        pre_processor = RestorableObject.load(pre_processor_id, file_pers_service, dict_pers_service, restore_root)
+        environment_id = restored_dict[ENVIRONMENT]
+        environment = Environment.load(environment_id, file_pers_service, dict_pers_service, restore_root)
+
+        return cls(dataloader=dataloader, pre_processor=pre_processor, environment=environment, store_id=store_id)
 
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
                       dict_pers_service: AbstractDictPersistenceService) -> int:
