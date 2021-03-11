@@ -99,7 +99,11 @@ class BaselineSaveService(AbstractSaveService):
             derived_from = model_save_info.base_model if model_save_info.base_model else None
 
             if derived_from and not(model_save_info.code or model_save_info.class_name):
-                model_info = ModelInfo.load(derived_from, self._file_pers_service, self._dict_pers_service, tmp_path)
+                # create separate dir to avoid naming conflicts
+                restore_dir = os.path.join(tmp_path, 'restore')
+                os.mkdir(restore_dir)
+
+                model_info = ModelInfo.load(derived_from, self._file_pers_service, self._dict_pers_service, restore_dir)
                 recover_info: FullModelRecoverInfo = model_info.recover_info
 
                 model_save_info.code = recover_info.model_code_file_path
@@ -115,7 +119,7 @@ class BaselineSaveService(AbstractSaveService):
 
             model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
 
-        return model_info_id
+            return model_info_id
 
     def _pickle_weights(self, model, save_path):
         # store pickle dump of model
