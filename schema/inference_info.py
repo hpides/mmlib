@@ -1,5 +1,5 @@
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
-from schema.RestorableObject import RestorableObject
+from schema.restorable_object import RestorableObject
 from schema.environment import Environment
 from schema.schema_obj import SchemaObj
 
