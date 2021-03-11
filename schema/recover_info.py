@@ -69,7 +69,7 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
         recover_validation = None
         if RECOVER_VAL in restored_dict:
             recover_val_id = restored_dict[RECOVER_VAL]
-            recover_validation = RecoverVal.load(recover_val_id, file_pers_service, dict_pers_service)
+            recover_validation = RecoverVal.load(recover_val_id, file_pers_service, dict_pers_service, restore_root)
 
         return cls(weights_file_path=weights_file_path, model_code_file_path=model_code_file_path,
                    model_class_name=model_class_name, store_id=store_id, recover_validation=recover_validation)

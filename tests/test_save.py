@@ -122,9 +122,9 @@ class TestSave(unittest.TestCase):
 
         model_id = self.save_recover_service.save_model(save_info)
 
-        restored_model = self.save_recover_service.recover_model(model_id, check_recover_val=True)
+        restored_model_info = self.save_recover_service.recover_model(model_id, check_recover_val=True)
 
-        self.assertTrue(model_equal(model, restored_model, imagenet_input))
+        self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
 
     def test_save_restore_model_version_and_recover_val(self):
         set_deterministic()

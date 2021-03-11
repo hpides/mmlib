@@ -2,6 +2,7 @@ import abc
 import os
 import sys
 import tempfile
+import warnings
 
 import torch
 
@@ -10,7 +11,9 @@ from mmlib.save_info import ModelSaveInfo
 # Future work, se if it would make sense to use protocol here
 from schema.model_info import ModelInfo
 from schema.recover_info import FullModelRecoverInfo
+from schema.recover_val import RecoverVal
 from schema.store_type import ModelStoreType
+from util.hash import state_dict_hash, inference_hash
 
 MODEL_WEIGHTS = 'model_weights'
 
@@ -60,9 +63,13 @@ class BaselineSaveService(AbstractSaveService):
     def save_model(self, model_save_info: ModelSaveInfo) -> str:
         self._check_consistency(model_save_info)
 
+        recover_val = None
+        if model_save_info.recover_val:
+            recover_val = self._generate_recover_val(model_save_info)
+
         # usually we would consider at this bit how we best store the given model
         # but since this is the baseline service we just store the full model every time.
-        model_id = self._save_full_model(model_save_info)
+        model_id = self._save_full_model(model_save_info, recover_val)
 
         return model_id
 
@@ -81,7 +88,22 @@ class BaselineSaveService(AbstractSaveService):
 
             restored_model_info = RestoredModelInfo(model)
 
+            if check_recover_val:
+                self._check_recover_val(model, recover_info)
+
         return restored_model_info
+
+    def _check_recover_val(self, model, recover_info):
+        if recover_info.recover_validation is None:
+            warnings.warn('check recoverVal not possible - no recover validation info available')
+        else:
+            rec_val = recover_info.recover_validation
+            weights_hash = state_dict_hash(model.state_dict())
+            assert weights_hash == rec_val.weights_hash, 'check weight hash failed'
+
+            inp_shape = rec_val.dummy_input_shape
+            inf_hash = inference_hash(model, inp_shape)
+            assert inf_hash == rec_val.inference_hash, 'check inference hash failed'
 
     def _check_consistency(self, model_save_info):
         if model_save_info.recover_val:
@@ -90,7 +112,7 @@ class BaselineSaveService(AbstractSaveService):
 
         # TODO add more/other checks
 
-    def _save_full_model(self, model_save_info: ModelSaveInfo) -> str:
+    def _save_full_model(self, model_save_info: ModelSaveInfo, recover_val: RecoverVal) -> str:
         # TODO check if recover val is true and implement
 
         with tempfile.TemporaryDirectory() as tmp_path:
@@ -98,7 +120,7 @@ class BaselineSaveService(AbstractSaveService):
 
             derived_from = model_save_info.base_model if model_save_info.base_model else None
 
-            if derived_from and not(model_save_info.code or model_save_info.class_name):
+            if derived_from and not (model_save_info.code or model_save_info.class_name):
                 # create separate dir to avoid naming conflicts
                 restore_dir = os.path.join(tmp_path, 'restore')
                 os.mkdir(restore_dir)
@@ -112,7 +134,8 @@ class BaselineSaveService(AbstractSaveService):
             # if the model to store is not derived from another model code and class name have to me defined
             recover_info = FullModelRecoverInfo(weights_file_path=weights_path,
                                                 model_code_file_path=model_save_info.code,
-                                                model_class_name=model_save_info.class_name)
+                                                model_class_name=model_save_info.class_name,
+                                                recover_validation=recover_val)
 
             model_info = ModelInfo(store_type=ModelStoreType.PICKLED_WEIGHTS, recover_info=recover_info,
                                    derived_from_id=derived_from)
@@ -141,3 +164,15 @@ class BaselineSaveService(AbstractSaveService):
         state_dict = torch.load(weights_file)
 
         return state_dict
+
+    def _generate_recover_val(self, model_save_info):
+        model = model_save_info.model
+        dummy_input_shape = model_save_info.dummy_input_shape
+
+        weights_hash = state_dict_hash(model.state_dict())
+        inf_hash = inference_hash(model, dummy_input_shape)
+
+        recover_val = RecoverVal(weights_hash=weights_hash, inference_hash=inf_hash,
+                                 dummy_input_shape=dummy_input_shape)
+
+        return recover_val
