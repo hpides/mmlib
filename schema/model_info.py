@@ -12,7 +12,7 @@ DERIVED_FROM = 'derived_from'
 INFERENCE_INFO_ID = 'inference_info_id'
 TRAIN_INFO_ID = 'train_info_id'
 
-REPRESENT_TYPE = 'model_info'
+MODEL_INFO_REPRESENT_TYPE = 'model_info'
 
 
 class ModelInfo(SchemaObj):
@@ -49,7 +49,7 @@ class ModelInfo(SchemaObj):
         if self.train_info:
             dict_representation[TRAIN_INFO_ID] = self.derived_from
 
-        dict_pers_service.save_dict(dict_representation, REPRESENT_TYPE)
+        dict_pers_service.save_dict(dict_representation, MODEL_INFO_REPRESENT_TYPE)
 
         return self.store_id
 
@@ -57,7 +57,7 @@ class ModelInfo(SchemaObj):
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
              dict_pers_service: AbstractDictPersistenceService, restore_root: str):
 
-        restored_dict = dict_pers_service.recover_dict(obj_id, REPRESENT_TYPE)
+        restored_dict = dict_pers_service.recover_dict(obj_id, MODEL_INFO_REPRESENT_TYPE)
 
         # mandatory fields
         store_type = ModelStoreType(restored_dict[STORE_TYPE])
@@ -92,12 +92,14 @@ class ModelInfo(SchemaObj):
         result = 0
 
         # size of the dict
-        result += dict_pers_service.dict_size(self.store_id, REPRESENT_TYPE)
+        result += dict_pers_service.dict_size(self.store_id, MODEL_INFO_REPRESENT_TYPE)
 
         # size of all referenced files/objects
         # for now we leave out the size of the base model, we might have to implement this later
         result += self.recover_info.size_in_bytes(file_pers_service, dict_pers_service)
-        result += self.inference_info.size_in_bytes(file_pers_service, dict_pers_service)
-        result += self.train_info.size_in_bytes(file_pers_service, dict_pers_service)
+        if self.inference_info:
+            result += self.inference_info.size_in_bytes(file_pers_service, dict_pers_service)
+        if self.train_info:
+            result += self.train_info.size_in_bytes(file_pers_service, dict_pers_service)
 
         return result

@@ -6,7 +6,7 @@ WEIGHTS_HASH = 'weights_hash'
 INFERENCE_HASH = 'inference_hash'
 DUMMY_INPUT_SHAPE = 'dummy_input_shape'
 
-REPRESENT_TYPE = 'recover_val'
+RECOVER_VAL = 'recover_val'
 
 
 class RecoverVal(SchemaObj):
@@ -29,14 +29,14 @@ class RecoverVal(SchemaObj):
             DUMMY_INPUT_SHAPE: self.dummy_input_shape,
         }
 
-        dict_pers_service.save_dict(dict_representation, REPRESENT_TYPE)
+        dict_pers_service.save_dict(dict_representation, RECOVER_VAL)
 
         return self.store_id
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
              dict_pers_service: AbstractDictPersistenceService, restore_root: str):
-        restored_dict = dict_pers_service.recover_dict(obj_id, REPRESENT_TYPE)
+        restored_dict = dict_pers_service.recover_dict(obj_id, RECOVER_VAL)
         store_id = restored_dict[ID]
         weights_hash = restored_dict[WEIGHTS_HASH]
         inference_hash = restored_dict[INFERENCE_HASH]
@@ -47,4 +47,4 @@ class RecoverVal(SchemaObj):
 
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
                       dict_pers_service: AbstractDictPersistenceService) -> int:
-        return dict_pers_service.dict_size(self.store_id, REPRESENT_TYPE)
+        return dict_pers_service.dict_size(self.store_id, RECOVER_VAL)

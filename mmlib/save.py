@@ -45,6 +45,16 @@ class AbstractSaveService(metaclass=abc.ABCMeta):
         the restored model.
         :return: The recovered model and metadata bundled in an object of type ModelRestoreInfo.
         """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def model_save_size(self, model_id: str) -> int:
+        """
+        Calculates and returns the amount of bytes that are used for storing the model.
+        :param model_id: The id to identify the model.
+        :return: The amount of bytes used to store the model.
+        """
+        raise NotImplementedError
 
 
 class BaselineSaveService(AbstractSaveService):
@@ -92,6 +102,13 @@ class BaselineSaveService(AbstractSaveService):
                 self._check_recover_val(model, recover_info)
 
         return restored_model_info
+
+    def model_save_size(self, model_id: str) -> int:
+        with tempfile.TemporaryDirectory() as tmp_path:
+            model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path)
+
+        return model_info.size_in_bytes(self._file_pers_service, self._dict_pers_service)
+
 
     def _check_recover_val(self, model, recover_info):
         if recover_info.recover_validation is None:

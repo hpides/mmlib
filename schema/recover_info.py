@@ -15,7 +15,7 @@ MODEL_CODE = 'model_code'
 MODEL_CLASS_NAME = 'model_class_name'
 RECOVER_VAL = 'recover_val'
 
-REPRESENT_TYPE = 'recover_info'
+FULL_MODEL_RECOVER_INFO = 'full_model_recover_info'
 
 
 class FullModelRecoverInfo(AbstractRecoverInfo):
@@ -48,7 +48,7 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
             recover_val_id = self.recover_validation.persist(file_pers_service, dict_pers_service)
             dict_representation[RECOVER_VAL] = recover_val_id
 
-        dict_pers_service.save_dict(dict_representation, REPRESENT_TYPE)
+        dict_pers_service.save_dict(dict_representation, FULL_MODEL_RECOVER_INFO)
 
         return self.store_id
 
@@ -56,7 +56,7 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
              dict_pers_service: AbstractDictPersistenceService, restore_root: str):
 
-        restored_dict = dict_pers_service.recover_dict(obj_id, REPRESENT_TYPE)
+        restored_dict = dict_pers_service.recover_dict(obj_id, FULL_MODEL_RECOVER_INFO)
 
         store_id = restored_dict[ID]
         weights_file_id = restored_dict[WEIGHTS]
@@ -79,13 +79,14 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
         result = 0
 
         # size of the dict
-        result += dict_pers_service.dict_size(self.store_id, REPRESENT_TYPE)
+        result += dict_pers_service.dict_size(self.store_id, FULL_MODEL_RECOVER_INFO)
 
-        restored_dict = dict_pers_service.recover_dict(self.store_id, REPRESENT_TYPE)
+        restored_dict = dict_pers_service.recover_dict(self.store_id, FULL_MODEL_RECOVER_INFO)
         # size of all referenced files/objects
 
         result += file_pers_service.file_size(restored_dict[WEIGHTS])
         result += file_pers_service.file_size(restored_dict[MODEL_CODE])
-        result += self.recover_validation.size_in_bytes(file_pers_service, dict_pers_service)
+        if self.recover_validation:
+            result += self.recover_validation.size_in_bytes(file_pers_service, dict_pers_service)
 
         return result
