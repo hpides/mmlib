@@ -12,7 +12,6 @@ from schema.model_info import RECOVER_INFO_ID, MODEL_INFO_REPRESENT_TYPE
 from schema.recover_info import FULL_MODEL_RECOVER_INFO
 from schema.recover_val import RECOVER_VAL
 from schema.save_info_builder import ModelSaveInfoBuilder
-from schema.schema_obj import SchemaObjType
 from tests.networks.mynets.googlenet import googlenet
 from tests.networks.mynets.mobilenet import mobilenet_v2
 from tests.networks.mynets.resnet18 import resnet18

@@ -109,7 +109,6 @@ class BaselineSaveService(AbstractSaveService):
 
         return model_info.size_in_bytes(self._file_pers_service, self._dict_pers_service)
 
-
     def _check_recover_val(self, model, recover_info):
         if recover_info.recover_validation is None:
             warnings.warn('check recoverVal not possible - no recover validation info available')
