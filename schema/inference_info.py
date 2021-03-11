@@ -55,4 +55,16 @@ class InferenceInfo(SchemaObj):
 
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
                       dict_pers_service: AbstractDictPersistenceService) -> int:
-        pass
+
+        result = 0
+
+        # size of the dict
+        result += dict_pers_service.dict_size(self.store_id, INFERENCE_INFO)
+
+        # size of all referenced files/objects
+
+        result += self.dataloader.size_in_bytes(file_pers_service, dict_pers_service)
+        result += self.pre_processor.size_in_bytes(file_pers_service, dict_pers_service)
+        result += self.environment.size_in_bytes(file_pers_service, dict_pers_service)
+
+        return result
