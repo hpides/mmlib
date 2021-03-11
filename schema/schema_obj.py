@@ -1,21 +1,7 @@
 import abc
 import json
-from enum import Enum
 
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
-
-
-class SchemaObjType(Enum):
-    STRING = 'string'
-    FILE = 'file'
-    MODEL_INFO = 'ModelInfo'
-    RECOVER_T1 = 'RecoverInfoT1'
-    RECOVER_VAL = 'RecoverVal'
-    DATASET = 'Dataset'
-    TRAIN_INFO = 'TrainInfo'
-    RESTORABLE_OBJ = 'restorable_obj'
-    ENVIRONMENT = 'environment'
-    FUNCTION = 'function'
 
 
 class SchemaObj(metaclass=abc.ABCMeta):

@@ -8,7 +8,6 @@ import torch
 
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from mmlib.save_info import ModelSaveInfo
-# Future work, se if it would make sense to use protocol here
 from schema.model_info import ModelInfo
 from schema.recover_info import FullModelRecoverInfo
 from schema.recover_val import RecoverVal
@@ -19,12 +18,11 @@ MODEL_WEIGHTS = 'model_weights'
 
 
 class RestoredModelInfo:
-    # TODO move to separate file
-
     def __init__(self, model: torch.nn.Module):
         self.model = model
 
 
+# Future work, se if it would make sense to use protocol here
 class AbstractSaveService(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
@@ -129,7 +127,6 @@ class BaselineSaveService(AbstractSaveService):
         # TODO add more/other checks
 
     def _save_full_model(self, model_save_info: ModelSaveInfo, recover_val: RecoverVal) -> str:
-        # TODO check if recover val is true and implement
 
         with tempfile.TemporaryDirectory() as tmp_path:
             weights_path = self._pickle_weights(model_save_info.model, tmp_path)
