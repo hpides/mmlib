@@ -60,7 +60,6 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
 
         store_id = restored_dict[ID]
         weights_file_id = restored_dict[WEIGHTS]
-        # TODO think about where to store files
         weights_file_path = file_pers_service.recover_file(weights_file_id, restore_root)
         model_code_file_id = restored_dict[MODEL_CODE]
         model_code_file_path = file_pers_service.recover_file(model_code_file_id, restore_root)
