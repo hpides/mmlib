@@ -73,3 +73,17 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
 
         return cls(weights_file_path=weights_file_path, model_code_file_path=model_code_file_path,
                    model_class_name=model_class_name, store_id=store_id, recover_validation=recover_validation)
+
+    def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
+                      dict_pers_service: AbstractDictPersistenceService) -> int:
+        result = 0
+
+        # size of the dict
+        result += dict_pers_service.dict_size(self.store_id, REPRESENT_TYPE)
+
+        restored_dict = dict_pers_service.recover_dict(self.store_id, REPRESENT_TYPE)
+        # size of all referenced files/objects
+
+        result += file_pers_service.file_size(restored_dict[WEIGHTS])
+        result += file_pers_service.file_size(restored_dict[MODEL_CODE])
+        result += self.recover_validation.size_in_bytes(file_pers_service, dict_pers_service)
