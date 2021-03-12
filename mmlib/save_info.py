@@ -1,11 +1,11 @@
 import torch
 
 from schema.environment import Environment
-from schema.restorable_object import RestorableObject
+from schema.restorable_object import RestorableObjectWrapper
 
 
 class InferenceSaveInfo:
-    def __init__(self, dataloader: RestorableObject, pre_processor: RestorableObject, environment: Environment):
+    def __init__(self, dataloader: RestorableObjectWrapper, pre_processor: RestorableObjectWrapper, environment: Environment):
         self.dataloader = dataloader
         self.pre_processor = pre_processor
         self.environment = environment

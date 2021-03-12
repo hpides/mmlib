@@ -1,5 +1,5 @@
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
-from schema.restorable_object import RestorableObject
+from schema.restorable_object import RestorableObjectWrapper
 from schema.environment import Environment
 from schema.schema_obj import SchemaObj
 
@@ -13,7 +13,7 @@ INFERENCE_INFO = 'inference_info'
 
 class InferenceInfo(SchemaObj):
 
-    def __init__(self, dataloader: RestorableObject, pre_processor: RestorableObject, environment: Environment,
+    def __init__(self, dataloader: RestorableObjectWrapper, pre_processor: RestorableObjectWrapper, environment: Environment,
                  store_id: str = None):
         self.store_id = store_id
         self.dataloader = dataloader
@@ -45,9 +45,9 @@ class InferenceInfo(SchemaObj):
 
         store_id = restored_dict[ID]
         dataloader_id = restored_dict[DATA_LOADER]
-        dataloader = RestorableObject.load(dataloader_id, file_pers_service, dict_pers_service, restore_root)
+        dataloader = RestorableObjectWrapper.load(dataloader_id, file_pers_service, dict_pers_service, restore_root)
         pre_processor_id = restored_dict[PRE_PROCESSOR]
-        pre_processor = RestorableObject.load(pre_processor_id, file_pers_service, dict_pers_service, restore_root)
+        pre_processor = RestorableObjectWrapper.load(pre_processor_id, file_pers_service, dict_pers_service, restore_root)
         environment_id = restored_dict[ENVIRONMENT]
         environment = Environment.load(environment_id, file_pers_service, dict_pers_service, restore_root)
 

@@ -2,7 +2,7 @@ import torch
 
 from mmlib.save_info import ModelSaveInfo, InferenceSaveInfo
 from schema.environment import Environment
-from schema.restorable_object import RestorableObject
+from schema.restorable_object import RestorableObjectWrapper
 
 
 class ModelSaveInfoBuilder:
@@ -42,7 +42,7 @@ class ModelSaveInfoBuilder:
         self._recover_val = True
         self._dummy_input_shape = dummy_input_shape
 
-    def add_inference_info(self, dataloader: RestorableObject, pre_processor: RestorableObject,
+    def add_inference_info(self, dataloader: RestorableObjectWrapper, pre_processor: RestorableObjectWrapper,
                            environment: Environment):
         """
         Indicates that inference info should be saved and adds the required info.
