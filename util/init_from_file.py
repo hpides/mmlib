@@ -11,10 +11,14 @@ def create_object(code, class_name):
     return model
 
 
-def create_object_with_parameters(code, class_name: [str], init_args: dict, init_ref_type_args: dict = None):
-    module, path = _module(code)
-    sys.path.append(path)
-    exec('from {} import {}'.format(module, class_name))
+def create_object_with_parameters(class_name: [str], init_args: dict, code: str = None, import_cmd: str = None,
+                                  init_ref_type_args: dict = None):
+    if code:
+        module, path = _module(code)
+        sys.path.append(path)
+        exec('from {} import {}'.format(module, class_name))
+    else:
+        exec(import_cmd)
 
     args_string = ', '.join(['{}={}'.format(k, v) for k, v in init_args.items()])
     ref_args_type_strings = ''
