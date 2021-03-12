@@ -6,7 +6,7 @@ from tests.networks.mynets.resnet18 import resnet18
 from util.dummy_data import imagenet_input
 from util.init_from_file import create_object, create_object_with_parameters
 
-CODE = '/Users/nils/Studium/master-thesis/mmlib/tests/dummy_classes/dummy.py'
+CODE = './dummy_classes/dummy.py'
 
 
 class TestInitFromFIle(unittest.TestCase):
