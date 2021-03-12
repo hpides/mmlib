@@ -1,6 +1,5 @@
 import abc
 import os
-import sys
 import tempfile
 import warnings
 
@@ -13,6 +12,7 @@ from schema.recover_info import FullModelRecoverInfo
 from schema.recover_val import RecoverVal
 from schema.store_type import ModelStoreType
 from util.hash import state_dict_hash, inference_hash
+from util.init_from_file import create_object
 
 MODEL_WEIGHTS = 'model_weights'
 
@@ -90,7 +90,7 @@ class BaselineSaveService(AbstractSaveService):
             # recover model form info
             recover_info: FullModelRecoverInfo = model_info.recover_info
 
-            model = self._init_model(recover_info.model_code_file_path, recover_info.model_class_name)
+            model = create_object(recover_info.model_code_file_path, recover_info.model_class_name)
             s_dict = self._recover_pickled_weights(recover_info.weights_file_path)
             model.load_state_dict(s_dict)
 
@@ -163,15 +163,6 @@ class BaselineSaveService(AbstractSaveService):
         torch.save(model.state_dict(), weight_path)
 
         return weight_path
-
-    def _init_model(self, code, generate_call):
-        path, file = os.path.split(code)
-        module = file.replace('.py', '')
-        sys.path.append(path)
-        exec('from {} import {}'.format(module, generate_call))
-        model = eval('{}()'.format(generate_call))
-
-        return model
 
     def _recover_pickled_weights(self, weights_file):
         state_dict = torch.load(weights_file)
