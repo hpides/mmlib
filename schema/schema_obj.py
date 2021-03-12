@@ -14,6 +14,7 @@ class SchemaObj(metaclass=abc.ABCMeta):
         :param file_pers_service: An instance of AbstractFilePersistenceService that is used to store files.
         :param dict_pers_service: An instance of AbstractDictPersistenceService that is used to store metadata as dicts.
         """
+        raise NotImplementedError
 
     @classmethod
     @abc.abstractmethod
@@ -26,7 +27,7 @@ class SchemaObj(metaclass=abc.ABCMeta):
         :param dict_pers_service: An instance of AbstractDictPersistenceService that is used to store metadata as dicts.
         :param restore_root: The path where restored files are stored to.
         """
-        pass
+        raise NotImplementedError
 
     @abc.abstractmethod
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
@@ -38,7 +39,7 @@ class SchemaObj(metaclass=abc.ABCMeta):
          as dicts.
         :return: The size in bytes.
         """
-        pass
+        raise NotImplementedError
 
 
 def __eq__(self, other):
