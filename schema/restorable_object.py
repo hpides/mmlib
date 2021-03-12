@@ -2,24 +2,32 @@ import abc
 
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.schema_obj import SchemaObj
-from util.init_from_file import create_object
+from util.init_from_file import create_object_with_parameters
 
 ID = 'id'
 CODE_FILE = 'code_file'
 CLASS_NAME = 'class_name'
 STATE_FILE = 'state_file'
+INIT_ARGS = 'init_args'
+INIT_REF_TYPE_ARGS = 'init_ref_type_args'
 
 RESTORABLE_OBJECT = 'restorable_object'
 
 
 class RestorableObjectWrapper(SchemaObj):
 
-    def __init__(self, instance: object, code: str, class_name: str, state_file: str, store_id: str = None):
+    def __init__(self, code: str, class_name: str, init_args: dict, init_ref_type_args: [str], instance: object = None,
+                 state_file: str = None, store_id: str = None):
         self.store_id = store_id
         self.instance = instance
         self.code = code
         self.class_name = class_name
+        self.init_args = init_args
+        self.init_ref_type_args = init_ref_type_args
         self.state_file = state_file
+
+    def set_instance(self, instance):
+        self.instance = instance
 
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
@@ -35,6 +43,8 @@ class RestorableObjectWrapper(SchemaObj):
             ID: self.store_id,
             CODE_FILE: code_file_id,
             CLASS_NAME: self.class_name,
+            INIT_ARGS: self.init_args,
+            INIT_REF_TYPE_ARGS: self.init_ref_type_args,
             STATE_FILE: state_file_id
         }
 
@@ -50,15 +60,15 @@ class RestorableObjectWrapper(SchemaObj):
         code_file_id = restored_dict[CODE_FILE]
         code_file_path = file_pers_service.recover_file(code_file_id, restore_root)
         class_name = restored_dict[CLASS_NAME]
+        init_args = restored_dict[INIT_ARGS]
+        ref_type_args = restored_dict[INIT_REF_TYPE_ARGS]
         state_file_id = restored_dict[STATE_FILE]
         state_file_path = file_pers_service.recover_file(state_file_id, restore_root)
 
-        instance = create_object(code_file_path, class_name)
+        restorable_obj_wrapper = cls(store_id=obj_id, code=code_file_path, class_name=class_name,
+                                     init_args=init_args, init_ref_type_args=ref_type_args, state_file=state_file_path)
 
-        restorable_obj_wrapper = cls(instance=instance, store_id=obj_id, code=code_file_path, class_name=class_name,
-                                     state_file=state_file_path)
-
-        restorable_obj_wrapper._restore_instance_from_state()
+        restorable_obj_wrapper._restore_instance_state()
 
         return restorable_obj_wrapper
 
@@ -76,15 +86,25 @@ class RestorableObjectWrapper(SchemaObj):
 
         return result
 
+    def restore_instance(self, ref_type_args: dict):
+        keys = set(ref_type_args.keys())
+        assert keys == set(self.init_ref_type_args), 'not all parameters are given'
+
+        self.instance = create_object_with_parameters(code=self.code, class_name=self.class_name,
+                                                      init_args=self.init_args, init_ref_type_args=ref_type_args)
+
+        self._restore_instance_state()
+
     @abc.abstractmethod
     def _save_instance_state(self):
         """
-        Saves the state of the internal instance to a file.
+        Saves the state of the internal instance to a file. Only needs to be implemented when there is a internal state
+        that can not be reproduced by passing the right arguments in the constructor.
         """
         raise NotImplementedError
 
     @abc.abstractmethod
-    def _restore_instance_from_state(self):
+    def _restore_instance_state(self):
         """
         Loads the state for the internal instance from a file.
         """
