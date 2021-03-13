@@ -30,7 +30,11 @@ def create_object_with_parameters(class_name: [str], init_args: dict, code: str 
         for i, name in enumerate(ref_type_names):
             ref_args_type_strings += '{}=ref_type_refs[{}], '.format(name, i)
 
-    exec_str = '{}({},{})'.format(class_name, args_string, ref_args_type_strings)
+    template_string = '{}({})'
+    if ref_args_type_strings:
+        template_string = '{}({},{})'
+
+    exec_str = template_string.format(class_name, args_string, ref_args_type_strings)
     model = eval(exec_str)
 
     return model

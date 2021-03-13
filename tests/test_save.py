@@ -21,8 +21,8 @@ from util.dummy_data import imagenet_input
 from util.mongo import MongoService
 
 MONGO_CONTAINER_NAME = 'mongo-test'
-COCO_ROOT = 'coco'  # TODO needs to be set
-COCO_ANNOT = 'coco'  # TODO needs to be set
+COCO_ROOT = 'coco_root'
+COCO_ANNOT = 'coco_annotations'
 
 
 class TestSave(unittest.TestCase):
@@ -110,20 +110,23 @@ class TestSave(unittest.TestCase):
         # coco_val_data = CustomCoco(args.coco_root, args.coco_annotations, transform=inference_transforms)
         data_wrapper = RestorableObjectWrapper(
             code='./networks/custom_coco.py',
-            class_name='CustomCoco',
-            init_args={'root': 'coco', 'ann_file': 'coco'},
-            init_ref_type_args=['transform']
+            class_name='InferenceCustomCoco',
+            init_args={},
+            config_args={'root': COCO_ROOT, 'ann_file': COCO_ANNOT},
+            init_ref_type_args=[]
         )
         dataloader = RestorableObjectWrapper(
             import_cmd='from torch.utils.data import DataLoader',
             class_name='DataLoader',
             init_args={'batch_size': 64, 'shuffle': False, 'num_workers': 0, 'pin_memory': True},
-            init_ref_type_args=['data']
+            config_args={},
+            init_ref_type_args=['dataset']
         )
         preprocessor = RestorableObjectWrapper(
             code='./networks/dummy_preprocessor.py',
             class_name='DummyPreprocessor',
             init_args={},
+            config_args={},
             init_ref_type_args=[]
         )
         environment = Environment(environment_data={'cpu': 'test'})

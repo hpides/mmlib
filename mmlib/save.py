@@ -12,7 +12,6 @@ from schema.model_info import ModelInfo
 from schema.recover_info import FullModelRecoverInfo
 from schema.recover_val import RecoverVal
 from schema.store_type import ModelStoreType
-from tests.networks.custom_coco import inference_transforms
 from util.hash import state_dict_hash, inference_hash
 from util.init_from_file import create_object
 
@@ -96,13 +95,6 @@ class BaselineSaveService(AbstractSaveService):
             model = create_object(recover_info.model_code_file_path, recover_info.model_class_name)
             s_dict = self._recover_pickled_weights(recover_info.weights_file_path)
             model.load_state_dict(s_dict)
-
-            if inference_info:
-                # TODO think about ref type args
-                # FIXME, for now and only for testing
-                model_info.inference_info.data_wrapper.restore_instance({'transform': inference_transforms})
-                model_info.inference_info.dataloader.restore_instance()
-                model_info.inference_info.pre_processor.restore_instance()
 
             restored_model_info = RestoredModelInfo(model=model, inference_info=model_info.inference_info)
 

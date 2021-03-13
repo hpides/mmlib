@@ -51,13 +51,21 @@ class InferenceInfo(SchemaObj):
         restored_dict = dict_pers_service.recover_dict(obj_id, INFERENCE_INFO)
 
         store_id = restored_dict[ID]
+
         data_wrapper_id = restored_dict[DATA_WRAPPER]
         data_wrapper = RestorableObjectWrapper.load(data_wrapper_id, file_pers_service, dict_pers_service, restore_root)
+        data_wrapper.restore_instance()
+
         dataloader_id = restored_dict[DATA_LOADER]
         dataloader = RestorableObjectWrapper.load(dataloader_id, file_pers_service, dict_pers_service, restore_root)
+        # TODO think about how to make this dependency nicer
+        dataloader.restore_instance(ref_type_args={'dataset': data_wrapper.instance})
+
         pre_processor_id = restored_dict[PRE_PROCESSOR]
         pre_processor = RestorableObjectWrapper.load(pre_processor_id, file_pers_service, dict_pers_service,
                                                      restore_root)
+        pre_processor.restore_instance()
+
         environment_id = restored_dict[ENVIRONMENT]
         environment = Environment.load(environment_id, file_pers_service, dict_pers_service, restore_root)
 

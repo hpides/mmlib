@@ -1,4 +1,5 @@
 import abc
+import configparser
 
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.schema_obj import SchemaObj
@@ -11,14 +12,25 @@ CODE_FILE = 'code_file'
 CLASS_NAME = 'class_name'
 STATE_FILE = 'state_file'
 INIT_ARGS = 'init_args'
+CONFIG_ARGS = 'config_args'
 INIT_REF_TYPE_ARGS = 'init_ref_type_args'
 
 RESTORABLE_OBJECT = 'restorable_object'
 
 
+def add_params_from_config(init_args, config_args):
+    # TODO think how to nicely integrate the config file
+    config_file = '/Users/nils/Studium/master-thesis/mmlib/tests/config.ini'
+    config = configparser.ConfigParser()
+    config.read(config_file)
+
+    for k, v in config_args.items():
+        init_args[k] = config['VALUES'][v]
+
+
 class RestorableObjectWrapper(SchemaObj):
 
-    def __init__(self, class_name: str, init_args: dict, init_ref_type_args: [str], code: str = None,
+    def __init__(self, class_name: str, init_args: dict, init_ref_type_args: [str], config_args: dict, code: str = None,
                  import_cmd: str = None, instance: object = None, store_id: str = None):
 
         self.store_id = store_id
@@ -27,6 +39,7 @@ class RestorableObjectWrapper(SchemaObj):
         self.import_cmd = import_cmd
         self.class_name = class_name
         self.init_args = init_args
+        self.config_args = config_args
         self.init_ref_type_args = init_ref_type_args
 
     def set_instance(self, instance):
@@ -41,6 +54,7 @@ class RestorableObjectWrapper(SchemaObj):
             ID: self.store_id,
             CLASS_NAME: self.class_name,
             INIT_ARGS: self.init_args,
+            CONFIG_ARGS: self.config_args,
             INIT_REF_TYPE_ARGS: self.init_ref_type_args,
         }
 
@@ -66,6 +80,7 @@ class RestorableObjectWrapper(SchemaObj):
 
         class_name = restored_dict[CLASS_NAME]
         init_args = restored_dict[INIT_ARGS]
+        config_args = restored_dict[CONFIG_ARGS]
         ref_type_args = restored_dict[INIT_REF_TYPE_ARGS]
 
         code_file_path = None
@@ -73,15 +88,10 @@ class RestorableObjectWrapper(SchemaObj):
             code_file_id = restored_dict[CODE_FILE]
             code_file_path = file_pers_service.recover_file(code_file_id, restore_root)
 
-        state_file_path = None
-        if STATE_FILE in restored_dict:
-            state_file_id = restored_dict[STATE_FILE]
-            state_file_path = file_pers_service.recover_file(state_file_id, restore_root)
-
         import_cmd = restored_dict[IMPORT_CMD] if IMPORT_CMD in restored_dict else None
 
         restorable_obj_wrapper = cls(store_id=obj_id, code=code_file_path, class_name=class_name, import_cmd=import_cmd,
-                                     init_args=init_args, init_ref_type_args=ref_type_args)
+                                     init_args=init_args, init_ref_type_args=ref_type_args, config_args=config_args)
 
         return restorable_obj_wrapper
 
@@ -108,8 +118,11 @@ class RestorableObjectWrapper(SchemaObj):
             assert keys == set(self.init_ref_type_args), self._generate_non_matching_parameter_message(
                 ref_type_args)
 
+        init_args = self.init_args
+        add_params_from_config(init_args, self.config_args)
+
         self.instance = create_object_with_parameters(
-            code=self.code, import_cmd=self.import_cmd, class_name=self.class_name, init_args=self.init_args,
+            code=self.code, import_cmd=self.import_cmd, class_name=self.class_name, init_args=init_args,
             init_ref_type_args=ref_type_args)
 
     def _generate_non_matching_parameter_message(self, ref_type_args):
@@ -135,6 +148,7 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
     def _add_optional_fields(self, dict_representation, file_pers_service, dict_pers_service):
         super(StateFileRestorableObjectWrapper, self)._add_optional_fields(dict_representation, file_pers_service,
                                                                            dict_pers_service)
+
         if self.state_file:
             state_file_id = file_pers_service.save_file(self.state_file)
             dict_representation[STATE_FILE] = state_file_id
