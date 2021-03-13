@@ -7,10 +7,12 @@ import torch
 
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from mmlib.save_info import ModelSaveInfo
+from schema.inference_info import InferenceInfo
 from schema.model_info import ModelInfo
 from schema.recover_info import FullModelRecoverInfo
 from schema.recover_val import RecoverVal
 from schema.store_type import ModelStoreType
+from tests.networks.custom_coco import inference_transforms
 from util.hash import state_dict_hash, inference_hash
 from util.init_from_file import create_object
 
@@ -18,8 +20,9 @@ MODEL_WEIGHTS = 'model_weights'
 
 
 class RestoredModelInfo:
-    def __init__(self, model: torch.nn.Module):
+    def __init__(self, model: torch.nn.Module, inference_info: InferenceInfo = None):
         self.model = model
+        self.inference_info = inference_info
 
 
 # Future work, se if it would make sense to use protocol here
@@ -81,7 +84,7 @@ class BaselineSaveService(AbstractSaveService):
 
         return model_id
 
-    def recover_model(self, model_id: str, check_recover_val=False) -> RestoredModelInfo:
+    def recover_model(self, model_id: str, inference_info=False, check_recover_val=False) -> RestoredModelInfo:
         # in this baseline approach we always store the full model (pickled weights + code)
 
         with tempfile.TemporaryDirectory() as tmp_path:
@@ -94,7 +97,14 @@ class BaselineSaveService(AbstractSaveService):
             s_dict = self._recover_pickled_weights(recover_info.weights_file_path)
             model.load_state_dict(s_dict)
 
-            restored_model_info = RestoredModelInfo(model)
+            if inference_info:
+                # TODO think about ref type args
+                # FIXME, for now and only for testing
+                model_info.inference_info.data_wrapper.restore_instance({'transform': inference_transforms})
+                model_info.inference_info.dataloader.restore_instance()
+                model_info.inference_info.pre_processor.restore_instance()
+
+            restored_model_info = RestoredModelInfo(model=model, inference_info=model_info.inference_info)
 
             if check_recover_val:
                 self._check_recover_val(model, recover_info)
@@ -150,8 +160,15 @@ class BaselineSaveService(AbstractSaveService):
                                                 model_class_name=model_save_info.class_name,
                                                 recover_validation=recover_val)
 
+            inference_info = None
+            if model_save_info.inference_info:
+                inference_info = InferenceInfo(data_wrapper=model_save_info.inference_info.data_wrapper,
+                                               dataloader=model_save_info.inference_info.dataloader,
+                                               pre_processor=model_save_info.inference_info.pre_processor,
+                                               environment=model_save_info.inference_info.environment)
+
             model_info = ModelInfo(store_type=ModelStoreType.PICKLED_WEIGHTS, recover_info=recover_info,
-                                   derived_from_id=derived_from)
+                                   derived_from_id=derived_from, inference_info=inference_info)
 
             model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
 

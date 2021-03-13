@@ -45,9 +45,11 @@ class ModelInfo(SchemaObj):
         if self.derived_from:
             dict_representation[DERIVED_FROM] = self.derived_from
         if self.inference_info:
-            dict_representation[INFERENCE_INFO_ID] = self.derived_from
+            inference_info_id = self.inference_info.persist(file_pers_service, dict_pers_service)
+            dict_representation[INFERENCE_INFO_ID] = inference_info_id
         if self.train_info:
-            dict_representation[TRAIN_INFO_ID] = self.derived_from
+            train_info_id = self.train_info.persist(file_pers_service, dict_pers_service)
+            dict_representation[TRAIN_INFO_ID] = train_info_id
 
         dict_pers_service.save_dict(dict_representation, MODEL_INFO_REPRESENT_TYPE)
 

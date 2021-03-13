@@ -5,7 +5,9 @@ from schema.restorable_object import RestorableObjectWrapper
 
 
 class InferenceSaveInfo:
-    def __init__(self, dataloader: RestorableObjectWrapper, pre_processor: RestorableObjectWrapper, environment: Environment):
+    def __init__(self, data_wrapper: RestorableObjectWrapper, dataloader: RestorableObjectWrapper,
+                 pre_processor: RestorableObjectWrapper, environment: Environment):
+        self.data_wrapper = data_wrapper
         self.dataloader = dataloader
         self.pre_processor = pre_processor
         self.environment = environment

@@ -8,9 +8,11 @@ from mmlib.deterministic import set_deterministic
 from mmlib.equal import model_equal
 from mmlib.persistence import MongoDictPersistenceService, FileSystemPersistenceService, DICT
 from mmlib.save import BaselineSaveService
+from schema.environment import Environment
 from schema.model_info import RECOVER_INFO_ID, MODEL_INFO_REPRESENT_TYPE
 from schema.recover_info import FULL_MODEL_RECOVER_INFO
 from schema.recover_val import RECOVER_VAL
+from schema.restorable_object import RestorableObjectWrapper
 from schema.save_info_builder import ModelSaveInfoBuilder
 from tests.networks.mynets.googlenet import googlenet
 from tests.networks.mynets.mobilenet import mobilenet_v2
@@ -19,6 +21,8 @@ from util.dummy_data import imagenet_input
 from util.mongo import MongoService
 
 MONGO_CONTAINER_NAME = 'mongo-test'
+COCO_ROOT = 'coco'  # TODO needs to be set
+COCO_ANNOT = 'coco'  # TODO needs to be set
 
 
 class TestSave(unittest.TestCase):
@@ -61,6 +65,16 @@ class TestSave(unittest.TestCase):
 
             self._test_save_restore_model(code_file, code_name, model)
 
+    def test_save_restore_model_pretrained_inference_info(self):
+        file_names = ['mobilenet', 'resnet18']
+        models = [mobilenet_v2, resnet18]
+        for file_name, model in zip(file_names, models):
+            code_name = model.__name__
+            model = model(pretrained=True)
+            code_file = './networks/mynets/{}.py'.format(file_name)
+
+            self._test_save_restore_model(code_file, code_name, model)
+
     def test_save_restore_model(self):
         file_names = ['mobilenet', 'resnet18']
         models = [mobilenet_v2, resnet18]
@@ -78,6 +92,46 @@ class TestSave(unittest.TestCase):
 
         model_id = self.save_recover_service.save_model(save_info)
         restored_model_info = self.save_recover_service.recover_model(model_id)
+        self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
+
+    def test_save_restore_model_inf_info(self):
+        file_names = ['mobilenet', 'resnet18']
+        models = [mobilenet_v2, resnet18]
+        for file_name, model in zip(file_names, models):
+            code_name = model.__name__
+            model = model()
+            code_file = './networks/mynets/{}.py'.format(file_name)
+
+            self._test_save_restore_model_inference_info(code_file, code_name, model)
+
+    def _test_save_restore_model_inference_info(self, code_file, code_name, model):
+        save_info_builder = ModelSaveInfoBuilder()
+        save_info_builder.add_model_info(model, code_file, code_name)
+        # coco_val_data = CustomCoco(args.coco_root, args.coco_annotations, transform=inference_transforms)
+        data_wrapper = RestorableObjectWrapper(
+            code='./networks/custom_coco.py',
+            class_name='CustomCoco',
+            init_args={'root': 'coco', 'ann_file': 'coco'},
+            init_ref_type_args=['transform']
+        )
+        dataloader = RestorableObjectWrapper(
+            import_cmd='from torch.utils.data import DataLoader',
+            class_name='DataLoader',
+            init_args={'batch_size': 64, 'shuffle': False, 'num_workers': 0, 'pin_memory': True},
+            init_ref_type_args=['data']
+        )
+        preprocessor = RestorableObjectWrapper(
+            code='./networks/dummy_preprocessor.py',
+            class_name='DummyPreprocessor',
+            init_args={},
+            init_ref_type_args=[]
+        )
+        environment = Environment(environment_data={'cpu': 'test'})
+        save_info_builder.add_inference_info(data_wrapper, dataloader, preprocessor, environment)
+        save_info = save_info_builder.build()
+
+        model_id = self.save_recover_service.save_model(save_info)
+        restored_model_info = self.save_recover_service.recover_model(model_id, inference_info=True)
         self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
 
     def test_save_restore_model_version(self):

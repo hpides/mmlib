@@ -20,7 +20,7 @@ def create_object_with_parameters(class_name: [str], init_args: dict, code: str 
     else:
         exec(import_cmd)
 
-    args_string = ', '.join(['{}={}'.format(k, v) for k, v in init_args.items()])
+    args_string = _arg_string(init_args)
     ref_args_type_strings = ''
 
     ref_type_refs = []
@@ -34,6 +34,17 @@ def create_object_with_parameters(class_name: [str], init_args: dict, code: str 
     model = eval(exec_str)
 
     return model
+
+
+def _arg_string(init_args):
+    args = []
+    for k, v in init_args.items():
+        if isinstance(v, str):
+            args.append('{}=\'{}\''.format(k, v))
+        else:
+            args.append('{}={}'.format(k, v))
+
+    return ', '.join(args)
 
 
 def _module(code):

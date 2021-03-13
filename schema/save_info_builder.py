@@ -15,6 +15,7 @@ class ModelSaveInfoBuilder:
         self._code_name = None
         self._recover_val = False
         self._dummy_input_shape = None
+        self._inference_data_wrapper = None
         self._inference_dataloader = None
         self._inference_pre_processor = None
         self._inference_environment = None
@@ -42,14 +43,16 @@ class ModelSaveInfoBuilder:
         self._recover_val = True
         self._dummy_input_shape = dummy_input_shape
 
-    def add_inference_info(self, dataloader: RestorableObjectWrapper, pre_processor: RestorableObjectWrapper,
-                           environment: Environment):
+    def add_inference_info(self, data_wrapper: RestorableObjectWrapper, dataloader: RestorableObjectWrapper,
+                           pre_processor: RestorableObjectWrapper, environment: Environment):
         """
         Indicates that inference info should be saved and adds the required info.
-        :param dataloader: The dataloader encapsulated in an RestorableObject
-        :param pre_processor: The pre_processor encapsulated in an RestorableObject
-        :param environment: The environment as an object of type Environment
+        :param data_wrapper: The data_wrapper wrapped in an RestorableObject.
+        :param dataloader: The dataloader wrapped in an RestorableObject.
+        :param pre_processor: The pre_processor wrapped in an RestorableObject.
+        :param environment: The environment as an object of type Environment.
         """
+        self._inference_data_wrapper = data_wrapper
         self._inference_dataloader = dataloader
         self._inference_pre_processor = pre_processor
         self._inference_environment = environment
@@ -57,7 +60,9 @@ class ModelSaveInfoBuilder:
     def build(self) -> ModelSaveInfo:
         # TODO check if all info is available
 
-        inf_info = InferenceSaveInfo(dataloader=self._inference_dataloader, pre_processor=self._inference_pre_processor,
+        inf_info = InferenceSaveInfo(data_wrapper=self._inference_data_wrapper,
+                                     dataloader=self._inference_dataloader,
+                                     pre_processor=self._inference_pre_processor,
                                      environment=self._inference_environment)
         save_info = ModelSaveInfo(self._model, self._base_model, self._code, self._code_name, self._recover_val,
                                   self._dummy_input_shape, inference_info=inf_info)

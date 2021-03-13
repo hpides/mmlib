@@ -32,6 +32,13 @@ class TestInitFromFIle(unittest.TestCase):
         self.assertEqual(43, obj.state2)
         self.assertEqual(42, obj.state3.state)
 
+    def test_init_code_string(self):
+        init_args = {'int_arg': 42, 'str_arg': '43'}
+        obj = create_object_with_parameters('DummyD', init_args=init_args, code=CODE)
+
+        self.assertEqual(42, obj.int_state)
+        self.assertEqual('43', obj.str_state)
+
     def test_init_import_cmd(self):
         expected = resnet18(pretrained=True)
         init_args = {'pretrained': True}
