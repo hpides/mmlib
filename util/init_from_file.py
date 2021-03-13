@@ -6,9 +6,9 @@ def create_object(code, class_name):
     module, path = _module(code)
     sys.path.append(path)
     exec('from {} import {}'.format(module, class_name))
-    model = eval('{}()'.format(class_name))
+    obj = eval('{}()'.format(class_name))
 
-    return model
+    return obj
 
 
 def create_object_with_parameters(class_name: [str], init_args: dict, code: str = None, import_cmd: str = None,
@@ -35,9 +35,9 @@ def create_object_with_parameters(class_name: [str], init_args: dict, code: str 
         template_string = '{}({},{})'
 
     exec_str = template_string.format(class_name, args_string, ref_args_type_strings)
-    model = eval(exec_str)
+    obj = eval(exec_str)
 
-    return model
+    return obj
 
 
 def _arg_string(init_args):
