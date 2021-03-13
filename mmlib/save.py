@@ -126,8 +126,6 @@ class BaselineSaveService(AbstractSaveService):
             assert model_save_info.dummy_input_shape, 'to store recover_val information a dummy input function needs ' \
                                                       'to be provided'
 
-        # TODO add more/other checks
-
     def _save_full_model(self, model_save_info: ModelSaveInfo, recover_val: RecoverVal) -> str:
 
         with tempfile.TemporaryDirectory() as tmp_path:
