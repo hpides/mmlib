@@ -104,8 +104,9 @@ class RestorableObjectWrapper(SchemaObj):
         restored_dict = dict_pers_service.recover_dict(self.store_id, RESTORABLE_OBJECT)
 
         # size of all referenced files/objects
-        # TODO adjust method, code not always given
-        result += file_pers_service.file_size(restored_dict[CODE_FILE])
+        if CODE_FILE in restored_dict:
+            result += file_pers_service.file_size(restored_dict[CODE_FILE])
+
         result += file_pers_service.file_size(restored_dict[STATE_FILE])
 
         return result
