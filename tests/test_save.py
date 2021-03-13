@@ -212,7 +212,6 @@ class TestSave(unittest.TestCase):
 
         save_version_info_builder = ModelSaveInfoBuilder()
         save_version_info_builder.add_model_info(model_version, base_model_id=model_version1_id)
-        # TODO dummy_input_shape should be inferred form base model
         save_version_info_builder.add_recover_val(dummy_input_shape=[10, 3, 300, 400])
         save_version_info = save_version_info_builder.build()
         model_version2_id = self.save_recover_service.save_model(save_version_info)
