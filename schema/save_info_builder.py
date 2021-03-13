@@ -60,10 +60,14 @@ class ModelSaveInfoBuilder:
     def build(self) -> ModelSaveInfo:
         # TODO check if all info is available
 
-        inf_info = InferenceSaveInfo(data_wrapper=self._inference_data_wrapper,
-                                     dataloader=self._inference_dataloader,
-                                     pre_processor=self._inference_pre_processor,
-                                     environment=self._inference_environment)
+        inf_info = None
+        if self._inference_data_wrapper or self._inference_dataloader or\
+                self._inference_pre_processor or self._inference_environment:
+            inf_info = InferenceSaveInfo(data_wrapper=self._inference_data_wrapper,
+                                         dataloader=self._inference_dataloader,
+                                         pre_processor=self._inference_pre_processor,
+                                         environment=self._inference_environment)
+
         save_info = ModelSaveInfo(self._model, self._base_model, self._code, self._code_name, self._recover_val,
                                   self._dummy_input_shape, inference_info=inf_info)
         return save_info
