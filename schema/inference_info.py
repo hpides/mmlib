@@ -3,13 +3,11 @@ from schema.environment import Environment
 from schema.restorable_object import RestorableObjectWrapper
 from schema.schema_obj import SchemaObj
 
-DATA_WRAPPER = 'data_wrapper'
-
 ID = 'id'
 DATA_LOADER = 'data_loader'
 PRE_PROCESSOR = 'pre_processor'
 ENVIRONMENT = 'environment'
-
+DATA_WRAPPER = 'data_wrapper'
 INFERENCE_INFO = 'inference_info'
 
 
