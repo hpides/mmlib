@@ -24,6 +24,8 @@ MONGO_CONTAINER_NAME = 'mongo-test'
 COCO_ROOT = 'coco_root'
 COCO_ANNOT = 'coco_annotations'
 
+CONFIG = '/Users/nils/Studium/master-thesis/mmlib/tests/config.ini'
+
 
 class TestSave(unittest.TestCase):
 
@@ -41,6 +43,8 @@ class TestSave(unittest.TestCase):
         file_pers_service = FileSystemPersistenceService(self.tmp_path)
         dict_pers_service = MongoDictPersistenceService()
         self.save_recover_service = BaselineSaveService(file_pers_service, dict_pers_service)
+
+        os.environ['MMLIB_CONFIG'] = CONFIG
 
     def tearDown(self) -> None:
         self.__clean_up()

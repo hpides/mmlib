@@ -1,5 +1,6 @@
 import abc
 import configparser
+import os
 
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.schema_obj import SchemaObj
@@ -19,8 +20,7 @@ RESTORABLE_OBJECT = 'restorable_object'
 
 
 def add_params_from_config(init_args, config_args):
-    # TODO think how to nicely integrate the config file
-    config_file = '/Users/nils/Studium/master-thesis/mmlib/tests/config.ini'
+    config_file = os.getenv('MMLIB_CONFIG')
     config = configparser.ConfigParser()
     config.read(config_file)
 
