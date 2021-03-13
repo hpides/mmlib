@@ -58,8 +58,7 @@ class InferenceInfo(SchemaObj):
 
         dataloader_id = restored_dict[DATA_LOADER]
         dataloader = RestorableObjectWrapper.load(dataloader_id, file_pers_service, dict_pers_service, restore_root)
-        # TODO think about how to make this dependency nicer
-        dataloader.restore_instance(ref_type_args={'dataset': data_wrapper.instance})
+        dataloader.restore_instance(ref_type_args={dataloader.init_ref_type_args[0]: data_wrapper.instance})
 
         pre_processor_id = restored_dict[PRE_PROCESSOR]
         pre_processor = RestorableObjectWrapper.load(pre_processor_id, file_pers_service, dict_pers_service,
