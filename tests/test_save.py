@@ -107,7 +107,7 @@ class TestSave(unittest.TestCase):
     def _test_save_restore_model_inference_info(self, code_file, code_name, model):
         save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(model, code_file, code_name)
-        # coco_val_data = CustomCoco(args.coco_root, args.coco_annotations, transform=inference_transforms)
+        save_info_builder.add_recover_val(dummy_input_shape=[10, 3, 300, 400])
         data_wrapper = RestorableObjectWrapper(
             code='./networks/custom_coco.py',
             class_name='InferenceCustomCoco',
@@ -135,6 +135,12 @@ class TestSave(unittest.TestCase):
 
         model_id = self.save_recover_service.save_model(save_info)
         restored_model_info = self.save_recover_service.recover_model(model_id, inference_info=True)
+
+        self.assertTrue(restored_model_info.inference_info.data_wrapper.instance)
+        self.assertTrue(restored_model_info.inference_info.dataloader.instance)
+        self.assertTrue(restored_model_info.inference_info.pre_processor.instance)
+        self.assertTrue(restored_model_info.inference_info.environment)
+
         self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
 
     def test_save_restore_model_version(self):
