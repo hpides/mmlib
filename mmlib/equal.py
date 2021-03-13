@@ -1,4 +1,3 @@
-import hashlib
 from typing import Callable
 
 import torch
@@ -80,44 +79,6 @@ def state_dict_equal(d1: dict, d2: dict, device: torch.device = None) -> bool:
             return False
 
     return True
-
-
-def state_dict_hash(state_dict: dict, device: torch.device = None) -> str:
-    """
-    Calculates a md5 hash of a state dict dependent on the layer names and the corresponding weight tensors.
-    :param state_dict: The state dict to create the hash from.
-    :param device: The device to execute on.
-    :return: The md5 hash as a string.
-    """
-    md5 = hashlib.md5()
-
-    device = get_device(device)
-
-    for layer_name, weight_tensor in state_dict.items():
-        weight_tensor = weight_tensor.to(device)
-        numpy_data = weight_tensor.numpy().data
-        md5.update(bytes(layer_name, 'utf-8'))
-        md5.update(numpy_data)
-
-    return md5.hexdigest()
-
-
-def tensor_hash(tensor: torch.tensor, device: torch.device = None) -> str:
-    """
-    Calculates a md5 hash of the given tensor.
-    :param tensor: The tensor to hash.
-    :param device: The device to execute on.
-    :return: The md5 hash as a string.
-    """
-    md5 = hashlib.md5()
-
-    device = get_device(device)
-
-    tensor = tensor.to(device)
-    numpy_data = tensor.detach().numpy().data
-    md5.update(numpy_data)
-
-    return md5.hexdigest()
 
 
 def model_equal(m1: torch.nn.Module, m2: torch.nn.Module, produce_input: Callable[[], torch.tensor],

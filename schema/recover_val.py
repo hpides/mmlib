@@ -1,44 +1,50 @@
-from schema.function import Function
-from schema.schema_obj import SchemaObj, SchemaObjType
+from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
+from schema.schema_obj import SchemaObj
 
 ID = 'id'
 WEIGHTS_HASH = 'weights_hash'
 INFERENCE_HASH = 'inference_hash'
 DUMMY_INPUT_SHAPE = 'dummy_input_shape'
 
+RECOVER_VAL = 'recover_val'
+
 
 class RecoverVal(SchemaObj):
 
-    def __init__(self, r_id: str = None, weights_hash: str = None, inference_hash: str = None,
-                 dummy_input_shape: [int] = None):
-        self.r_id = r_id
+    def __init__(self, weights_hash: str, inference_hash: str, dummy_input_shape: [int], store_id: str = None):
+        self.store_id = store_id
         self.weights_hash = weights_hash
         self.inference_hash = inference_hash
         self.dummy_input_shape = dummy_input_shape
-        self._type_mapping = {
-            ID: SchemaObjType.STRING,
-            WEIGHTS_HASH: SchemaObjType.STRING,
-            INFERENCE_HASH: SchemaObjType.STRING,
-            DUMMY_INPUT_SHAPE: SchemaObjType.STRING,
-        }
 
-    def to_dict(self) -> dict:
-        recover_val = {
+    def persist(self, file_pers_service: AbstractFilePersistenceService,
+                dict_pers_service: AbstractDictPersistenceService) -> str:
+        if not self.store_id:
+            self.store_id = dict_pers_service.generate_id()
+
+        dict_representation = {
+            ID: self.store_id,
             WEIGHTS_HASH: self.weights_hash,
             INFERENCE_HASH: self.inference_hash,
             DUMMY_INPUT_SHAPE: self.dummy_input_shape,
         }
 
-        if self.r_id:
-            recover_val[ID] = self.r_id
+        dict_pers_service.save_dict(dict_representation, RECOVER_VAL)
 
-        return recover_val
+        return self.store_id
 
-    def load_dict(self, state_dict: dict):
-        self.r_id = state_dict[ID] if ID in state_dict else None
-        self.weights_hash = state_dict[WEIGHTS_HASH]
-        self.inference_hash = state_dict[INFERENCE_HASH]
-        self.dummy_input_shape = state_dict[DUMMY_INPUT_SHAPE]
+    @classmethod
+    def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
+             dict_pers_service: AbstractDictPersistenceService, restore_root: str):
+        restored_dict = dict_pers_service.recover_dict(obj_id, RECOVER_VAL)
+        store_id = restored_dict[ID]
+        weights_hash = restored_dict[WEIGHTS_HASH]
+        inference_hash = restored_dict[INFERENCE_HASH]
+        dummy_input_shape = restored_dict[DUMMY_INPUT_SHAPE]
 
-    def get_type(self, dict_key) -> SchemaObjType:
-        return self._type_mapping[dict_key]
+        return cls(weights_hash=weights_hash, inference_hash=inference_hash, dummy_input_shape=dummy_input_shape,
+                   store_id=store_id)
+
+    def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
+                      dict_pers_service: AbstractDictPersistenceService) -> int:
+        return dict_pers_service.dict_size(self.store_id, RECOVER_VAL)

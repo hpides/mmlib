@@ -83,7 +83,7 @@ class TestProbe(unittest.TestCase):
 
         self.assertEqual(summary1, summary2)
 
-    def test_safe_and_load(self):
+    def test_save_and_load(self):
         model1 = models.alexnet(pretrained=True)
         dummy_input = imagenet_input()
         computed_summary = probe_inference(model1, dummy_input)
