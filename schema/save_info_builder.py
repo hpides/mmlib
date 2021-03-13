@@ -58,11 +58,14 @@ class ModelSaveInfoBuilder:
         self._inference_environment = environment
 
     def build(self) -> ModelSaveInfo:
-        # TODO check if all info is available
-
         inf_info = None
         if self._inference_data_wrapper or self._inference_dataloader or\
                 self._inference_pre_processor or self._inference_environment:
+
+            assert self._inference_data_wrapper, 'if inference info shall be stored -> data wrapper must be given'
+            assert self._inference_dataloader, 'if inference info shall be stored -> data loader must be given'
+            assert self._inference_environment, 'if inference info shall be stored -> environment must be given'
+
             inf_info = InferenceSaveInfo(data_wrapper=self._inference_data_wrapper,
                                          dataloader=self._inference_dataloader,
                                          pre_processor=self._inference_pre_processor,
