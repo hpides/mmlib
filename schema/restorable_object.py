@@ -1,6 +1,7 @@
 import abc
 import configparser
 import os
+from typing import Dict
 
 import torch
 
@@ -20,26 +21,6 @@ INIT_REF_TYPE_ARGS = 'init_ref_type_args'
 STATE_FILE = 'state_file'
 
 RESTORABLE_OBJECT = 'restorable_object'
-
-class StateDictObj(metaclass=abc.ABCMeta):
-    def __init__(self):
-        self.state_objs: [RestorableObjectWrapper] = []
-
-
-class TrainService(StateDictObj):
-
-    @abc.abstractmethod
-    def train(self, model: torch.nn.Module):
-        raise NotImplementedError
-
-
-def add_params_from_config(init_args, config_args):
-    config_file = os.getenv('MMLIB_CONFIG')
-    config = configparser.ConfigParser()
-    config.read(config_file)
-
-    for k, v in config_args.items():
-        init_args[k] = config['VALUES'][v]
 
 
 class RestorableObjectWrapper(SchemaObj):
@@ -146,6 +127,11 @@ class RestorableObjectWrapper(SchemaObj):
             self.init_ref_type_args, ref_type_args)
 
 
+class StateDictObj(metaclass=abc.ABCMeta):
+    def __init__(self):
+        self.state_objs: Dict[str, RestorableObjectWrapper] = {}
+
+
 class StateDictRestorableObjectWrapper(SchemaObj):
 
     def __init__(self, class_name: str, code: str, instance: StateDictObj = None, store_id: str = None):
@@ -162,10 +148,10 @@ class StateDictRestorableObjectWrapper(SchemaObj):
 
         # persist instance state dict
         state_dict_refs = {}
-        for k, v in self.instance.state_objs:
+        for k, v in self.instance.state_objs.items():
             obj: RestorableObjectWrapper = v
             obj_id = obj.persist(file_pers_service, dict_pers_service)
-            state_dict_refs[obj_id] = obj
+            state_dict_refs[k] = obj_id
 
         code_file_id = file_pers_service.save_file(self.code)
 
@@ -195,14 +181,13 @@ class StateDictRestorableObjectWrapper(SchemaObj):
 
     @abc.abstractmethod
     def restore_instance(self, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService, restore_root: str):
+                         dict_pers_service: AbstractDictPersistenceService, restore_root: str):
         raise NotImplementedError
 
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
                       dict_pers_service: AbstractDictPersistenceService) -> int:
         # TODO implement
         return 0
-
 
 
 class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
@@ -256,3 +241,19 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
         Loads the state for the internal instance from a file.
         """
         raise NotImplementedError
+
+
+class TrainService(StateDictObj):
+
+    @abc.abstractmethod
+    def train(self, model: torch.nn.Module):
+        raise NotImplementedError
+
+
+def add_params_from_config(init_args, config_args):
+    config_file = os.getenv('MMLIB_CONFIG')
+    config = configparser.ConfigParser()
+    config.read(config_file)
+
+    for k, v in config_args.items():
+        init_args[k] = config['VALUES'][v]

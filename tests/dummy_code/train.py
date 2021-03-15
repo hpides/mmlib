@@ -11,10 +11,11 @@ from schema.restorable_object import StateDictRestorableObjectWrapper, RESTORABL
 from tests.networks.mynets.resnet18 import resnet18
 from tests.test_dict_persistence import MONGO_CONTAINER_NAME
 from tests.test_save import CONFIG
+from util.init_from_file import create_object
 
 
 class ResnetTrainService(TrainService):
-    def train(self, model: torch.nn.Module):
+    def train(self, model: torch.nn.Module, number_batches=None):
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         train_loader = self._get_dataloader()
@@ -23,8 +24,6 @@ class ResnetTrainService(TrainService):
 
         # switch to train mode
         model.train()
-
-        outputs = []
 
         for i, (images, target) in enumerate(train_loader):
             images = images.to(device)
@@ -35,18 +34,23 @@ class ResnetTrainService(TrainService):
             loss = torch.nn.CrossEntropyLoss()(output, target)
 
             # compute gradient and do SGD step
-            optimizer = self._get_optimizer()
+            # TODO restore manually here since optimizer needs model params
+            optimizer = self._get_optimizer(model.parameters())
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
+            if not (number_batches is None or i < number_batches - 1):
+                break
+
     def _get_dataloader(self):
-        dataloader = self.state_objs['data_loader'].instace
+        dataloader = self.state_objs['dataloader'].instance
         return dataloader
 
-    def _get_optimizer(self):
-        optimizer = self.state_objs['optimizer'].instace
-        return optimizer
+    def _get_optimizer(self, parameters):
+        optimizer_wrapper = self.state_objs['optimizer']
+        optimizer_wrapper.restore_instance({'params': parameters})
+        return optimizer_wrapper.instance
 
 
 class ResnetTrainWrapper(StateDictRestorableObjectWrapper):
@@ -58,17 +62,28 @@ class ResnetTrainWrapper(StateDictRestorableObjectWrapper):
         restored_dict = dict_pers_service.recover_dict(self.store_id, RESTORABLE_OBJECT)
         state_objs = restored_dict[STATE_DICT]
 
-        optimizer = RestorableObjectWrapper.load(state_objs['optimizer'], file_pers_service, dict_pers_service,
-                                                 restore_root)
-        state_dict['optimizer'] = optimizer  # TODO fix can only be initialized in the train method
+        # NOTE: Dataloader instance is loaded in the train routine
+        state_dict['optimizer'] = RestorableObjectWrapper.load(
+            state_objs['optimizer'], file_pers_service, dict_pers_service, restore_root)
 
-        dataloader = RestorableObjectWrapper.load(state_objs['data_loader'], file_pers_service, dict_pers_service,
-                                                  restore_root)
-        state_dict['data_loader'] = dataloader
+        data_wrapper = RestorableObjectWrapper.load(
+            state_objs['data'], file_pers_service, dict_pers_service, restore_root)
+        state_dict['data'] = data_wrapper
+        data_wrapper.restore_instance()
+
+        dataloader = RestorableObjectWrapper.load(
+            state_objs['dataloader'], file_pers_service, dict_pers_service, restore_root)
+        state_dict['dataloader'] = dataloader
+        dataloader.restore_instance(ref_type_args={'dataset': data_wrapper.instance})
+
+        self.instance = create_object(code=self.code, class_name=self.class_name)
+        self.instance.state_objs = state_dict
 
 
 if __name__ == '__main__':
     # init dict with internal state here
+
+    os.environ['MMLIB_CONFIG'] = CONFIG
 
     with tempfile.TemporaryDirectory() as tmp_path:
         file_ps = FileSystemPersistenceService(base_path=tmp_path)
@@ -86,14 +101,6 @@ if __name__ == '__main__':
             init_ref_type_args=['params']
         )
 
-        model = resnet18()
-
-        optimizer_id = state_dict['optimizer'].persist(file_ps, dict_ps)
-
-        optimizer_wrapper = RestorableObjectWrapper.load(optimizer_id, file_ps, dict_ps, tmp_path)
-        optimizer_wrapper.restore_instance(ref_type_args={'params': model.parameters()})
-        optimizer = optimizer_wrapper.instance
-
         state_dict['data'] = RestorableObjectWrapper(
             code='../networks/custom_coco.py',
             class_name='InferenceCustomCoco',
@@ -102,12 +109,6 @@ if __name__ == '__main__':
             init_ref_type_args=[]
         )
 
-        os.environ['MMLIB_CONFIG'] = CONFIG
-        data_wrapper_id = state_dict['data'].persist(file_ps, dict_ps)
-        data_wrapper = RestorableObjectWrapper.load(data_wrapper_id, file_ps, dict_ps, tmp_path)
-        data_wrapper.restore_instance()
-        data = data_wrapper.instance
-
         state_dict['dataloader'] = RestorableObjectWrapper(
             import_cmd='from torch.utils.data import DataLoader',
             class_name='DataLoader',
@@ -115,10 +116,42 @@ if __name__ == '__main__':
             config_args={},
             init_ref_type_args=['dataset']
         )
-        dataloader_wrapper_id = state_dict['dataloader'].persist(file_ps, dict_ps)
-        dataloader_wrapper = RestorableObjectWrapper.load(dataloader_wrapper_id, file_ps, dict_ps, tmp_path)
-        dataloader_wrapper.restore_instance({'dataset': data})
-        dataloader = dataloader_wrapper.instance
 
+        ts = ResnetTrainService()
+        ts.state_objs = state_dict
 
-        print(optimizer_id)
+        ts_wrapper = ResnetTrainWrapper(
+            code='./train.py',
+            class_name='ResnetTrainService',
+            instance=ts
+        )
+
+        ts_wrapper_id = ts_wrapper.persist(file_ps, dict_ps)
+
+        ts_wrapper_new = ResnetTrainWrapper.load(ts_wrapper_id, file_ps, dict_ps, tmp_path)
+        ts_wrapper_new.restore_instance(file_ps, dict_ps, tmp_path)
+        ts_new: ResnetTrainService = ts_wrapper_new.instance
+
+        model = resnet18()
+        ts_new.train(model, number_batches=2)
+
+        print('test')
+
+        #
+        # optimizer_id = state_dict['optimizer'].persist(file_ps, dict_ps)
+        #
+        # optimizer_wrapper = RestorableObjectWrapper.load(optimizer_id, file_ps, dict_ps, tmp_path)
+        # optimizer_wrapper.restore_instance(ref_type_args={'params': model.parameters()})
+        # optimizer = optimizer_wrapper.instance
+        #
+        # data_wrapper_id = state_dict['data'].persist(file_ps, dict_ps)
+        # data_wrapper = RestorableObjectWrapper.load(data_wrapper_id, file_ps, dict_ps, tmp_path)
+        # data_wrapper.restore_instance()
+        # data = data_wrapper.instance
+        #
+        # dataloader_wrapper_id = state_dict['dataloader'].persist(file_ps, dict_ps)
+        # dataloader_wrapper = RestorableObjectWrapper.load(dataloader_wrapper_id, file_ps, dict_ps, tmp_path)
+        # dataloader_wrapper.restore_instance({'dataset': data})
+        # dataloader = dataloader_wrapper.instance
+        #
+        # print(optimizer_id)
