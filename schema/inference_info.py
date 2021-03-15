@@ -1,6 +1,8 @@
+import abc
+
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.environment import Environment
-from schema.restorable_object import RestorableObjectWrapper
+from schema.restorable_object import RestorableObjectWrapper, StateFileRestorableObjectWrapper
 from schema.schema_obj import SchemaObj
 
 ID = 'id'
@@ -11,9 +13,22 @@ DATA_WRAPPER = 'data_wrapper'
 INFERENCE_INFO = 'inference_info'
 
 
+class StateDictObj(metaclass=abc.ABCMeta):
+    def __init__(self):
+        self.state_objs: [RestorableObjectWrapper] = []
+
+
+class InferenceService(StateDictObj):
+
+    @abc.abstractmethod
+    def infer(self):
+        raise NotImplementedError
+
+
 class InferenceInfo(SchemaObj):
 
-    def __init__(self, data_wrapper: RestorableObjectWrapper, dataloader: RestorableObjectWrapper,
+    def __init__(self, inference_service: StateFileRestorableObjectWrapper, data_wrapper: RestorableObjectWrapper,
+                 dataloader: RestorableObjectWrapper,
                  pre_processor: RestorableObjectWrapper, environment: Environment, store_id: str = None):
         self.store_id = store_id
         self.data_wrapper = data_wrapper

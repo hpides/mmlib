@@ -3,8 +3,11 @@ import configparser
 import os
 
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
+from schema.inference_info import StateDictObj
 from schema.schema_obj import SchemaObj
 from util.init_from_file import create_object_with_parameters
+
+STATE_DICT = 'state_dict'
 
 ID = 'id'
 CODE_FILE = 'code_file'
@@ -128,6 +131,63 @@ class RestorableObjectWrapper(SchemaObj):
     def _generate_non_matching_parameter_message(self, ref_type_args):
         return 'given parameters not match the expected parameters - expected: {}, given: {}'.format(
             self.init_ref_type_args, ref_type_args)
+
+
+class StateDictRestorableObjectWrapper(SchemaObj):
+
+    def __init__(self, class_name: str, code: str, instance: StateDictObj = None, store_id: str = None):
+        self.store_id = store_id
+        self.instance = instance
+        self.code = code
+        self.class_name = class_name
+
+    def persist(self, file_pers_service: AbstractFilePersistenceService,
+                dict_pers_service: AbstractDictPersistenceService) -> str:
+
+        if not self.store_id:
+            self.store_id = dict_pers_service.generate_id()
+
+        # persist instance state dict
+        state_dict_refs = {}
+        for k, v in self.instance.state_objs:
+            obj: RestorableObjectWrapper = v
+            obj_id = obj.persist(file_pers_service, dict_pers_service)
+            state_dict_refs[obj_id] = obj
+
+        code_file_id = file_pers_service.save_file(self.code)
+
+        dict_representation = {
+            ID: self.store_id,
+            CLASS_NAME: self.class_name,
+            CODE_FILE: code_file_id,
+            STATE_DICT: state_dict_refs
+        }
+
+        dict_pers_service.save_dict(dict_representation, RESTORABLE_OBJECT)
+
+        return self.store_id
+
+    @classmethod
+    def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
+             dict_pers_service: AbstractDictPersistenceService, restore_root: str):
+
+        restored_dict = dict_pers_service.recover_dict(obj_id, RESTORABLE_OBJECT)
+
+        class_name = restored_dict[CLASS_NAME]
+        code_file_path = file_pers_service.recover_file(restored_dict[CODE_FILE], restore_root)
+
+        restorable_obj_wrapper = cls(store_id=obj_id, code=code_file_path, class_name=class_name)
+
+        return restorable_obj_wrapper
+
+    @abc.abstractmethod
+    def restore_instance(self, ref_type_args: dict = None):
+        # state_dict = {}
+        # for k,v in restored_dict[STATE_DICT]:
+        #     wrapper = RestorableObjectWrapper.load(v, file_pers_service, dict_pers_service, restore_root)
+        #     wrapper.restore_instance()
+        #     state_dict[k] = wrapper.instance
+        raise NotImplementedError
 
 
 class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
