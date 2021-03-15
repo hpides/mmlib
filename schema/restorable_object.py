@@ -2,8 +2,9 @@ import abc
 import configparser
 import os
 
+import torch
+
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
-from schema.inference_info import StateDictObj
 from schema.schema_obj import SchemaObj
 from util.init_from_file import create_object_with_parameters
 
@@ -19,6 +20,17 @@ INIT_REF_TYPE_ARGS = 'init_ref_type_args'
 STATE_FILE = 'state_file'
 
 RESTORABLE_OBJECT = 'restorable_object'
+
+class StateDictObj(metaclass=abc.ABCMeta):
+    def __init__(self):
+        self.state_objs: [RestorableObjectWrapper] = []
+
+
+class TrainService(StateDictObj):
+
+    @abc.abstractmethod
+    def train(self, model: torch.nn.Module):
+        raise NotImplementedError
 
 
 def add_params_from_config(init_args, config_args):
@@ -122,7 +134,8 @@ class RestorableObjectWrapper(SchemaObj):
                 ref_type_args)
 
         init_args = self.init_args
-        add_params_from_config(init_args, self.config_args)
+        if len(self.config_args) > 0:
+            add_params_from_config(init_args, self.config_args)
 
         self.instance = create_object_with_parameters(
             code=self.code, import_cmd=self.import_cmd, class_name=self.class_name, init_args=init_args,
@@ -181,13 +194,15 @@ class StateDictRestorableObjectWrapper(SchemaObj):
         return restorable_obj_wrapper
 
     @abc.abstractmethod
-    def restore_instance(self, ref_type_args: dict = None):
-        # state_dict = {}
-        # for k,v in restored_dict[STATE_DICT]:
-        #     wrapper = RestorableObjectWrapper.load(v, file_pers_service, dict_pers_service, restore_root)
-        #     wrapper.restore_instance()
-        #     state_dict[k] = wrapper.instance
+    def restore_instance(self, file_pers_service: AbstractFilePersistenceService,
+             dict_pers_service: AbstractDictPersistenceService, restore_root: str):
         raise NotImplementedError
+
+    def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
+                      dict_pers_service: AbstractDictPersistenceService) -> int:
+        # TODO implement
+        return 0
+
 
 
 class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
