@@ -6,15 +6,14 @@ from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersis
 from schema.schema_obj import SchemaObj
 from util.init_from_file import create_object_with_parameters
 
-IMPORT_CMD = 'import_cmd'
-
 ID = 'id'
 CODE_FILE = 'code_file'
 CLASS_NAME = 'class_name'
-STATE_FILE = 'state_file'
+IMPORT_CMD = 'import_cmd'
 INIT_ARGS = 'init_args'
 CONFIG_ARGS = 'config_args'
 INIT_REF_TYPE_ARGS = 'init_ref_type_args'
+STATE_FILE = 'state_file'
 
 RESTORABLE_OBJECT = 'restorable_object'
 
