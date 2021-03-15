@@ -56,4 +56,3 @@ class Function(SchemaObj):
                       dict_pers_service: AbstractDictPersistenceService) -> int:
         pass
 
-    def class_function(self, args, ref_args):

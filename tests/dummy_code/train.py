@@ -10,6 +10,7 @@ from schema.restorable_object import StateDictRestorableObjectWrapper, RESTORABL
     RestorableObjectWrapper, TrainService
 from tests.networks.mynets.resnet18 import resnet18
 from tests.test_dict_persistence import MONGO_CONTAINER_NAME
+from tests.test_save import CONFIG
 
 
 class ResnetTrainService(TrainService):
@@ -92,5 +93,32 @@ if __name__ == '__main__':
         optimizer_wrapper = RestorableObjectWrapper.load(optimizer_id, file_ps, dict_ps, tmp_path)
         optimizer_wrapper.restore_instance(ref_type_args={'params': model.parameters()})
         optimizer = optimizer_wrapper.instance
+
+        state_dict['data'] = RestorableObjectWrapper(
+            code='../networks/custom_coco.py',
+            class_name='InferenceCustomCoco',
+            init_args={},
+            config_args={'root': 'coco_root', 'ann_file': 'coco_annotations'},
+            init_ref_type_args=[]
+        )
+
+        os.environ['MMLIB_CONFIG'] = CONFIG
+        data_wrapper_id = state_dict['data'].persist(file_ps, dict_ps)
+        data_wrapper = RestorableObjectWrapper.load(data_wrapper_id, file_ps, dict_ps, tmp_path)
+        data_wrapper.restore_instance()
+        data = data_wrapper.instance
+
+        state_dict['dataloader'] = RestorableObjectWrapper(
+            import_cmd='from torch.utils.data import DataLoader',
+            class_name='DataLoader',
+            init_args={'batch_size': 64, 'shuffle': False, 'num_workers': 0, 'pin_memory': True},
+            config_args={},
+            init_ref_type_args=['dataset']
+        )
+        dataloader_wrapper_id = state_dict['dataloader'].persist(file_ps, dict_ps)
+        dataloader_wrapper = RestorableObjectWrapper.load(dataloader_wrapper_id, file_ps, dict_ps, tmp_path)
+        dataloader_wrapper.restore_instance({'dataset': data})
+        dataloader = dataloader_wrapper.instance
+
 
         print(optimizer_id)

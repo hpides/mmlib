@@ -4,7 +4,7 @@ import torch
 
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.environment import Environment
-from schema.restorable_object import RestorableObjectWrapper, StateFileRestorableObjectWrapper
+from schema.restorable_object import RestorableObjectWrapper, StateFileRestorableObjectWrapper, StateDictObj
 from schema.schema_obj import SchemaObj
 
 ID = 'id'
@@ -15,15 +15,11 @@ DATA_WRAPPER = 'data_wrapper'
 INFERENCE_INFO = 'inference_info'
 
 
-
 class InferenceService(StateDictObj):
 
     @abc.abstractmethod
     def infer(self, model: torch.nn.Module):
         raise NotImplementedError
-
-
-
 
 
 class InferenceInfo(SchemaObj):
