@@ -7,7 +7,7 @@ import torch
 from mmlib.persistence import AbstractDictPersistenceService, AbstractFilePersistenceService, \
     FileSystemPersistenceService, MongoDictPersistenceService
 from schema.restorable_object import StateDictRestorableObjectWrapper, RESTORABLE_OBJECT, STATE_DICT, \
-    RestorableObjectWrapper, TrainService
+    RestorableObjectWrapper, TrainService, StateFileRestorableObjectWrapper
 from tests.networks.mynets.resnet18 import resnet18
 from tests.test_dict_persistence import MONGO_CONTAINER_NAME
 from tests.test_save import CONFIG
@@ -48,7 +48,7 @@ class ResnetTrainService(TrainService):
         return dataloader
 
     def _get_optimizer(self, parameters):
-        optimizer_wrapper = self.state_objs['optimizer']
+        optimizer_wrapper: OptimizerWrapper = self.state_objs['optimizer']
         optimizer_wrapper.restore_instance({'params': parameters})
         return optimizer_wrapper.instance
 
@@ -80,6 +80,17 @@ class ResnetTrainWrapper(StateDictRestorableObjectWrapper):
         self.instance.state_objs = state_dict
 
 
+class OptimizerWrapper(StateFileRestorableObjectWrapper):
+
+    def _save_instance_state(self, path):
+        if self.instance:
+            state_dict = self.instance.state_dict()
+            torch.save(state_dict, path)
+
+    def _restore_instance_state(self, path):
+        self.instance.load_state_dict(torch.load(path))
+
+
 if __name__ == '__main__':
     # init dict with internal state here
 
@@ -93,13 +104,14 @@ if __name__ == '__main__':
         state_dict = {}
         # torch.optim.SGD(model.parameters(), 1e-4, momentum=0.9, weight_decay=1e-4)
         # TODO implement state_dict save for optimizer
-        state_dict['optimizer'] = RestorableObjectWrapper(
+        optimizer = OptimizerWrapper(
             import_cmd='import torch',
             class_name='torch.optim.SGD',
             init_args={'lr': 1e-4, 'momentum': 0.9, 'weight_decay': 1e-4},
             config_args={},
             init_ref_type_args=['params']
         )
+        state_dict['optimizer'] = optimizer
 
         state_dict['data'] = RestorableObjectWrapper(
             code='../networks/custom_coco.py',
@@ -133,6 +145,13 @@ if __name__ == '__main__':
         ts_new: ResnetTrainService = ts_wrapper_new.instance
 
         model = resnet18()
+        ts_new.train(model, number_batches=2)
+
+        nid = ts_wrapper_new.persist(file_ps, dict_ps)
+        nw = ResnetTrainWrapper.load(nid, file_ps, dict_ps, tmp_path)
+        nw.restore_instance(file_ps, dict_ps, tmp_path)
+        new: ResnetTrainService = ts_wrapper_new.instance
+
         ts_new.train(model, number_batches=2)
 
         print('test')

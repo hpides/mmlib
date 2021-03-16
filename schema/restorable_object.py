@@ -1,6 +1,7 @@
 import abc
 import configparser
 import os
+import tempfile
 from typing import Dict
 
 import torch
@@ -42,9 +43,17 @@ class RestorableObjectWrapper(SchemaObj):
 
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
-        if not self.store_id:
-            self.store_id = dict_pers_service.generate_id()
+        # TODO think about how to solve maybe update instead of insert new
+        # if not self.store_id:
+        self.store_id = dict_pers_service.generate_id()
 
+        dict_representation = self._persist_fields(dict_pers_service, file_pers_service)
+
+        dict_pers_service.save_dict(dict_representation, RESTORABLE_OBJECT)
+
+        return self.store_id
+
+    def _persist_fields(self, dict_pers_service, file_pers_service):
         dict_representation = {
             ID: self.store_id,
             CLASS_NAME: self.class_name,
@@ -52,12 +61,8 @@ class RestorableObjectWrapper(SchemaObj):
             CONFIG_ARGS: self.config_args,
             INIT_REF_TYPE_ARGS: self.init_ref_type_args,
         }
-
         self._add_optional_fields(dict_representation, file_pers_service, dict_pers_service)
-
-        dict_pers_service.save_dict(dict_representation, RESTORABLE_OBJECT)
-
-        return self.store_id
+        return dict_representation
 
     def _add_optional_fields(self, dict_representation, file_pers_service, dict_pers_service):
         if self.code:
@@ -73,22 +78,26 @@ class RestorableObjectWrapper(SchemaObj):
              dict_pers_service: AbstractDictPersistenceService, restore_root: str):
         restored_dict = dict_pers_service.recover_dict(obj_id, RESTORABLE_OBJECT)
 
-        class_name = restored_dict[CLASS_NAME]
-        init_args = restored_dict[INIT_ARGS]
-        config_args = restored_dict[CONFIG_ARGS]
-        ref_type_args = restored_dict[INIT_REF_TYPE_ARGS]
-
-        code_file_path = None
-        if CODE_FILE in restored_dict:
-            code_file_id = restored_dict[CODE_FILE]
-            code_file_path = file_pers_service.recover_file(code_file_id, restore_root)
-
-        import_cmd = restored_dict[IMPORT_CMD] if IMPORT_CMD in restored_dict else None
+        class_name, code_file_path, config_args, import_cmd, init_args, ref_type_args = cls._restore_fields(
+            file_pers_service, restore_root, restored_dict)
 
         restorable_obj_wrapper = cls(store_id=obj_id, code=code_file_path, class_name=class_name, import_cmd=import_cmd,
                                      init_args=init_args, init_ref_type_args=ref_type_args, config_args=config_args)
 
         return restorable_obj_wrapper
+
+    @classmethod
+    def _restore_fields(cls, file_pers_service, restore_root, restored_dict):
+        class_name = restored_dict[CLASS_NAME]
+        init_args = restored_dict[INIT_ARGS]
+        config_args = restored_dict[CONFIG_ARGS]
+        ref_type_args = restored_dict[INIT_REF_TYPE_ARGS]
+        code_file_path = None
+        if CODE_FILE in restored_dict:
+            code_file_id = restored_dict[CODE_FILE]
+            code_file_path = file_pers_service.recover_file(code_file_id, restore_root)
+        import_cmd = restored_dict[IMPORT_CMD] if IMPORT_CMD in restored_dict else None
+        return class_name, code_file_path, config_args, import_cmd, init_args, ref_type_args
 
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
                       dict_pers_service: AbstractDictPersistenceService) -> int:
@@ -142,9 +151,9 @@ class StateDictRestorableObjectWrapper(SchemaObj):
 
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
-
-        if not self.store_id:
-            self.store_id = dict_pers_service.generate_id()
+        # TODO think about how to solve maybe update instead of insert new
+        # if not self.store_id:
+        self.store_id = dict_pers_service.generate_id()
 
         # persist instance state dict
         state_dict_refs = {}
@@ -191,19 +200,31 @@ class StateDictRestorableObjectWrapper(SchemaObj):
 
 
 class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
-
-    def __init__(self, class_name: str, init_args: dict, init_ref_type_args: [str], code: str = None,
+    def __init__(self, class_name: str, init_args: dict, init_ref_type_args: [str], config_args: dict, code: str = None,
                  import_cmd: str = None, instance: object = None, store_id: str = None, state_file: str = None):
-        super().__init__(class_name, init_args, init_ref_type_args, code, import_cmd, instance, store_id)
+        super().__init__(class_name, init_args, init_ref_type_args, config_args, code, import_cmd, instance, store_id)
         self.state_file = state_file
 
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
-        return_id = super(StateFileRestorableObjectWrapper, self).persist(file_pers_service, dict_pers_service)
 
-        self._save_instance_state()
+        # TODO think about how to solve maybe update instead of insert new
+        # if not self.store_id:
+        self.store_id = dict_pers_service.generate_id()
 
-        return return_id
+        dict_representation = super()._persist_fields(dict_pers_service, file_pers_service)
+
+        if self.instance:
+            with tempfile.TemporaryDirectory() as tmp_path:
+                state_file = os.path.join(tmp_path, 'state')
+                self._save_instance_state(state_file)
+                state_file_id = file_pers_service.save_file(state_file)
+
+            dict_representation[STATE_FILE] = state_file_id
+
+        dict_pers_service.save_dict(dict_representation, RESTORABLE_OBJECT)
+
+        return self.store_id
 
     def _add_optional_fields(self, dict_representation, file_pers_service, dict_pers_service):
         super(StateFileRestorableObjectWrapper, self)._add_optional_fields(dict_representation, file_pers_service,
@@ -216,19 +237,29 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
              dict_pers_service: AbstractDictPersistenceService, restore_root: str):
-        obj = StateFileRestorableObjectWrapper.load(obj_id, file_pers_service, dict_pers_service, restore_root)
+        restored_dict = dict_pers_service.recover_dict(obj_id, RESTORABLE_OBJECT)
 
-        obj._restore_instance_state()
+        class_name, code_file_path, config_args, import_cmd, init_args, ref_type_args = \
+            RestorableObjectWrapper._restore_fields(file_pers_service, restore_root, restored_dict)
+
+        state_file = None
+        if STATE_FILE in restored_dict:
+            state_file_id = restored_dict[STATE_FILE]
+            state_file = file_pers_service.recover_file(state_file_id, restore_root)
+
+        obj = cls(class_name=class_name, code=code_file_path, config_args=config_args, import_cmd=import_cmd,
+                  init_args=init_args, init_ref_type_args=ref_type_args, state_file=state_file)
 
         return obj
 
     def restore_instance(self, ref_type_args: dict = None):
         super(StateFileRestorableObjectWrapper, self).restore_instance(ref_type_args)
 
-        self._restore_instance_state()
+        if self.state_file:
+            self._restore_instance_state(self.state_file)
 
     @abc.abstractmethod
-    def _save_instance_state(self):
+    def _save_instance_state(self, path):
         """
         Saves the state of the internal instance to a file. Only needs to be implemented when there is a internal state
         that can not be reproduced by passing the right arguments in the constructor.
@@ -236,7 +267,7 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def _restore_instance_state(self):
+    def _restore_instance_state(self, path):
         """
         Loads the state for the internal instance from a file.
         """
