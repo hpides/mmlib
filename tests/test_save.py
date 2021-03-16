@@ -10,7 +10,7 @@ from mmlib.persistence import MongoDictPersistenceService, FileSystemPersistence
 from mmlib.save import BaselineSaveService
 from schema.environment import Environment
 from schema.model_info import RECOVER_INFO_ID, MODEL_INFO_REPRESENT_TYPE
-from schema.recover_info import FULL_MODEL_RECOVER_INFO
+from schema.recover_info import RECOVER_INFO
 from schema.recover_val import RECOVER_VAL
 from schema.restorable_object import RestorableObjectWrapper
 from schema.save_info_builder import ModelSaveInfoBuilder
@@ -261,7 +261,7 @@ class TestSave(unittest.TestCase):
         model_info_size = self.mongo_service.document_size(ObjectId(model_id), MODEL_INFO_REPRESENT_TYPE)
         model_info_dict = self.mongo_service.get_dict(ObjectId(model_id), MODEL_INFO_REPRESENT_TYPE)
         restore_info_id = model_info_dict[RECOVER_INFO_ID].replace(DICT, '')
-        restore_dict_size = self.mongo_service.document_size(ObjectId(restore_info_id), FULL_MODEL_RECOVER_INFO)
+        restore_dict_size = self.mongo_service.document_size(ObjectId(restore_info_id), RECOVER_INFO)
 
         # for now the size consists of
         #   - dict for model modelInfo
@@ -276,7 +276,7 @@ class TestSave(unittest.TestCase):
             restore_dict_size
 
         if recover_val:
-            restore_info = self.mongo_service.get_dict(ObjectId(restore_info_id), FULL_MODEL_RECOVER_INFO)
+            restore_info = self.mongo_service.get_dict(ObjectId(restore_info_id), RECOVER_INFO)
             recover_val_id = restore_info[RECOVER_VAL].replace(DICT, '')
             val_dict_size = self.mongo_service.document_size(ObjectId(recover_val_id), RECOVER_VAL)
             expected_size += val_dict_size
