@@ -15,7 +15,6 @@ class Dataset(SchemaObj):
 
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
-
         if not self.store_id:
             self.store_id = dict_pers_service.generate_id()
 
@@ -31,8 +30,15 @@ class Dataset(SchemaObj):
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
              dict_pers_service: AbstractDictPersistenceService, restore_root: str):
-        pass
+        restored_dict = dict_pers_service.recover_dict(obj_id, DATASET)
+
+        store_id = restored_dict[ID]
+        raw_data = restored_dict[RAW_DATA]
+
+        return cls(raw_data=raw_data, store_id=store_id)
 
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
                       dict_pers_service: AbstractDictPersistenceService) -> int:
-        pass
+
+        return dict_pers_service.dict_size(self.store_id, DATASET)
+
