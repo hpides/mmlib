@@ -66,21 +66,26 @@ if __name__ == '__main__':
 
         # wrap the resnet_ts in a wrapper to be restorable on other devices and persist teh wrapper
         ts_wrapper = ResnetTrainWrapper(
-            code='./train.py',
+            code='./resnet_train.py',
             class_name='ResnetTrainService',
             instance=resnet_ts
         )
 
-        # train for two epochs
+        # train with 2 batches
         resnet_ts.train(model, number_batches=2)
 
+        # persist the train service
+        ts_wrapper_id = ts_wrapper.persist(file_ps, dict_ps)
 
+        # load the wrapper back to continue training
+        ts_wrapper_new = ResnetTrainWrapper.load(ts_wrapper_id, file_ps, dict_ps, tmp_path)
+        ts_wrapper_new.restore_instance(file_ps, dict_ps, tmp_path)
+        resnet_ts_new: ResnetTrainService = ts_wrapper_new.instance
 
-        # ts_wrapper_id = ts_wrapper.persist(file_ps, dict_ps)
+        # train with another 2 batches
+        resnet_ts_new.train(model, number_batches=2)
+
         #
-        # # load the wrapper for the first time, and restore the instance
-        # ts_wrapper_new = ResnetTrainWrapper.load(ts_wrapper_id, file_ps, dict_ps, tmp_path)
-        # ts_wrapper_new.restore_instance(file_ps, dict_ps, tmp_path)
         # resnet_ts_new: ResnetTrainService = ts_wrapper_new.instance
         #
         # # use the restored train service to
