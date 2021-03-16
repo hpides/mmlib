@@ -1,78 +1,58 @@
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.environment import Environment
-from schema.function import Function
-from schema.inference_info import InferenceInfo, DATA_WRAPPER, PRE_PROCESSOR, DATA_LOADER, ENVIRONMENT, ID
-from schema.restorable_object import RestorableObjectWrapper
+from schema.restorable_object import StateDictRestorableObjectWrapper
+from schema.schema_obj import SchemaObj
 
-LOSS = 'loss'
-OPTIMIZER = 'optimizer'
+ID = 'id'
+ENVIRONMENT = 'environment'
+TRAIN_SERVICE = 'train_service'
 
 TRAIN_INFO = 'train_info'
 
 
-class TrainInfo(InferenceInfo):
+class TrainInfo(SchemaObj):
 
-    def __init__(self, data_wrapper: RestorableObjectWrapper, dataloader: RestorableObjectWrapper,
-                 pre_processor: RestorableObjectWrapper, environment: Environment, loss: Function,
-                 optimizer: RestorableObjectWrapper, store_id: str = None):
-        super().__init__(data_wrapper, dataloader, pre_processor, environment, store_id)
-        self.loss = loss
-        self.optimizer = optimizer
+    def __init__(self, train_service: StateDictRestorableObjectWrapper, environment: Environment, store_id: str = None):
+        self.store_id = store_id
+        self.environment = environment
+        self.train_service = train_service
 
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
-        dict_representation = self._persist_fields(dict_pers_service, file_pers_service)
+        if not self.store_id:
+            self.store_id = dict_pers_service.generate_id()
+
+        env_id = self.environment.persist(file_pers_service, dict_pers_service)
+        train_service_id = self.train_service.persist(file_pers_service, dict_pers_service)
+
+        dict_representation = {
+            ID: self.store_id,
+            TRAIN_SERVICE: train_service_id,
+            ENVIRONMENT: env_id,
+        }
 
         dict_pers_service.save_dict(dict_representation, TRAIN_INFO)
 
         return self.store_id
 
-    def _persist_fields(self, dict_pers_service, file_pers_service):
-        dict_representation = super()._persist_fields(dict_pers_service, file_pers_service)
-
-        loss_func_id = self.loss.persist(file_pers_service, dict_pers_service)
-        optimizer_id = self.optimizer.persist(file_pers_service, dict_pers_service)
-
-        dict_representation[LOSS] = loss_func_id
-        dict_representation[OPTIMIZER] = optimizer_id
-
-        return dict_representation
-
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
              dict_pers_service: AbstractDictPersistenceService, restore_root: str):
-        fields_dict = cls._load_fields(dict_pers_service, file_pers_service, obj_id, restore_root)
-
-        return cls(data_wrapper=fields_dict[DATA_WRAPPER], dataloader=fields_dict[DATA_LOADER],
-                   pre_processor=fields_dict[PRE_PROCESSOR], environment=fields_dict[ENVIRONMENT],
-                   loss=fields_dict[LOSS], optimizer=fields_dict[OPTIMIZER], store_id=fields_dict[ID])
-
-    @classmethod
-    def _load_fields(cls, dict_pers_service, file_pers_service, obj_id, restore_root):
         restored_dict = dict_pers_service.recover_dict(obj_id, TRAIN_INFO)
 
-        result = super()._load_fields(dict_pers_service, file_pers_service, obj_id, restore_root)
+        store_id = restored_dict[ID]
 
-        loss_id = restored_dict[LOSS]
-        result[LOSS] = Function.load(loss_id, file_pers_service, dict_pers_service, restore_root)
+        env_id = restored_dict[ENVIRONMENT]
+        env = Environment.load(env_id, file_pers_service, dict_pers_service, restore_root)
 
-        optimizer_id = restored_dict[OPTIMIZER]
-        optimizer = RestorableObjectWrapper.load(optimizer_id, file_pers_service, dict_pers_service, restore_root)
-        optimizer.restore_instance()
-        result[OPTIMIZER] = optimizer
+        train_service_id = restored_dict[TRAIN_SERVICE]
+        train_service_wrapper = StateDictRestorableObjectWrapper.load(train_service_id, file_pers_service,
+                                                                      dict_pers_service, restore_root)
+        train_service_wrapper.restore_instance()
 
-        return result
+        return cls(train_service=train_service_wrapper, environment=env, store_id=store_id)
 
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
                       dict_pers_service: AbstractDictPersistenceService) -> int:
-        result = 0
-
-        # size of the dict
-        result += dict_pers_service.dict_size(self.store_id, TRAIN_INFO)
-
-        result = super()._fields_size(dict_pers_service, file_pers_service)
-
-        result += self.loss.size_in_bytes(file_pers_service, dict_pers_service)
-        result += self.optimizer.size_in_bytes(file_pers_service, dict_pers_service)
-
-        return result
+        # TODO
+        pass
