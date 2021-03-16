@@ -54,5 +54,11 @@ class TrainInfo(SchemaObj):
 
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
                       dict_pers_service: AbstractDictPersistenceService) -> int:
-        # TODO
-        pass
+        result = 0
+
+        result += dict_pers_service.dict_size(self.store_id, TRAIN_INFO)
+
+        result += self.environment.size_in_bytes(file_pers_service, dict_pers_service)
+        result += self.train_service.size_in_bytes(file_pers_service, dict_pers_service)
+
+        return result
