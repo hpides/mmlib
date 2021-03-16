@@ -55,4 +55,3 @@ class Function(SchemaObj):
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
                       dict_pers_service: AbstractDictPersistenceService) -> int:
         pass
-

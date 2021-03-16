@@ -178,7 +178,6 @@ class StateDictRestorableObjectWrapper(SchemaObj):
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
              dict_pers_service: AbstractDictPersistenceService, restore_root: str):
-
         restored_dict = dict_pers_service.recover_dict(obj_id, RESTORABLE_OBJECT)
 
         class_name = restored_dict[CLASS_NAME]

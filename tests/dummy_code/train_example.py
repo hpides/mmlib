@@ -84,38 +84,3 @@ if __name__ == '__main__':
 
         # train with another 2 batches
         resnet_ts_new.train(model, number_batches=2)
-
-        #
-        # resnet_ts_new: ResnetTrainService = ts_wrapper_new.instance
-        #
-        # # use the restored train service to
-        #
-        # resnet_ts_new.train(model, number_batches=2)
-        #
-        # nid = ts_wrapper_new.persist(file_ps, dict_ps)
-        # nw = ResnetTrainWrapper.load(nid, file_ps, dict_ps, tmp_path)
-        # nw.restore_instance(file_ps, dict_ps, tmp_path)
-        # new: ResnetTrainService = ts_wrapper_new.instance
-        #
-        # ts_new.train(model, number_batches=2)
-        #
-        # print('test')
-
-        #
-        # optimizer_id = state_dict['optimizer'].persist(file_ps, dict_ps)
-        #
-        # optimizer_wrapper = RestorableObjectWrapper.load(optimizer_id, file_ps, dict_ps, tmp_path)
-        # optimizer_wrapper.restore_instance(ref_type_args={'params': model.parameters()})
-        # optimizer = optimizer_wrapper.instance
-        #
-        # data_wrapper_id = state_dict['data'].persist(file_ps, dict_ps)
-        # data_wrapper = RestorableObjectWrapper.load(data_wrapper_id, file_ps, dict_ps, tmp_path)
-        # data_wrapper.restore_instance()
-        # data = data_wrapper.instance
-        #
-        # dataloader_wrapper_id = state_dict['dataloader'].persist(file_ps, dict_ps)
-        # dataloader_wrapper = RestorableObjectWrapper.load(dataloader_wrapper_id, file_ps, dict_ps, tmp_path)
-        # dataloader_wrapper.restore_instance({'dataset': data})
-        # dataloader = dataloader_wrapper.instance
-        #
-        # print(optimizer_id)

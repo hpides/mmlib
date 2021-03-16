@@ -32,7 +32,6 @@ class Environment(SchemaObj):
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
              dict_pers_service: AbstractDictPersistenceService, restore_root: str):
-
         restored_dict = dict_pers_service.recover_dict(obj_id, ENVIRONMENT)
 
         env_dict = dict_pers_service.recover_dict(restored_dict[ENVIRONMENT_DICT], ENVIRONMENT_DICT)
@@ -41,7 +40,6 @@ class Environment(SchemaObj):
 
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
                       dict_pers_service: AbstractDictPersistenceService) -> int:
-
         restored_dict = dict_pers_service.recover_dict(self.store_id, ENVIRONMENT)
         env_size = dict_pers_service.dict_size(restored_dict[ENVIRONMENT_DICT], ENVIRONMENT_DICT)
 
