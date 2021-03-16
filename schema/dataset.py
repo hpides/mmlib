@@ -39,6 +39,4 @@ class Dataset(SchemaObj):
 
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
                       dict_pers_service: AbstractDictPersistenceService) -> int:
-
         return dict_pers_service.dict_size(self.store_id, DATASET)
-
