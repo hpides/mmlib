@@ -7,11 +7,13 @@ import torch
 
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from mmlib.save_info import ModelSaveInfo
+from schema.dataset import Dataset
 from schema.inference_info import InferenceInfo
 from schema.model_info import ModelInfo
-from schema.recover_info import FullModelRecoverInfo
+from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo
 from schema.recover_val import RecoverVal
 from schema.store_type import ModelStoreType
+from schema.train_info import TrainInfo
 from util.hash import state_dict_hash, inference_hash
 from util.init_from_file import create_object
 
@@ -55,6 +57,18 @@ class AbstractSaveService(metaclass=abc.ABCMeta):
         :return: The amount of bytes used to store the model.
         """
         raise NotImplementedError
+
+    def _generate_recover_val(self, model_save_info):
+        model = model_save_info.model
+        dummy_input_shape = model_save_info.dummy_input_shape
+
+        weights_hash = state_dict_hash(model.state_dict())
+        inf_hash = inference_hash(model, dummy_input_shape)
+
+        recover_val = RecoverVal(weights_hash=weights_hash, inference_hash=inf_hash,
+                                 dummy_input_shape=dummy_input_shape)
+
+        return recover_val
 
 
 class BaselineSaveService(AbstractSaveService):
@@ -176,14 +190,64 @@ class BaselineSaveService(AbstractSaveService):
 
         return state_dict
 
-    def _generate_recover_val(self, model_save_info):
-        model = model_save_info.model
-        dummy_input_shape = model_save_info.dummy_input_shape
 
-        weights_hash = state_dict_hash(model.state_dict())
-        inf_hash = inference_hash(model, dummy_input_shape)
+class ProvenanceSaveService(AbstractSaveService):
 
-        recover_val = RecoverVal(weights_hash=weights_hash, inference_hash=inf_hash,
-                                 dummy_input_shape=dummy_input_shape)
+    def __init__(self, file_pers_service: AbstractFilePersistenceService,
+                 dict_pers_service: AbstractDictPersistenceService, ):
+        # baseline_save_service: BaselineSaveService):
+        """
+        :param file_pers_service: An instance of AbstractFilePersistenceService that is used to store files.
+        :param dict_pers_service: An instance of AbstractDictPersistenceService that is used to store metadata as dicts.
+        # :param baseline_save_service: An instance of BaselineSaveService that is used to store "full models"
+        """
+        self._file_pers_service = file_pers_service
+        self._dict_pers_service = dict_pers_service
+        # self.baseline_save_service = baseline_save_service
 
-        return recover_val
+    def save_model(self, model_save_info: ModelSaveInfo) -> str:
+        self._check_consistency(model_save_info)
+
+        recover_val = None
+        if model_save_info.recover_val:
+            recover_val = self._generate_recover_val(model_save_info)
+
+        model_id = self._save_provenance_model(model_save_info, recover_val)
+
+        return model_id
+
+    def recover_model(self, model_id: str, check_recover_val=False) -> RestoredModelInfo:
+        pass
+
+    def model_save_size(self, model_id: str) -> int:
+        pass
+
+    def _check_consistency(self, model_save_info):
+        # TODO
+        pass
+
+    def _save_provenance_model(self, model_save_info, recover_val):
+        dataset = Dataset(model_save_info.raw_data)
+        train_info = TrainInfo(
+            train_service=model_save_info.train_service,
+            environment=model_save_info.environment
+        )
+
+        prov_recover_info = ProvenanceRecoverInfo(
+            dataset=dataset,
+            model_code_file_path=model_save_info.code,
+            model_class_name=model_save_info.class_name,
+            train_info=train_info,
+            recover_validation=recover_val)
+
+        derived_from = model_save_info.base_model if model_save_info.base_model else None
+
+        # TODO implement inference info
+        inference_info = None
+
+        model_info = ModelInfo(store_type=ModelStoreType.PICKLED_WEIGHTS, recover_info=prov_recover_info,
+                               derived_from_id=derived_from, inference_info=inference_info)
+
+        model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
+
+        return model_info_id
