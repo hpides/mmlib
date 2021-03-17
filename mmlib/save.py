@@ -14,7 +14,8 @@ from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo
 from schema.recover_val import RecoverVal
 from schema.store_type import ModelStoreType
 from schema.train_info import TrainInfo
-from tests.inference_and_training.resnet_train import ResnetTrainWrapper
+from tests.inference_and_training.resnet_train import ResnetTrainWrapper, ResnetTrainService
+from tests.networks.mynets.resnet18 import resnet18
 from util.hash import state_dict_hash, inference_hash
 from util.init_from_file import create_object
 
@@ -218,7 +219,23 @@ class ProvenanceSaveService(AbstractSaveService):
         return model_id
 
     def recover_model(self, model_id: str, check_recover_val=False) -> RestoredModelInfo:
-        pass
+        # TODO this code is just for testing
+        # get model_0 - usually done by going through past models or just restore a full model version)
+        model_0 = resnet18(pretrained=True)
+
+        with tempfile.TemporaryDirectory() as tmp_path:
+            restore_dir = os.path.join(tmp_path, 'restore2')
+            os.mkdir(restore_dir)
+
+            model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, restore_dir)
+            rec_info: ProvenanceRecoverInfo = model_info.recover_info
+
+            train_service: ResnetTrainService = rec_info.train_info.train_service.instance
+            # TODO train command needs to be restored
+            train_service.train(model_0, number_batches=2)
+
+            # TODO check recover val if needed
+            return RestoredModelInfo(model=model_0)
 
     def model_save_size(self, model_id: str) -> int:
         pass

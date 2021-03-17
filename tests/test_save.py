@@ -102,6 +102,8 @@ class TestSave(unittest.TestCase):
         self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
 
     def test_save_restore_provenance_model(self):
+
+        # model-0, is "stored" - we just use pretrain to model stored
         model = resnet18(pretrained=True)
         code_file = './networks/mynets/{}.py'.format('resnet18')
         code_name = 'resnet18'
@@ -118,10 +120,24 @@ class TestSave(unittest.TestCase):
         save_info_builder.add_prov_data(raw_data_path='data', env=prov_env, train_service=resnet_ts,
                                         code=prov_train_serv_code, class_name=prov_train_serv_class_name)
         save_info = save_info_builder.build()
-        self.provenance_save_service.save_model(save_info)
-        print('done')
 
+        # save: train_state-0
+        model_id = self.provenance_save_service.save_model(save_info)
 
+        # train with 2 batches
+        # TODO this command should also be tracked, to re-execute it for a restore
+        #  for now we will just assume the command is always the same
+        # transitions model and train service:
+        # model-0, train_state-0 -> # model-1, train_state-1
+        resnet_ts.train(model, number_batches=2)
+
+        # "model" is in model_1
+
+        # to recover model_1 we hav saved train_state-0, and take it together with model_0 and the fixed command of
+        # "resnet_ts.train(model, number_batches=2)" to produce model_1
+        recovered_model_info = self.provenance_save_service.recover_model(model_id)
+
+        self.assertTrue(model_equal(model, recovered_model_info.model, imagenet_input))
 
     def _add_resnet_prov_state_dict(self, resnet_ts, model):
         # TODO think about how to get rid of magic strings
