@@ -2,7 +2,7 @@ import torch
 
 from mmlib.save_info import ModelSaveInfo, InferenceSaveInfo
 from schema.environment import Environment
-from schema.restorable_object import RestorableObjectWrapper
+from schema.restorable_object import RestorableObjectWrapper, StateDictObj
 
 
 class ModelSaveInfoBuilder:
@@ -19,6 +19,11 @@ class ModelSaveInfoBuilder:
         self._inference_dataloader = None
         self._inference_pre_processor = None
         self._inference_environment = None
+        self._prov_raw_data = None
+        self.prov_env = None
+        self.prov_train_service = None
+        self.prov_train_service_code = None
+        self.prov_train_service_lass_name = None
 
     def add_model_info(self, model: torch.nn.Module, code: str = None, model_class_name: str = None,
                        base_model_id: str = None):
@@ -58,6 +63,7 @@ class ModelSaveInfoBuilder:
         self._inference_environment = environment
 
     def build(self) -> ModelSaveInfo:
+        # TODO update build method for prov data
         inf_info = None
         if self._inference_data_wrapper or self._inference_dataloader or \
                 self._inference_pre_processor or self._inference_environment:
@@ -73,3 +79,14 @@ class ModelSaveInfoBuilder:
         save_info = ModelSaveInfo(self._model, self._base_model, self._code, self._code_name, self._recover_val,
                                   self._dummy_input_shape, inference_info=inf_info)
         return save_info
+
+    def add_prov_raw_data(self, raw_data_path: str):
+        self._prov_raw_data = raw_data_path
+
+    def add_prov_environment(self, env: Environment):
+        self.prov_env = env
+
+    def add_prov_train_servcie(self, train_service: StateDictObj, code: str, class_name: str):
+        self.prov_train_service = train_service
+        self.prov_train_service_code = code
+        self.prov_train_service_lass_name = class_name

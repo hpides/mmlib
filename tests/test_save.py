@@ -7,7 +7,8 @@ from bson import ObjectId
 from mmlib.deterministic import set_deterministic
 from mmlib.equal import model_equal
 from mmlib.persistence import MongoDictPersistenceService, FileSystemPersistenceService, DICT
-from mmlib.save import BaselineSaveService
+from mmlib.save import BaselineSaveService, ProvenanceSaveService
+from schema.environment import Environment
 from schema.model_info import RECOVER_INFO_ID, MODEL_INFO_REPRESENT_TYPE
 from schema.recover_info import RECOVER_INFO
 from schema.recover_val import RECOVER_VAL
@@ -41,6 +42,7 @@ class TestSave(unittest.TestCase):
         file_pers_service = FileSystemPersistenceService(self.tmp_path)
         dict_pers_service = MongoDictPersistenceService()
         self.save_recover_service = BaselineSaveService(file_pers_service, dict_pers_service)
+        self.provenance_save_service = ProvenanceSaveService(file_pers_service, dict_pers_service)
 
         os.environ['MMLIB_CONFIG'] = CONFIG
 
@@ -95,6 +97,19 @@ class TestSave(unittest.TestCase):
         model_id = self.save_recover_service.save_model(save_info)
         restored_model_info = self.save_recover_service.recover_model(model_id)
         self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
+
+    def test_save_restore_provenance_model(self):
+        model = resnet18(pretrained=True)
+        code_file = './networks/mynets/{}.py'.format('resnet18')
+        code_name = 'resnet18'
+
+        save_info_builder = ModelSaveInfoBuilder()
+        save_info_builder.add_model_info(model, code_file, code_name)
+        save_info_builder.add_prov_raw_data('')  # TODO define data
+        save_info_builder.add_prov_train_servcie(None, None, None)  # TODO
+
+        env = Environment({})  # TODO for now use a dummy environment, needs to be tracked in real scenario
+        save_info_builder.add_prov_environment(env)
 
     # def test_save_restore_model_inf_info(self):
     #     file_names = ['mobilenet', 'resnet18']

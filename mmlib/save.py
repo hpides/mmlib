@@ -238,7 +238,8 @@ class ProvenanceSaveService(AbstractSaveService):
             model_code_file_path=model_save_info.code,
             model_class_name=model_save_info.class_name,
             train_info=train_info,
-            recover_validation=recover_val)
+            recover_validation=recover_val
+        )
 
         derived_from = model_save_info.base_model if model_save_info.base_model else None
 
