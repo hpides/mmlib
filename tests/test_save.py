@@ -2,6 +2,7 @@ import os
 import shutil
 import unittest
 
+import torch
 from bson import ObjectId
 
 from mmlib.deterministic import set_deterministic
@@ -12,7 +13,9 @@ from schema.environment import Environment
 from schema.model_info import RECOVER_INFO_ID, MODEL_INFO_REPRESENT_TYPE
 from schema.recover_info import RECOVER_INFO
 from schema.recover_val import RECOVER_VAL
+from schema.restorable_object import RestorableObjectWrapper
 from schema.save_info_builder import ModelSaveInfoBuilder
+from tests.inference_and_training.resnet_train import ResnetTrainService, OptimizerWrapper
 from tests.networks.mynets.googlenet import googlenet
 from tests.networks.mynets.mobilenet import mobilenet_v2
 from tests.networks.mynets.resnet18 import resnet18
@@ -106,10 +109,55 @@ class TestSave(unittest.TestCase):
         save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(model, code_file, code_name)
         save_info_builder.add_prov_raw_data('')  # TODO define data
-        save_info_builder.add_prov_train_servcie(None, None, None)  # TODO
+
+        resnet_ts = ResnetTrainService()
+        self._add_resnet_prov_state_dict(resnet_ts, model)
+        prov_train_serv_code = './inference_and_training/resnet_train.py'
+        prov_train_serv_class_name = 'ResnetTrainService'
+        save_info_builder.add_prov_train_servcie(train_service=resnet_ts, code=prov_train_serv_code,
+                                                 class_name=prov_train_serv_class_name)
 
         env = Environment({})  # TODO for now use a dummy environment, needs to be tracked in real scenario
         save_info_builder.add_prov_environment(env)
+
+    def _add_resnet_prov_state_dict(self, resnet_ts, model):
+        # TODO think about how to get rid of magic strings
+        state_dict = {}
+
+        optimizer = torch.optim.SGD(model.parameters(), 1e-4, momentum=0.9, weight_decay=1e-4)
+        state_dict['optimizer'] = OptimizerWrapper(
+            import_cmd='import torch',
+            class_name='torch.optim.SGD',
+            init_args={'lr': 1e-4, 'momentum': 0.9, 'weight_decay': 1e-4},
+            config_args={},
+            init_ref_type_args=['params'],
+            instance=optimizer
+        )
+
+        data_wrapper = RestorableObjectWrapper(
+            code='../networks/custom_coco.py',
+            class_name='TrainCustomCoco',
+            init_args={},
+            # TODO think how to get data into here
+            config_args={'root': 'coco_root', 'ann_file': 'coco_annotations'},
+            init_ref_type_args=[]
+        )
+        # restore instance ein this way so that we do not have to read manually from config file
+        data_wrapper.restore_instance()
+        state_dict['data'] = data_wrapper
+
+        dataloader = torch.utils.data.DataLoader(data_wrapper.instance, batch_size=64, shuffle=True, num_workers=0,
+                                                 pin_memory=True)
+        state_dict['dataloader'] = RestorableObjectWrapper(
+            import_cmd='from torch.utils.data import DataLoader',
+            class_name='DataLoader',
+            init_args={'batch_size': 64, 'shuffle': False, 'num_workers': 0, 'pin_memory': True},
+            config_args={},
+            init_ref_type_args=['dataset'],
+            instance=dataloader
+        )
+
+        resnet_ts.state_objs = state_dict
 
     # def test_save_restore_model_inf_info(self):
     #     file_names = ['mobilenet', 'resnet18']
