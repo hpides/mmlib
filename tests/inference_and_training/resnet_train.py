@@ -7,6 +7,8 @@ from schema.restorable_object import TrainService, OptimizerWrapper
 class ResnetTrainService(TrainService):
     def train(self, model: torch.nn.Module, number_batches=None):
 
+        print('enter: ResnetTrainService')
+
         set_deterministic()
 
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -19,6 +21,7 @@ class ResnetTrainService(TrainService):
         model.train()
 
         for i, (images, target) in enumerate(train_loader):
+            print(images.numpy()[0][0][0])
             images = images.to(device)
             target = target.to(device)
 

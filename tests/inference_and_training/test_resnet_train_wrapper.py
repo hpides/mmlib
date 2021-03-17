@@ -55,7 +55,7 @@ class TestSave(unittest.TestCase):
             data_wrapper.restore_instance()
             state_dict['data'] = data_wrapper
 
-            dataloader = torch.utils.data.DataLoader(data_wrapper.instance, batch_size=64, shuffle=True, num_workers=0,
+            dataloader = torch.utils.data.DataLoader(data_wrapper.instance, batch_size=64, shuffle=False, num_workers=0,
                                                      pin_memory=True)
             state_dict['dataloader'] = RestorableObjectWrapper(
                 import_cmd='from torch.utils.data import DataLoader',
