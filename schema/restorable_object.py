@@ -8,7 +8,7 @@ import torch
 
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.schema_obj import SchemaObj
-from util.init_from_file import create_object_with_parameters
+from util.init_from_file import create_object_with_parameters, create_object
 
 STATE_DICT = 'state_dict'
 
@@ -22,6 +22,12 @@ INIT_REF_TYPE_ARGS = 'init_ref_type_args'
 STATE_FILE = 'state_file'
 
 RESTORABLE_OBJECT = 'restorable_object'
+
+
+class RestoredModelInfo:
+    def __init__(self, model: torch.nn.Module):
+        self.model = model
+        # self.inference_info = inference_info
 
 
 class RestorableObjectWrapper(SchemaObj):
@@ -183,7 +189,8 @@ class StateDictRestorableObjectWrapper(SchemaObj):
         class_name = restored_dict[CLASS_NAME]
         code_file_path = file_pers_service.recover_file(restored_dict[CODE_FILE], restore_root)
 
-        restorable_obj_wrapper = cls(store_id=obj_id, code=code_file_path, class_name=class_name)
+        # TODO needs to be more general
+        restorable_obj_wrapper = ResnetTrainWrapper(store_id=obj_id, code=code_file_path, class_name=class_name)
 
         return restorable_obj_wrapper
 
@@ -287,3 +294,46 @@ def add_params_from_config(init_args, config_args):
 
     for k, v in config_args.items():
         init_args[k] = config['VALUES'][v]
+
+
+
+
+
+
+
+class OptimizerWrapper(StateFileRestorableObjectWrapper):
+
+    def _save_instance_state(self, path):
+        if self.instance:
+            state_dict = self.instance.state_dict()
+            torch.save(state_dict, path)
+
+    def _restore_instance_state(self, path):
+        self.instance.load_state_dict(torch.load(path))
+
+
+class ResnetTrainWrapper(StateDictRestorableObjectWrapper):
+
+    def restore_instance(self, file_pers_service: AbstractFilePersistenceService,
+                         dict_pers_service: AbstractDictPersistenceService, restore_root: str):
+        state_dict = {}
+
+        restored_dict = dict_pers_service.recover_dict(self.store_id, RESTORABLE_OBJECT)
+        state_objs = restored_dict[STATE_DICT]
+
+        # NOTE: Dataloader instance is loaded in the train routine
+        state_dict['optimizer'] = OptimizerWrapper.load(
+            state_objs['optimizer'], file_pers_service, dict_pers_service, restore_root)
+
+        data_wrapper = RestorableObjectWrapper.load(
+            state_objs['data'], file_pers_service, dict_pers_service, restore_root)
+        state_dict['data'] = data_wrapper
+        data_wrapper.restore_instance()
+
+        dataloader = RestorableObjectWrapper.load(
+            state_objs['dataloader'], file_pers_service, dict_pers_service, restore_root)
+        state_dict['dataloader'] = dataloader
+        dataloader.restore_instance(ref_type_args={'dataset': data_wrapper.instance})
+
+        self.instance = create_object(code=self.code, class_name=self.class_name)
+        self.instance.state_objs = state_dict

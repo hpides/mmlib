@@ -1,6 +1,6 @@
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.inference_info import InferenceInfo
-from schema.recover_info import AbstractRecoverInfo, FullModelRecoverInfo
+from schema.recover_info import AbstractRecoverInfo, FullModelRecoverInfo, ProvenanceRecoverInfo
 from schema.schema_obj import SchemaObj
 from schema.store_type import ModelStoreType
 from schema.train_info import TrainInfo
@@ -70,8 +70,11 @@ class ModelInfo(SchemaObj):
         if store_type == ModelStoreType.PICKLED_WEIGHTS:
             recover_info = FullModelRecoverInfo.load(recover_info_id, file_pers_service, dict_pers_service,
                                                      restore_root)
+        elif store_type == ModelStoreType.PROVENANCE:
+            recover_info = ProvenanceRecoverInfo.load(recover_info_id, file_pers_service, dict_pers_service,
+                                                      restore_root)
         else:
-            assert 'Not implemented yet'
+            assert False, 'Not implemented yet'
 
         # optional fields
         derived_from_id = restored_dict[DERIVED_FROM] if DERIVED_FROM in restored_dict else None

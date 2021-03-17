@@ -48,7 +48,7 @@ class TrainInfo(SchemaObj):
         train_service_id = restored_dict[TRAIN_SERVICE]
         train_service_wrapper = StateDictRestorableObjectWrapper.load(train_service_id, file_pers_service,
                                                                       dict_pers_service, restore_root)
-        train_service_wrapper.restore_instance()
+        train_service_wrapper.restore_instance(file_pers_service, dict_pers_service, restore_root)
 
         return cls(train_service=train_service_wrapper, environment=env, store_id=store_id)
 

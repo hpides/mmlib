@@ -12,20 +12,14 @@ from schema.inference_info import InferenceInfo
 from schema.model_info import ModelInfo
 from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo
 from schema.recover_val import RecoverVal
+from schema.restorable_object import RestoredModelInfo, ResnetTrainWrapper
 from schema.store_type import ModelStoreType
 from schema.train_info import TrainInfo
-from tests.inference_and_training.resnet_train import ResnetTrainWrapper, ResnetTrainService
 from tests.networks.mynets.resnet18 import resnet18
 from util.hash import state_dict_hash, inference_hash
 from util.init_from_file import create_object
 
 MODEL_WEIGHTS = 'model_weights'
-
-
-class RestoredModelInfo:
-    def __init__(self, model: torch.nn.Module, inference_info: InferenceInfo = None):
-        self.model = model
-        self.inference_info = inference_info
 
 
 # Future work, se if it would make sense to use protocol here
@@ -230,9 +224,12 @@ class ProvenanceSaveService(AbstractSaveService):
             model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, restore_dir)
             rec_info: ProvenanceRecoverInfo = model_info.recover_info
 
-            train_service: ResnetTrainService = rec_info.train_info.train_service.instance
+            # TODO here we can just use the info to restore an instance of...
+            # use create_object(recover_info.model_code_file_path, recover_info.model_class_name)
+
+            train_service = rec_info.train_info.train_service.instance
             # TODO train command needs to be restored
-            train_service.train(model_0, number_batches=2)
+            train_service.train(model_0, number_batches=1)
 
             # TODO check recover val if needed
             return RestoredModelInfo(model=model_0)
@@ -274,7 +271,7 @@ class ProvenanceSaveService(AbstractSaveService):
         # TODO implement inference info
         inference_info = None
 
-        model_info = ModelInfo(store_type=ModelStoreType.PICKLED_WEIGHTS, recover_info=prov_recover_info,
+        model_info = ModelInfo(store_type=ModelStoreType.PROVENANCE, recover_info=prov_recover_info,
                                derived_from_id=derived_from, inference_info=inference_info)
 
         model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)

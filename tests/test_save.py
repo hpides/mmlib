@@ -13,9 +13,9 @@ from schema.environment import Environment
 from schema.model_info import RECOVER_INFO_ID, MODEL_INFO_REPRESENT_TYPE
 from schema.recover_info import RECOVER_INFO
 from schema.recover_val import RECOVER_VAL
-from schema.restorable_object import RestorableObjectWrapper
+from schema.restorable_object import RestorableObjectWrapper, OptimizerWrapper
 from schema.save_info_builder import ModelSaveInfoBuilder
-from tests.inference_and_training.resnet_train import ResnetTrainService, OptimizerWrapper
+from tests.inference_and_training.resnet_train import ResnetTrainService
 from tests.networks.mynets.googlenet import googlenet
 from tests.networks.mynets.mobilenet import mobilenet_v2
 from tests.networks.mynets.resnet18 import resnet18
@@ -103,7 +103,7 @@ class TestSave(unittest.TestCase):
 
     def test_save_restore_provenance_model(self):
 
-        # model-0, is "stored" - we just use pretrain to model stored
+        # model-0, is "stored" - we just use pretrain to model the stored model
         model = resnet18(pretrained=True)
         code_file = './networks/mynets/{}.py'.format('resnet18')
         code_name = 'resnet18'
@@ -129,7 +129,7 @@ class TestSave(unittest.TestCase):
         #  for now we will just assume the command is always the same
         # transitions model and train service:
         # model-0, train_state-0 -> # model-1, train_state-1
-        resnet_ts.train(model, number_batches=2)
+        resnet_ts.train(model, number_batches=1)
 
         # "model" is in model_1
 

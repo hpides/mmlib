@@ -1,13 +1,14 @@
 import torch
 
-from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
-from schema.restorable_object import TrainService, StateDictRestorableObjectWrapper, RESTORABLE_OBJECT, STATE_DICT, \
-    RestorableObjectWrapper, StateFileRestorableObjectWrapper
-from util.init_from_file import create_object
+from mmlib.deterministic import set_deterministic
+from schema.restorable_object import TrainService, OptimizerWrapper
 
 
 class ResnetTrainService(TrainService):
     def train(self, model: torch.nn.Module, number_batches=None):
+
+        set_deterministic()
+
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         train_loader = self._get_dataloader()
@@ -46,41 +47,3 @@ class ResnetTrainService(TrainService):
             optimizer_wrapper.restore_instance({'params': parameters})
 
         return optimizer_wrapper.instance
-
-
-class ResnetTrainWrapper(StateDictRestorableObjectWrapper):
-
-    def restore_instance(self, file_pers_service: AbstractFilePersistenceService,
-                         dict_pers_service: AbstractDictPersistenceService, restore_root: str):
-        state_dict = {}
-
-        restored_dict = dict_pers_service.recover_dict(self.store_id, RESTORABLE_OBJECT)
-        state_objs = restored_dict[STATE_DICT]
-
-        # NOTE: Dataloader instance is loaded in the train routine
-        state_dict['optimizer'] = OptimizerWrapper.load(
-            state_objs['optimizer'], file_pers_service, dict_pers_service, restore_root)
-
-        data_wrapper = RestorableObjectWrapper.load(
-            state_objs['data'], file_pers_service, dict_pers_service, restore_root)
-        state_dict['data'] = data_wrapper
-        data_wrapper.restore_instance()
-
-        dataloader = RestorableObjectWrapper.load(
-            state_objs['dataloader'], file_pers_service, dict_pers_service, restore_root)
-        state_dict['dataloader'] = dataloader
-        dataloader.restore_instance(ref_type_args={'dataset': data_wrapper.instance})
-
-        self.instance = create_object(code=self.code, class_name=self.class_name)
-        self.instance.state_objs = state_dict
-
-
-class OptimizerWrapper(StateFileRestorableObjectWrapper):
-
-    def _save_instance_state(self, path):
-        if self.instance:
-            state_dict = self.instance.state_dict()
-            torch.save(state_dict, path)
-
-    def _restore_instance_state(self, path):
-        self.instance.load_state_dict(torch.load(path))
