@@ -108,17 +108,20 @@ class TestSave(unittest.TestCase):
 
         save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(model, code_file, code_name)
-        save_info_builder.add_prov_raw_data('')  # TODO define data
 
         resnet_ts = ResnetTrainService()
         self._add_resnet_prov_state_dict(resnet_ts, model)
         prov_train_serv_code = './inference_and_training/resnet_train.py'
         prov_train_serv_class_name = 'ResnetTrainService'
-        save_info_builder.add_prov_train_servcie(train_service=resnet_ts, code=prov_train_serv_code,
-                                                 class_name=prov_train_serv_class_name)
+        prov_env = Environment({})
+        # TODO specify correct data path and env
+        save_info_builder.add_prov_data(raw_data_path='data', env=prov_env, train_service=resnet_ts,
+                                        code=prov_train_serv_code, class_name=prov_train_serv_class_name)
+        save_info = save_info_builder.build()
+        self.provenance_save_service.save_model(save_info)
+        print('done')
 
-        env = Environment({})  # TODO for now use a dummy environment, needs to be tracked in real scenario
-        save_info_builder.add_prov_environment(env)
+
 
     def _add_resnet_prov_state_dict(self, resnet_ts, model):
         # TODO think about how to get rid of magic strings
@@ -135,7 +138,7 @@ class TestSave(unittest.TestCase):
         )
 
         data_wrapper = RestorableObjectWrapper(
-            code='../networks/custom_coco.py',
+            code='./networks/custom_coco.py',
             class_name='TrainCustomCoco',
             init_args={},
             # TODO think how to get data into here

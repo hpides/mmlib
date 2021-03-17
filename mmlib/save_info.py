@@ -1,7 +1,26 @@
 import torch
 
 from schema.environment import Environment
-from schema.restorable_object import RestorableObjectWrapper
+from schema.restorable_object import RestorableObjectWrapper, StateDictObj
+
+
+class TrainSaveInfo:
+    def __init__(self, train_service: StateDictObj, train_service_code: str, train_service_class_name: str,
+                 environment: Environment):
+        self.train_service = train_service
+        self.train_service_code = train_service_code
+        self.train_service_class_name = train_service_class_name
+        self.environment = environment
+
+
+class ProvRecoverInfo:
+    def __init__(self, raw_dataset: str, model_code: str, model_class_name: str, train_info: TrainSaveInfo,
+                 recover_val: bool):
+        self.raw_dataset = raw_dataset
+        self.model_code = model_code
+        self.model_class_name = model_class_name
+        self.train_info = train_info
+        self.recover_val = recover_val
 
 
 class InferenceSaveInfo:
@@ -14,9 +33,8 @@ class InferenceSaveInfo:
 
 
 class ModelSaveInfo:
-
     def __init__(self, model: torch.nn.Module, base_model: str, code: str, class_name: str, recover_val: bool,
-                 dummy_input_shape: [int], inference_info: InferenceSaveInfo):
+                 dummy_input_shape: [int], inference_info: InferenceSaveInfo, prov_rec_info: ProvRecoverInfo):
         self.model = model
         self.base_model = base_model
         self.code = code
@@ -24,3 +42,4 @@ class ModelSaveInfo:
         self.recover_val = recover_val
         self.dummy_input_shape = dummy_input_shape
         self.inference_info = inference_info
+        self.prov_rec_info = prov_rec_info

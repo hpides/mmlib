@@ -1,6 +1,6 @@
 import torch
 
-from mmlib.save_info import ModelSaveInfo, InferenceSaveInfo
+from mmlib.save_info import ModelSaveInfo, InferenceSaveInfo, ProvRecoverInfo, TrainSaveInfo
 from schema.environment import Environment
 from schema.restorable_object import RestorableObjectWrapper, StateDictObj
 
@@ -12,7 +12,7 @@ class ModelSaveInfoBuilder:
         self._model = None
         self._base_model = None
         self._code = None
-        self._code_name = None
+        self._class_name = None
         self._recover_val = False
         self._dummy_input_shape = None
         self._inference_data_wrapper = None
@@ -20,10 +20,10 @@ class ModelSaveInfoBuilder:
         self._inference_pre_processor = None
         self._inference_environment = None
         self._prov_raw_data = None
-        self.prov_env = None
-        self.prov_train_service = None
-        self.prov_train_service_code = None
-        self.prov_train_service_lass_name = None
+        self._prov_env = None
+        self._prov_train_service = None
+        self._prov_train_service_code = None
+        self._prov_train_service_class_name = None
 
     def add_model_info(self, model: torch.nn.Module, code: str = None, model_class_name: str = None,
                        base_model_id: str = None):
@@ -38,7 +38,7 @@ class ModelSaveInfoBuilder:
         self._model = model
         self._base_model = base_model_id
         self._code = code
-        self._code_name = model_class_name
+        self._class_name = model_class_name
 
     def add_recover_val(self, dummy_input_shape: [int] = None):
         """
@@ -76,17 +76,30 @@ class ModelSaveInfoBuilder:
                                          pre_processor=self._inference_pre_processor,
                                          environment=self._inference_environment)
 
-        save_info = ModelSaveInfo(self._model, self._base_model, self._code, self._code_name, self._recover_val,
-                                  self._dummy_input_shape, inference_info=inf_info)
+        prov_train_info = TrainSaveInfo(train_service=self._prov_train_service,
+                                        train_service_code=self._prov_train_service_code,
+                                        train_service_class_name=self._prov_train_service_class_name,
+                                        environment=self._prov_env)
+
+        prov_save_info = None
+        # TODO better if check and assertions
+        if self._prov_raw_data:
+            prov_save_info = ProvRecoverInfo(
+                raw_dataset=self._prov_raw_data,
+                model_code=self._code,
+                model_class_name=self._class_name,
+                train_info=prov_train_info,
+                recover_val=False  # TODO not fixed
+            )
+
+        save_info = ModelSaveInfo(self._model, self._base_model, self._code, self._class_name, self._recover_val,
+                                  self._dummy_input_shape, inference_info=inf_info, prov_rec_info=prov_save_info)
         return save_info
 
-    def add_prov_raw_data(self, raw_data_path: str):
+    def add_prov_data(self, raw_data_path: str, env: Environment, train_service: StateDictObj, code: str,
+                      class_name: str):
         self._prov_raw_data = raw_data_path
-
-    def add_prov_environment(self, env: Environment):
-        self.prov_env = env
-
-    def add_prov_train_servcie(self, train_service: StateDictObj, code: str, class_name: str):
-        self.prov_train_service = train_service
-        self.prov_train_service_code = code
-        self.prov_train_service_lass_name = class_name
+        self._prov_env = env
+        self._prov_train_service = train_service
+        self._prov_train_service_code = code
+        self._prov_train_service_class_name = class_name

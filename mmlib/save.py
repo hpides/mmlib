@@ -14,6 +14,7 @@ from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo
 from schema.recover_val import RecoverVal
 from schema.store_type import ModelStoreType
 from schema.train_info import TrainInfo
+from tests.inference_and_training.resnet_train import ResnetTrainWrapper
 from util.hash import state_dict_hash, inference_hash
 from util.init_from_file import create_object
 
@@ -227,18 +228,28 @@ class ProvenanceSaveService(AbstractSaveService):
         pass
 
     def _save_provenance_model(self, model_save_info, recover_val):
-        dataset = Dataset(model_save_info.raw_data)
-        train_info = TrainInfo(
-            train_service=model_save_info.train_service,
-            environment=model_save_info.environment
+        train_service_wrapper = ResnetTrainWrapper(  # TODO make this more generic and put logic one level up
+            class_name=model_save_info.prov_rec_info.train_info.train_service_class_name,
+            code=model_save_info.prov_rec_info.train_info.train_service_code,
+            instance=model_save_info.prov_rec_info.train_info.train_service
         )
+        dataset = Dataset(model_save_info.prov_rec_info.raw_dataset)
+        train_info = TrainInfo(
+            train_service=train_service_wrapper,
+            environment=model_save_info.prov_rec_info.train_info.environment
+        )
+
+        prov_recover_val = None
+        if model_save_info.prov_rec_info.recover_val:
+            # TODO
+            pass
 
         prov_recover_info = ProvenanceRecoverInfo(
             dataset=dataset,
-            model_code_file_path=model_save_info.code,
-            model_class_name=model_save_info.class_name,
+            model_code_file_path=model_save_info.prov_rec_info.model_code,
+            model_class_name=model_save_info.prov_rec_info.model_class_name,
             train_info=train_info,
-            recover_validation=recover_val
+            recover_validation=prov_recover_val
         )
 
         derived_from = model_save_info.base_model if model_save_info.base_model else None
