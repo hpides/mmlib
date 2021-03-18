@@ -218,14 +218,12 @@ class ProvenanceSaveService(AbstractSaveService):
         model_0 = resnet18(pretrained=True)
 
         with tempfile.TemporaryDirectory() as tmp_path:
+            # TODO path, dont use magic string
             restore_dir = os.path.join(tmp_path, 'restore2')
             os.mkdir(restore_dir)
 
             model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, restore_dir)
             rec_info: ProvenanceRecoverInfo = model_info.recover_info
-
-            # TODO here we can just use the info to restore an instance of...
-            # use create_object(recover_info.model_code_file_path, recover_info.model_class_name)
 
             train_service = rec_info.train_info.train_service.instance
             # TODO train command needs to be restored
