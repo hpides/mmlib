@@ -115,7 +115,7 @@ class TestSave(unittest.TestCase):
         self._add_resnet_prov_state_dict(resnet_ts, model)
         prov_train_serv_code = './inference_and_training/resnet_train.py'
         prov_train_serv_class_name = 'ResnetTrainService'
-        prov_train_wrapper_code = '/Users/nils/Studium/master-thesis/mmlib/schema/restorable_object.py'
+        prov_train_wrapper_code = './inference_and_training/resnet_train.py'
         prov_train_wrapper_class_name = 'ResnetTrainWrapper'
         prov_env = Environment({})
         train_kwargs = {'number_batches': 1}

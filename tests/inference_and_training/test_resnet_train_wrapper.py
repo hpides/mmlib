@@ -6,8 +6,8 @@ import torch
 
 from mmlib.equal import model_equal
 from mmlib.persistence import FileSystemPersistenceService, MongoDictPersistenceService
-from schema.restorable_object import RestorableObjectWrapper, ResnetTrainWrapper
-from tests.inference_and_training.resnet_train import OptimizerWrapper, ResnetTrainService
+from schema.restorable_object import RestorableObjectWrapper
+from tests.inference_and_training.resnet_train import OptimizerWrapper, ResnetTrainService, ResnetTrainWrapper
 from tests.networks.mynets.resnet18 import resnet18
 from tests.test_dict_persistence import MONGO_CONTAINER_NAME
 from tests.test_save import CONFIG
