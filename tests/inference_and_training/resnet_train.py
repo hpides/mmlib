@@ -26,8 +26,6 @@ class ResnetTrainService(TrainService):
             output = model(images)
             loss = torch.nn.CrossEntropyLoss()(output, target)
 
-            # compute gradient and do SGD step
-            # TODO restore manually here since optimizer needs model params
             optimizer = self._get_optimizer(model.parameters())
             optimizer.zero_grad()
             loss.backward()
