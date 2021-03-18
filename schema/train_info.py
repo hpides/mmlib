@@ -1,6 +1,6 @@
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.environment import Environment
-from schema.restorable_object import StateDictRestorableObjectWrapper
+from schema.restorable_object import StateDictRestorableObjectWrapper, ResnetTrainWrapper
 from schema.schema_obj import SchemaObj
 
 ID = 'id'
@@ -47,7 +47,11 @@ class TrainInfo(SchemaObj):
         store_id = restored_dict[ID]
 
         train_service_id = restored_dict[TRAIN_SERVICE]
-        train_service_wrapper = StateDictRestorableObjectWrapper.load(train_service_id, file_pers_service,
+
+        # TODO import automatic - restore form info
+        wrapper_class = eval('ResnetTrainWrapper')
+
+        train_service_wrapper = wrapper_class.load(train_service_id, file_pers_service,
                                                                       dict_pers_service, restore_root)
         train_service_wrapper.restore_instance(file_pers_service, dict_pers_service, restore_root)
 

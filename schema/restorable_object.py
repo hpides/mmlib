@@ -189,8 +189,7 @@ class StateDictRestorableObjectWrapper(SchemaObj):
         class_name = restored_dict[CLASS_NAME]
         code_file_path = file_pers_service.recover_file(restored_dict[CODE_FILE], restore_root)
 
-        # TODO needs to be more general
-        restorable_obj_wrapper = ResnetTrainWrapper(store_id=obj_id, code=code_file_path, class_name=class_name)
+        restorable_obj_wrapper = cls(store_id=obj_id, code=code_file_path, class_name=class_name)
 
         return restorable_obj_wrapper
 
@@ -307,6 +306,7 @@ class OptimizerWrapper(StateFileRestorableObjectWrapper):
         self.instance.load_state_dict(torch.load(path))
 
 
+# TODO move and fix circular imports
 class ResnetTrainWrapper(StateDictRestorableObjectWrapper):
 
     def restore_instance(self, file_pers_service: AbstractFilePersistenceService,

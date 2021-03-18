@@ -116,7 +116,7 @@ class TestSave(unittest.TestCase):
         prov_train_serv_code = './inference_and_training/resnet_train.py'
         prov_train_serv_class_name = 'ResnetTrainService'
         prov_env = Environment({})
-        train_kwargs = {'number_batches': 2}
+        train_kwargs = {'number_batches': 1}
 
         # TODO specify correct data path and env, atm env is empty and datapath comes from config
         save_info_builder.add_prov_data(raw_data_path='data', env=prov_env, train_service=resnet_ts,
