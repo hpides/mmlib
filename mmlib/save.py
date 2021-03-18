@@ -19,6 +19,8 @@ from tests.networks.mynets.resnet18 import resnet18
 from util.hash import state_dict_hash, inference_hash
 from util.init_from_file import create_object
 
+RESTORE_PATH = 'restore_path'
+
 MODEL_WEIGHTS = 'model_weights'
 
 
@@ -218,8 +220,7 @@ class ProvenanceSaveService(AbstractSaveService):
         model_0 = resnet18(pretrained=True)
 
         with tempfile.TemporaryDirectory() as tmp_path:
-            # TODO path, dont use magic string
-            restore_dir = os.path.join(tmp_path, 'restore2')
+            restore_dir = os.path.join(tmp_path, RESTORE_PATH)
             os.mkdir(restore_dir)
 
             model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, restore_dir)
