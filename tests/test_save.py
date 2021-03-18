@@ -118,7 +118,7 @@ class TestSave(unittest.TestCase):
         prov_env = Environment({})
         train_kwargs = {'number_batches': 2}
 
-        # TODO specify correct data path and env
+        # TODO specify correct data path and env, atm env is empty and datapath comes from config
         save_info_builder.add_prov_data(raw_data_path='data', env=prov_env, train_service=resnet_ts,
                                         train_kwargs=train_kwargs, code=prov_train_serv_code,
                                         class_name=prov_train_serv_class_name)
@@ -132,8 +132,7 @@ class TestSave(unittest.TestCase):
         resnet_ts.train(model, **train_kwargs)
 
         # "model" is in model_1
-
-        # to recover model_1 we hav saved train_state-0, and take it together with model_0 and the fixed command of
+        # to recover model_1 we have saved train_state-0, and take it together with model_0 and the fixed command of
         # "resnet_ts.train(model, number_batches=2)" to produce model_1
         recovered_model_info = self.provenance_save_service.recover_model(model_id)
 
