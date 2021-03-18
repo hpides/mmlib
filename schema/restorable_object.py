@@ -25,9 +25,9 @@ RESTORABLE_OBJECT = 'restorable_object'
 
 
 class RestoredModelInfo:
-    def __init__(self, model: torch.nn.Module):
+    def __init__(self, model: torch.nn.Module, inference_info=None):
         self.model = model
-        # self.inference_info = inference_info
+        self.inference_info = inference_info
 
 
 class RestorableObjectWrapper(SchemaObj):
@@ -294,11 +294,6 @@ def add_params_from_config(init_args, config_args):
 
     for k, v in config_args.items():
         init_args[k] = config['VALUES'][v]
-
-
-
-
-
 
 
 class OptimizerWrapper(StateFileRestorableObjectWrapper):
