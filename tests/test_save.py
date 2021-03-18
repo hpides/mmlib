@@ -116,20 +116,20 @@ class TestSave(unittest.TestCase):
         prov_train_serv_code = './inference_and_training/resnet_train.py'
         prov_train_serv_class_name = 'ResnetTrainService'
         prov_env = Environment({})
+        train_kwargs = {'number_batches': 2}
+
         # TODO specify correct data path and env
         save_info_builder.add_prov_data(raw_data_path='data', env=prov_env, train_service=resnet_ts,
-                                        code=prov_train_serv_code, class_name=prov_train_serv_class_name)
+                                        train_kwargs=train_kwargs, code=prov_train_serv_code,
+                                        class_name=prov_train_serv_class_name)
         save_info = save_info_builder.build()
 
         # save: train_state-0
         model_id = self.provenance_save_service.save_model(save_info)
 
-        # train with 2 batches
-        # TODO this command should also be tracked, to re-execute it for a restore
-        #  for now we will just assume the command is always the same
         # transitions model and train service:
         # model-0, train_state-0 -> # model-1, train_state-1
-        resnet_ts.train(model, number_batches=2)
+        resnet_ts.train(model, **train_kwargs)
 
         # "model" is in model_1
 

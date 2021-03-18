@@ -22,6 +22,7 @@ class ModelSaveInfoBuilder:
         self._prov_raw_data = None
         self._prov_env = None
         self._prov_train_service = None
+        self._prov_train_kwargs = None
         self._prov_train_service_code = None
         self._prov_train_service_class_name = None
 
@@ -79,6 +80,7 @@ class ModelSaveInfoBuilder:
         prov_train_info = TrainSaveInfo(train_service=self._prov_train_service,
                                         train_service_code=self._prov_train_service_code,
                                         train_service_class_name=self._prov_train_service_class_name,
+                                        train_kwargs=self._prov_train_kwargs,
                                         environment=self._prov_env)
 
         prov_save_info = None
@@ -96,10 +98,11 @@ class ModelSaveInfoBuilder:
                                   self._dummy_input_shape, inference_info=inf_info, prov_rec_info=prov_save_info)
         return save_info
 
-    def add_prov_data(self, raw_data_path: str, env: Environment, train_service: StateDictObj, code: str,
-                      class_name: str):
+    def add_prov_data(self, raw_data_path: str, env: Environment, train_service: StateDictObj, train_kwargs: dict,
+                      code: str, class_name: str):
         self._prov_raw_data = raw_data_path
         self._prov_env = env
         self._prov_train_service = train_service
+        self._prov_train_kwargs = train_kwargs
         self._prov_train_service_code = code
         self._prov_train_service_class_name = class_name

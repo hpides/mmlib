@@ -226,8 +226,8 @@ class ProvenanceSaveService(AbstractSaveService):
             rec_info: ProvenanceRecoverInfo = model_info.recover_info
 
             train_service = rec_info.train_info.train_service.instance
-            # TODO train command needs to be restored
-            train_service.train(model_0, number_batches=2)
+            train_kwargs = rec_info.train_info.train_kwargs
+            train_service.train(model_0, **train_kwargs)
 
             # TODO check recover val if needed
             return RestoredModelInfo(model=model_0)
@@ -248,6 +248,7 @@ class ProvenanceSaveService(AbstractSaveService):
         dataset = Dataset(model_save_info.prov_rec_info.raw_dataset)
         train_info = TrainInfo(
             train_service=train_service_wrapper,
+            train_kwargs=model_save_info.prov_rec_info.train_info.train_kwargs,
             environment=model_save_info.prov_rec_info.train_info.environment
         )
 

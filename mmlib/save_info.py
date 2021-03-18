@@ -6,10 +6,11 @@ from schema.restorable_object import RestorableObjectWrapper, StateDictObj
 
 class TrainSaveInfo:
     def __init__(self, train_service: StateDictObj, train_service_code: str, train_service_class_name: str,
-                 environment: Environment):
+                 train_kwargs: dict, environment: Environment):
         self.train_service = train_service
         self.train_service_code = train_service_code
         self.train_service_class_name = train_service_class_name
+        self.train_kwargs = train_kwargs
         self.environment = environment
 
 
