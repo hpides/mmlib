@@ -4,18 +4,21 @@ from schema.restorable_object import StateDictRestorableObjectWrapper
 from schema.schema_obj import SchemaObj
 
 ID = 'id'
-ENVIRONMENT = 'environment'
 TRAIN_SERVICE = 'train_service'
+TRAIN_KWARGS = 'train_kwargs'
+ENVIRONMENT = 'environment'
 
 TRAIN_INFO = 'train_info'
 
 
 class TrainInfo(SchemaObj):
 
-    def __init__(self, train_service: StateDictRestorableObjectWrapper, environment: Environment, store_id: str = None):
+    def __init__(self, train_service: StateDictRestorableObjectWrapper, train_kwargs: dict, environment: Environment,
+                 store_id: str = None):
         self.store_id = store_id
-        self.environment = environment
         self.train_service = train_service
+        self.train_kwargs = train_kwargs
+        self.environment = environment
 
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
@@ -28,6 +31,7 @@ class TrainInfo(SchemaObj):
         dict_representation = {
             ID: self.store_id,
             TRAIN_SERVICE: train_service_id,
+            TRAIN_KWARGS: self.train_kwargs,
             ENVIRONMENT: env_id,
         }
 
@@ -42,15 +46,17 @@ class TrainInfo(SchemaObj):
 
         store_id = restored_dict[ID]
 
-        env_id = restored_dict[ENVIRONMENT]
-        env = Environment.load(env_id, file_pers_service, dict_pers_service, restore_root)
-
         train_service_id = restored_dict[TRAIN_SERVICE]
         train_service_wrapper = StateDictRestorableObjectWrapper.load(train_service_id, file_pers_service,
                                                                       dict_pers_service, restore_root)
         train_service_wrapper.restore_instance(file_pers_service, dict_pers_service, restore_root)
 
-        return cls(train_service=train_service_wrapper, environment=env, store_id=store_id)
+        train_kwargs = restored_dict[TRAIN_KWARGS]
+
+        env_id = restored_dict[ENVIRONMENT]
+        env = Environment.load(env_id, file_pers_service, dict_pers_service, restore_root)
+
+        return cls(train_service=train_service_wrapper, train_kwargs=train_kwargs, environment=env, store_id=store_id)
 
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
                       dict_pers_service: AbstractDictPersistenceService) -> int:
@@ -58,7 +64,7 @@ class TrainInfo(SchemaObj):
 
         result += dict_pers_service.dict_size(self.store_id, TRAIN_INFO)
 
-        result += self.environment.size_in_bytes(file_pers_service, dict_pers_service)
         result += self.train_service.size_in_bytes(file_pers_service, dict_pers_service)
+        result += self.environment.size_in_bytes(file_pers_service, dict_pers_service)
 
         return result
