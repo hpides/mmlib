@@ -11,6 +11,15 @@ def create_object(code, class_name):
     return obj
 
 
+def create_type(code, type_name):
+    module, path = _module(code)
+    sys.path.append(path)
+    exec('from {} import {}'.format(module, type_name))
+    obj = eval('{}'.format(type_name))
+
+    return obj
+
+
 def create_object_with_parameters(class_name: [str], init_args: dict, code: str = None, import_cmd: str = None,
                                   init_ref_type_args: dict = None):
     if code:

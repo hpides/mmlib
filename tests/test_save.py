@@ -115,13 +115,16 @@ class TestSave(unittest.TestCase):
         self._add_resnet_prov_state_dict(resnet_ts, model)
         prov_train_serv_code = './inference_and_training/resnet_train.py'
         prov_train_serv_class_name = 'ResnetTrainService'
+        prov_train_wrapper_code = '/Users/nils/Studium/master-thesis/mmlib/schema/restorable_object.py'
+        prov_train_wrapper_class_name = 'ResnetTrainWrapper'
         prov_env = Environment({})
         train_kwargs = {'number_batches': 1}
 
         # TODO specify correct data path and env, atm env is empty and datapath comes from config
-        save_info_builder.add_prov_data(raw_data_path='data', env=prov_env, train_service=resnet_ts,
-                                        train_kwargs=train_kwargs, code=prov_train_serv_code,
-                                        class_name=prov_train_serv_class_name)
+        save_info_builder.add_prov_data(
+            raw_data_path='data', env=prov_env, train_service=resnet_ts, train_kwargs=train_kwargs,
+            code=prov_train_serv_code, class_name=prov_train_serv_class_name, wrapper_code=prov_train_wrapper_code,
+            wrapper_class_name=prov_train_wrapper_class_name)
         save_info = save_info_builder.build()
 
         # save: train_state-0

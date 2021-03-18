@@ -1,11 +1,14 @@
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.environment import Environment
-from schema.restorable_object import StateDictRestorableObjectWrapper, ResnetTrainWrapper
+from schema.restorable_object import StateDictRestorableObjectWrapper
 from schema.schema_obj import SchemaObj
+from util.init_from_file import create_type
 
 ID = 'id'
 TRAIN_SERVICE = 'train_service'
 TRAIN_KWARGS = 'train_kwargs'
+WRAPPER_CODE = 'wrapper_code'
+WRAPPER_CLASS_NAME = 'wrapper_class_name'
 ENVIRONMENT = 'environment'
 
 TRAIN_INFO = 'train_info'
@@ -13,10 +16,13 @@ TRAIN_INFO = 'train_info'
 
 class TrainInfo(SchemaObj):
 
-    def __init__(self, train_service: StateDictRestorableObjectWrapper, train_kwargs: dict, environment: Environment,
+    def __init__(self, ts_wrapper: StateDictRestorableObjectWrapper, ts_wrapper_code: str, ts_wrapper_class_name: str,
+                 train_kwargs: dict, environment: Environment,
                  store_id: str = None):
         self.store_id = store_id
-        self.train_service = train_service
+        self.train_service_wrapper = ts_wrapper
+        self.train_service_wrapper_code = ts_wrapper_code
+        self.train_service_wrapper_class_name = ts_wrapper_class_name
         self.train_kwargs = train_kwargs
         self.environment = environment
 
@@ -26,11 +32,13 @@ class TrainInfo(SchemaObj):
             self.store_id = dict_pers_service.generate_id()
 
         env_id = self.environment.persist(file_pers_service, dict_pers_service)
-        train_service_id = self.train_service.persist(file_pers_service, dict_pers_service)
+        train_service_id = self.train_service_wrapper.persist(file_pers_service, dict_pers_service)
 
         dict_representation = {
             ID: self.store_id,
             TRAIN_SERVICE: train_service_id,
+            WRAPPER_CODE: self.train_service_wrapper_code,
+            WRAPPER_CLASS_NAME: self.train_service_wrapper_class_name,
             TRAIN_KWARGS: self.train_kwargs,
             ENVIRONMENT: env_id,
         }
@@ -48,11 +56,12 @@ class TrainInfo(SchemaObj):
 
         train_service_id = restored_dict[TRAIN_SERVICE]
 
-        # TODO import automatic - restore form info
-        wrapper_class = eval('ResnetTrainWrapper')
+        ts_wrapper_class_name = restored_dict[WRAPPER_CLASS_NAME]
+        ts_wrapper_code = restored_dict[WRAPPER_CODE]
+        wrapper_class = create_type(code=ts_wrapper_code, type_name=ts_wrapper_class_name)
 
         train_service_wrapper = wrapper_class.load(train_service_id, file_pers_service,
-                                                                      dict_pers_service, restore_root)
+                                                   dict_pers_service, restore_root)
         train_service_wrapper.restore_instance(file_pers_service, dict_pers_service, restore_root)
 
         train_kwargs = restored_dict[TRAIN_KWARGS]
@@ -60,7 +69,9 @@ class TrainInfo(SchemaObj):
         env_id = restored_dict[ENVIRONMENT]
         env = Environment.load(env_id, file_pers_service, dict_pers_service, restore_root)
 
-        return cls(train_service=train_service_wrapper, train_kwargs=train_kwargs, environment=env, store_id=store_id)
+        return cls(ts_wrapper=train_service_wrapper, ts_wrapper_code=ts_wrapper_code,
+                   ts_wrapper_class_name=ts_wrapper_class_name, train_kwargs=train_kwargs, environment=env,
+                   store_id=store_id)
 
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
                       dict_pers_service: AbstractDictPersistenceService) -> int:
@@ -68,7 +79,7 @@ class TrainInfo(SchemaObj):
 
         result += dict_pers_service.dict_size(self.store_id, TRAIN_INFO)
 
-        result += self.train_service.size_in_bytes(file_pers_service, dict_pers_service)
+        result += self.train_service_wrapper.size_in_bytes(file_pers_service, dict_pers_service)
         result += self.environment.size_in_bytes(file_pers_service, dict_pers_service)
 
         return result

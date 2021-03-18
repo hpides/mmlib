@@ -12,12 +12,12 @@ from schema.inference_info import InferenceInfo
 from schema.model_info import ModelInfo
 from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo
 from schema.recover_val import RecoverVal
-from schema.restorable_object import RestoredModelInfo, ResnetTrainWrapper
+from schema.restorable_object import RestoredModelInfo
 from schema.store_type import ModelStoreType
 from schema.train_info import TrainInfo
 from tests.networks.mynets.resnet18 import resnet18
 from util.hash import state_dict_hash, inference_hash
-from util.init_from_file import create_object
+from util.init_from_file import create_object, create_type
 
 RESTORE_PATH = 'restore_path'
 
@@ -226,7 +226,7 @@ class ProvenanceSaveService(AbstractSaveService):
             model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, restore_dir)
             rec_info: ProvenanceRecoverInfo = model_info.recover_info
 
-            train_service = rec_info.train_info.train_service.instance
+            train_service = rec_info.train_info.train_service_wrapper.instance
             train_kwargs = rec_info.train_info.train_kwargs
             train_service.train(model_0, **train_kwargs)
 
@@ -241,14 +241,19 @@ class ProvenanceSaveService(AbstractSaveService):
         pass
 
     def _save_provenance_model(self, model_save_info, recover_val):
-        train_service_wrapper = ResnetTrainWrapper(  # TODO make this more generic and put logic one level up
+        tw_class_name = model_save_info.prov_rec_info.train_info.train_wrapper_class_name
+        tw_code = model_save_info.prov_rec_info.train_info.train_wrapper_code
+        tpe = create_type(code=tw_code, type_name=tw_class_name)
+        train_service_wrapper = tpe(
             class_name=model_save_info.prov_rec_info.train_info.train_service_class_name,
             code=model_save_info.prov_rec_info.train_info.train_service_code,
             instance=model_save_info.prov_rec_info.train_info.train_service
         )
         dataset = Dataset(model_save_info.prov_rec_info.raw_dataset)
         train_info = TrainInfo(
-            train_service=train_service_wrapper,
+            ts_wrapper=train_service_wrapper,
+            ts_wrapper_code=tw_code,
+            ts_wrapper_class_name=tw_class_name,
             train_kwargs=model_save_info.prov_rec_info.train_info.train_kwargs,
             environment=model_save_info.prov_rec_info.train_info.environment
         )
