@@ -129,7 +129,7 @@ class TestSave(unittest.TestCase):
         #  for now we will just assume the command is always the same
         # transitions model and train service:
         # model-0, train_state-0 -> # model-1, train_state-1
-        resnet_ts.train(model, number_batches=1)
+        resnet_ts.train(model, number_batches=2)
 
         # "model" is in model_1
 

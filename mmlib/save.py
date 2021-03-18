@@ -229,7 +229,7 @@ class ProvenanceSaveService(AbstractSaveService):
 
             train_service = rec_info.train_info.train_service.instance
             # TODO train command needs to be restored
-            train_service.train(model_0, number_batches=1)
+            train_service.train(model_0, number_batches=2)
 
             # TODO check recover val if needed
             return RestoredModelInfo(model=model_0)
