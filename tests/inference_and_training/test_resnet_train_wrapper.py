@@ -31,7 +31,6 @@ class TestSave(unittest.TestCase):
             model = resnet18(pretrained=True)
 
             # prepare state dict for ResnetTrainService
-            # TODO think about how to get rid of magic strings
             state_dict = {}
 
             optimizer = torch.optim.SGD(model.parameters(), 1e-4, momentum=0.9, weight_decay=1e-4)
