@@ -95,7 +95,7 @@ class BaselineSaveService(AbstractSaveService):
 
         return model_id
 
-    def recover_model(self, model_id: str, inference_info=False, check_recover_val=False) -> RestoredModelInfo:
+    def recover_model(self, model_id: str, check_recover_val=False) -> RestoredModelInfo:
         # in this baseline approach we always store the full model (pickled weights + code)
 
         with tempfile.TemporaryDirectory() as tmp_path:
@@ -190,19 +190,17 @@ class BaselineSaveService(AbstractSaveService):
         return state_dict
 
 
-class ProvenanceSaveService(AbstractSaveService):
+class ProvenanceSaveService(BaselineSaveService):
 
     def __init__(self, file_pers_service: AbstractFilePersistenceService,
-                 dict_pers_service: AbstractDictPersistenceService, ):
+                 dict_pers_service: AbstractDictPersistenceService):
         # baseline_save_service: BaselineSaveService):
         """
         :param file_pers_service: An instance of AbstractFilePersistenceService that is used to store files.
         :param dict_pers_service: An instance of AbstractDictPersistenceService that is used to store metadata as dicts.
         # :param baseline_save_service: An instance of BaselineSaveService that is used to store "full models"
         """
-        self._file_pers_service = file_pers_service
-        self._dict_pers_service = dict_pers_service
-        # self.baseline_save_service = baseline_save_service
+        super().__init__(file_pers_service, dict_pers_service)
 
     def save_model(self, model_save_info: ModelSaveInfo) -> str:
         self._check_consistency(model_save_info)
