@@ -28,7 +28,7 @@ MONGO_CONTAINER_NAME = 'mongo-test'
 COCO_ROOT = 'coco_root'
 COCO_ANNOT = 'coco_annotations'
 
-CONFIG = './config.ini'
+CONFIG = './local-config.ini'
 
 
 class TestSave(unittest.TestCase):
