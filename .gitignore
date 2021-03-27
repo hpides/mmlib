@@ -146,3 +146,5 @@ dist/
 /examples/summary
 /tests/filesystem-tmp/
 /tests/saveservice-tmp/
+/tests/tmp-data/
+/tests/data/reduced-custom-coco-data.zip

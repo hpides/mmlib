@@ -122,6 +122,7 @@ class BaselineSaveService(AbstractSaveService):
         return model_info.size_in_bytes(self._file_pers_service, self._dict_pers_service)
 
     def _check_recover_val(self, model, recover_info):
+        # TODO maybe move to abstract super class
         if recover_info.recover_validation is None:
             warnings.warn('check recoverVal not possible - no recover validation info available')
         else:
@@ -243,8 +244,8 @@ class ProvenanceSaveService(AbstractSaveService):
     def _save_provenance_model(self, model_save_info, recover_val):
         tw_class_name = model_save_info.prov_rec_info.train_info.train_wrapper_class_name
         tw_code = model_save_info.prov_rec_info.train_info.train_wrapper_code
-        tpe = create_type(code=tw_code, type_name=tw_class_name)
-        train_service_wrapper = tpe(
+        type_ = create_type(code=tw_code, type_name=tw_class_name)
+        train_service_wrapper = type_(
             class_name=model_save_info.prov_rec_info.train_info.train_service_class_name,
             code=model_save_info.prov_rec_info.train_info.train_service_code,
             instance=model_save_info.prov_rec_info.train_info.train_service

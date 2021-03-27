@@ -1,5 +1,8 @@
+import os
+
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.schema_obj import SchemaObj
+from util.zip import zip_path, unzip
 
 ID = 'id'
 RAW_DATA = 'raw_data'
@@ -18,9 +21,12 @@ class Dataset(SchemaObj):
         if not self.store_id:
             self.store_id = dict_pers_service.generate_id()
 
+        zip_file_path = zip_path(self.raw_data)
+        raw_data_id = file_pers_service.save_file(zip_file_path)
+
         dict_representation = {
             ID: self.store_id,
-            RAW_DATA: self.raw_data
+            RAW_DATA: raw_data_id
         }
 
         dict_pers_service.save_dict(dict_representation, DATASET)
@@ -33,9 +39,13 @@ class Dataset(SchemaObj):
         restored_dict = dict_pers_service.recover_dict(obj_id, DATASET)
 
         store_id = restored_dict[ID]
-        raw_data = restored_dict[RAW_DATA]
+        raw_data_id = restored_dict[RAW_DATA]
 
-        return cls(raw_data=raw_data, store_id=store_id)
+        zip_file_path = file_pers_service.recover_file(raw_data_id, restore_root)
+        restore_path = os.path.join(restore_root, 'data')
+        unzipped_path = unzip(zip_file_path, restore_path)
+
+        return cls(raw_data=unzipped_path, store_id=store_id)
 
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
                       dict_pers_service: AbstractDictPersistenceService) -> int:

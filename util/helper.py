@@ -53,3 +53,17 @@ def clean(path):
         shutil.rmtree(path)
     else:
         os.remove(path)
+
+
+def copy_all_data(src_root, dst_root):
+    src_root = os.path.abspath(src_root)
+    dst_root = os.path.abspath(dst_root)
+
+    shutil.copytree(src_root, dst_root)
+
+
+def move_data(src_root, dst_root):
+    src_root = os.path.abspath(src_root)
+    dst_root = os.path.abspath(dst_root)
+
+    shutil.move(src_root, dst_root)

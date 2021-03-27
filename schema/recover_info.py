@@ -1,10 +1,13 @@
 import abc
+import configparser
+import os
 
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.dataset import Dataset
 from schema.recover_val import RecoverVal
 from schema.schema_obj import SchemaObj
 from schema.train_info import TrainInfo
+from util.helper import copy_all_data, clean
 
 TRAIN_INFO = 'train_info'
 
@@ -144,6 +147,14 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
         store_id = restored_dict[ID]
         dataset_id = restored_dict[DATASET]
         dataset = Dataset.load(dataset_id, file_pers_service, dict_pers_service, restore_root)
+
+        # make data available for train_info
+        # TODO for now we copy the data, maybe if we run into performance issues we should use move instead of copy
+
+        data_dst_path = _data_dst_path()
+        clean(data_dst_path)
+        copy_all_data(dataset.raw_data, data_dst_path)
+
         model_code_id = restored_dict[MODEL_CODE]
         model_code_file_path = file_pers_service.recover_file(model_code_id, restore_root)
         model_class_name = restored_dict[MODEL_CLASS_NAME]
@@ -175,3 +186,12 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
             result += self.recover_validation.size_in_bytes(file_pers_service, dict_pers_service)
 
         return result
+
+
+def _data_dst_path():
+    # TODO magic strings
+    config_file = os.getenv('MMLIB_CONFIG')
+    config = configparser.ConfigParser()
+    config.read(config_file)
+
+    return config['VALUES']['current_data_root']

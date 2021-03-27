@@ -4,6 +4,7 @@ import unittest
 
 import torch
 from bson import ObjectId
+from torch.nn.modules import instancenorm
 
 from mmlib.deterministic import set_deterministic
 from mmlib.equal import model_equal
@@ -16,6 +17,7 @@ from schema.recover_val import RECOVER_VAL
 from schema.restorable_object import RestorableObjectWrapper, OptimizerWrapper
 from schema.save_info_builder import ModelSaveInfoBuilder
 from tests.inference_and_training.resnet_train import ResnetTrainService
+from tests.networks.custom_coco import TrainCustomCoco
 from tests.networks.mynets.googlenet import googlenet
 from tests.networks.mynets.mobilenet import mobilenet_v2
 from tests.networks.mynets.resnet18 import resnet18
@@ -26,7 +28,7 @@ MONGO_CONTAINER_NAME = 'mongo-test'
 COCO_ROOT = 'coco_root'
 COCO_ANNOT = 'coco_annotations'
 
-CONFIG = '/Users/nils/Studium/master-thesis/mmlib/tests/config.ini'
+CONFIG = './config.ini'
 
 
 class TestSave(unittest.TestCase):
@@ -117,12 +119,14 @@ class TestSave(unittest.TestCase):
         prov_train_serv_class_name = 'ResnetTrainService'
         prov_train_wrapper_code = './inference_and_training/resnet_train.py'
         prov_train_wrapper_class_name = 'ResnetTrainWrapper'
+        raw_data = './data/reduced-custom-coco-data'
         prov_env = Environment({})
-        train_kwargs = {'number_batches': 1}
+        train_kwargs = {}
+        # train_kwargs = {'number_batches': 1}
 
-        # TODO specify correct data path and env, atm env is empty and datapath comes from config
+        # TODO specify correct env, atm env is empty
         save_info_builder.add_prov_data(
-            raw_data_path='data', env=prov_env, train_service=resnet_ts, train_kwargs=train_kwargs,
+            raw_data_path=raw_data, env=prov_env, train_service=resnet_ts, train_kwargs=train_kwargs,
             code=prov_train_serv_code, class_name=prov_train_serv_class_name, wrapper_code=prov_train_wrapper_code,
             wrapper_class_name=prov_train_wrapper_class_name)
         save_info = save_info_builder.build()
@@ -157,19 +161,17 @@ class TestSave(unittest.TestCase):
             instance=optimizer
         )
 
-        data_wrapper = RestorableObjectWrapper(
+        data_wrapper = TrainCustomCoco('./data/reduced-custom-coco-data')
+        state_dict['data'] = RestorableObjectWrapper(
             code='./networks/custom_coco.py',
             class_name='TrainCustomCoco',
             init_args={},
-            # TODO think how to get data into here
-            config_args={'root': 'coco_root', 'ann_file': 'coco_annotations'},
-            init_ref_type_args=[]
+            config_args={'root': 'current_data_root'},
+            init_ref_type_args=[],
+            instance=data_wrapper
         )
-        # restore instance ein this way so that we do not have to read manually from config file
-        data_wrapper.restore_instance()
-        state_dict['data'] = data_wrapper
 
-        dataloader = torch.utils.data.DataLoader(data_wrapper.instance, batch_size=64, shuffle=False, num_workers=0,
+        dataloader = torch.utils.data.DataLoader(data_wrapper, batch_size=64, shuffle=False, num_workers=0,
                                                  pin_memory=True)
         state_dict['dataloader'] = RestorableObjectWrapper(
             import_cmd='from torch.utils.data import DataLoader',
