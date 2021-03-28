@@ -6,6 +6,9 @@ from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersis
 
 class SchemaObj(metaclass=abc.ABCMeta):
 
+    def __init__(self, store_id: str = None):
+        self.store_id = store_id
+
     @abc.abstractmethod
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
@@ -14,7 +17,10 @@ class SchemaObj(metaclass=abc.ABCMeta):
         :param file_pers_service: An instance of AbstractFilePersistenceService that is used to store files.
         :param dict_pers_service: An instance of AbstractDictPersistenceService that is used to store metadata as dicts.
         """
-        raise NotImplementedError
+        if not self.store_id:
+            self.store_id = dict_pers_service.generate_id()
+
+        return self.store_id
 
     @classmethod
     @abc.abstractmethod

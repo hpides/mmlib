@@ -19,7 +19,7 @@ class TrainInfo(SchemaObj):
     def __init__(self, ts_wrapper: StateDictRestorableObjectWrapper, ts_wrapper_code: str, ts_wrapper_class_name: str,
                  train_kwargs: dict, environment: Environment,
                  store_id: str = None):
-        self.store_id = store_id
+        super().__init__(store_id)
         self.train_service_wrapper = ts_wrapper
         self.train_service_wrapper_code = ts_wrapper_code
         self.train_service_wrapper_class_name = ts_wrapper_class_name
@@ -28,8 +28,8 @@ class TrainInfo(SchemaObj):
 
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
-        if not self.store_id:
-            self.store_id = dict_pers_service.generate_id()
+
+        super().persist(file_pers_service, dict_pers_service)
 
         env_id = self.environment.persist(file_pers_service, dict_pers_service)
         train_service_id = self.train_service_wrapper.persist(file_pers_service, dict_pers_service)

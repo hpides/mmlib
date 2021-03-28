@@ -15,14 +15,14 @@ class InferenceInfo(SchemaObj):
 
     def __init__(self, inference_service: StateDictRestorableObjectWrapper, environment: Environment,
                  store_id: str = None):
-        self.store_id = store_id
+        super().__init__(store_id)
         self.environment = environment
         self.inference_service = inference_service
 
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
-        if not self.store_id:
-            self.store_id = dict_pers_service.generate_id()
+
+        super().persist(file_pers_service, dict_pers_service)
 
         env_id = self.environment.persist(file_pers_service, dict_pers_service)
         train_service_id = self.inference_service.persist(file_pers_service, dict_pers_service)

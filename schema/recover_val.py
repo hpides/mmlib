@@ -12,15 +12,15 @@ RECOVER_VAL = 'recover_val'
 class RecoverVal(SchemaObj):
 
     def __init__(self, weights_hash: str, inference_hash: str, dummy_input_shape: [int], store_id: str = None):
-        self.store_id = store_id
+        super().__init__(store_id)
         self.weights_hash = weights_hash
         self.inference_hash = inference_hash
         self.dummy_input_shape = dummy_input_shape
 
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
-        if not self.store_id:
-            self.store_id = dict_pers_service.generate_id()
+
+        super().persist(file_pers_service, dict_pers_service)
 
         dict_representation = {
             ID: self.store_id,

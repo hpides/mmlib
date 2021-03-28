@@ -19,7 +19,7 @@ class ModelInfo(SchemaObj):
 
     def __init__(self, store_type: ModelStoreType, recover_info: AbstractRecoverInfo, store_id: str = None,
                  derived_from_id: str = None, inference_info: InferenceInfo = None, train_info: TrainInfo = None):
-        self.store_id = store_id
+        super().__init__(store_id)
         self.store_type = store_type
         self.recover_info = recover_info
         self.derived_from = derived_from_id
@@ -29,8 +29,7 @@ class ModelInfo(SchemaObj):
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
 
-        if not self.store_id:
-            self.store_id = dict_pers_service.generate_id()
+        super().persist(file_pers_service, dict_pers_service)
 
         recover_info_id = self.recover_info.persist(file_pers_service, dict_pers_service)
 

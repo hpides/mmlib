@@ -35,7 +35,7 @@ class RestorableObjectWrapper(SchemaObj):
     def __init__(self, class_name: str, init_args: dict, init_ref_type_args: [str], config_args: dict, code: str = None,
                  import_cmd: str = None, instance: object = None, store_id: str = None):
 
-        self.store_id = store_id
+        super().__init__(store_id)
         self.instance = instance
         self.code = code
         self.import_cmd = import_cmd
@@ -49,9 +49,8 @@ class RestorableObjectWrapper(SchemaObj):
 
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
-        # TODO think about how to solve maybe update instead of insert new
-        # if not self.store_id:
-        self.store_id = dict_pers_service.generate_id()
+
+        super().persist(file_pers_service, dict_pers_service)
 
         dict_representation = self._persist_fields(dict_pers_service, file_pers_service)
 
@@ -150,16 +149,15 @@ class StateDictObj(metaclass=abc.ABCMeta):
 class StateDictRestorableObjectWrapper(SchemaObj):
 
     def __init__(self, class_name: str, code: str, instance: StateDictObj = None, store_id: str = None):
-        self.store_id = store_id
+        super().__init__(store_id)
         self.instance = instance
         self.code = code
         self.class_name = class_name
 
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
-        # TODO think about how to solve maybe update instead of insert new
-        # if not self.store_id:
-        self.store_id = dict_pers_service.generate_id()
+
+        super().persist(file_pers_service, dict_pers_service)
 
         # persist instance state dict
         state_dict_refs = {}

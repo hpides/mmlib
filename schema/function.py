@@ -15,17 +15,18 @@ class Function(SchemaObj):
 
     def __init__(self, code_file: str, import_cmd: str, call_name: str, args: dict, ref_type_args: [str],
                  store_id: str = None):
+        super().__init__(store_id)
         self.code = code_file
         self.import_cmd = import_cmd
         self.call_name = call_name
         self.args = args
         self.ref_type_args = ref_type_args
-        self.store_id = store_id
+
 
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
-        if not self.store_id:
-            self.store_id = dict_pers_service.generate_id()
+
+        super().persist(file_pers_service, dict_pers_service)
 
         dict_representation = {
             ID: self.store_id,
