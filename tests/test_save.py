@@ -145,10 +145,33 @@ class TestSave(unittest.TestCase):
         resnet_ts.train(model, **train_kwargs)
 
         # "model" is in model_1
-        # to recover model_1 we have saved train_state-0, and take it together with model_0 and the fixed command of
+        # to recover model_1 we have saved train_state-0, and take it together with model_0
         recovered_model_info = self.provenance_save_service.recover_model(model_id)
 
         self.assertTrue(model_equal(model, recovered_model_info.model, imagenet_input))
+
+        # # save: train_state-1
+        # save_info_builder = ModelSaveInfoBuilder()
+        # save_info_builder.add_model_info(code=code_file, model_class_name=class_name, base_model_id=model_id)
+        # save_info_builder.add_prov_data(
+        #     raw_data_path=raw_data, env=prov_env, train_service=resnet_ts, train_kwargs=train_kwargs,
+        #     code=prov_train_serv_code, class_name=prov_train_serv_class_name, wrapper_code=prov_train_wrapper_code,
+        #     wrapper_class_name=prov_train_wrapper_class_name)
+        # save_info = save_info_builder.build()
+        #
+        # model_id_2 = self.provenance_save_service.save_model(save_info)
+        # # -------------------------------------------------------------
+        #
+        # # transitions model and train service:
+        # # model-1, train_state-1 -> # model-2, train_state-2
+        # resnet_ts.train(model, **train_kwargs)
+        #
+        # # "model" is in model_2
+        # # to recover model_2 we have saved train_state-1, and take it together with model_1
+        # recovered_model_info = self.provenance_save_service.recover_model(model_id_2)
+        #
+        # self.assertTrue(model_equal(model, recovered_model_info.model, imagenet_input))
+
 
     def _add_resnet_prov_state_dict(self, resnet_ts, model):
         set_deterministic()
