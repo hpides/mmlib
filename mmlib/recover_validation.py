@@ -50,8 +50,6 @@ class RecoverValidationService:
 
         self.dict_save_service.save_dict(store_dict, RECOVER_VAL)
 
-    def check_recover_info(self, ):
-
     def _generate_recover_val(self, model, dummy_input_shape):
         assert model is not None, 'if recover val should be generated, then model needs to be given'
 
