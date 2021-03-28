@@ -1,7 +1,6 @@
 import abc
 import os
 import tempfile
-import warnings
 
 import torch
 
@@ -11,11 +10,9 @@ from schema.dataset import Dataset
 from schema.inference_info import InferenceInfo
 from schema.model_info import ModelInfo
 from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo
-from schema.recover_val import RecoverVal
 from schema.restorable_object import RestoredModelInfo
 from schema.store_type import ModelStoreType
 from schema.train_info import TrainInfo
-from util.hash import state_dict_hash, inference_hash
 from util.init_from_file import create_object, create_type
 
 RESTORE_PATH = 'restore_path'
@@ -36,12 +33,10 @@ class AbstractSaveService(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def recover_model(self, model_id: str, check_recover_val=False) -> RestoredModelInfo:
+    def recover_model(self, model_id: str) -> RestoredModelInfo:
         """
         Recovers a the model and metadata identified by the given model id.
         :param model_id: The id to identify the model with.
-        :param check_recover_val: The flag that indicates if the recover validation data (if there) is used to validate
-        the restored model.
         :return: The recovered model and metadata bundled in an object of type ModelRestoreInfo.
         """
         raise NotImplementedError
@@ -54,8 +49,6 @@ class AbstractSaveService(metaclass=abc.ABCMeta):
         :return: The amount of bytes used to store the model.
         """
         raise NotImplementedError
-
-
 
 
 class BaselineSaveService(AbstractSaveService):
@@ -74,17 +67,13 @@ class BaselineSaveService(AbstractSaveService):
     def save_model(self, model_save_info: ModelSaveInfo) -> str:
         self._check_consistency(model_save_info)
 
-        recover_val = None
-        if model_save_info.recover_val:
-            recover_val = self._generate_recover_val(model_save_info.model, model_save_info.dummy_input_shape)
-
         # usually we would consider at this bit how we best store the given model
         # but since this is the baseline service we just store the full model every time.
-        model_id = self._save_full_model(model_save_info, recover_val)
+        model_id = self._save_full_model(model_save_info)
 
         return model_id
 
-    def recover_model(self, model_id: str, check_recover_val=False) -> RestoredModelInfo:
+    def recover_model(self, model_id: str) -> RestoredModelInfo:
         # in this baseline approach we always store the full model (pickled weights + code)
 
         with tempfile.TemporaryDirectory() as tmp_path:
@@ -99,9 +88,6 @@ class BaselineSaveService(AbstractSaveService):
 
             restored_model_info = RestoredModelInfo(model=model, inference_info=model_info.inference_info)
 
-            if check_recover_val:
-                self._check_recover_val(model, recover_info)
-
         return restored_model_info
 
     def model_save_size(self, model_id: str) -> int:
@@ -110,14 +96,10 @@ class BaselineSaveService(AbstractSaveService):
 
         return model_info.size_in_bytes(self._file_pers_service, self._dict_pers_service)
 
-
-
     def _check_consistency(self, model_save_info):
-        if model_save_info.recover_val:
-            assert model_save_info.dummy_input_shape, 'to store recover_val information a dummy input function needs ' \
-                                                      'to be provided'
+        assert True, 'nothing checked so far'
 
-    def _save_full_model(self, model_save_info: ModelSaveInfo, recover_val: RecoverVal) -> str:
+    def _save_full_model(self, model_save_info: ModelSaveInfo) -> str:
 
         with tempfile.TemporaryDirectory() as tmp_path:
             weights_path = self._pickle_weights(model_save_info.model, tmp_path)
@@ -138,8 +120,7 @@ class BaselineSaveService(AbstractSaveService):
             # if the model to store is not derived from another model code and class name have to me defined
             recover_info = FullModelRecoverInfo(weights_file_path=weights_path,
                                                 model_code_file_path=model_save_info.code,
-                                                model_class_name=model_save_info.class_name,
-                                                recover_validation=recover_val)
+                                                model_class_name=model_save_info.class_name)
 
             inference_info = None
             if model_save_info.inference_info:
@@ -202,11 +183,11 @@ class ProvenanceSaveService(BaselineSaveService):
             # if model_save_info.recover_val:
             #     recover_val = self._generate_recover_val(model_save_info)
 
-            model_id = self._save_provenance_model(model_save_info, recover_val)
+            model_id = self._save_provenance_model(model_save_info)
 
             return model_id
 
-    def recover_model(self, model_id: str, check_recover_val=False) -> RestoredModelInfo:
+    def recover_model(self, model_id: str) -> RestoredModelInfo:
 
         base_model_id = self._get_base_model(model_id)
         if base_model_id is None:
@@ -214,11 +195,11 @@ class ProvenanceSaveService(BaselineSaveService):
             store_type = self._get_store_type(model_id)
             assert store_type == ModelStoreType.PICKLED_WEIGHTS, \
                 'for all other model types then ModelStoreType.PICKLED_WEIGHTS we need a base model'
-            return super().recover_model(model_id, check_recover_val)
+            return super().recover_model(model_id)
         else:
             # if there is a base model we first have to restore the base model to continue training base on it
             base_model_store_type = self._get_store_type(base_model_id)
-            base_model_info = self._recover_base_model(base_model_id, base_model_store_type, check_recover_val)
+            base_model_info = self._recover_base_model(base_model_id, base_model_store_type)
             base_model = base_model_info.model
 
             with tempfile.TemporaryDirectory() as tmp_path:
@@ -234,9 +215,6 @@ class ProvenanceSaveService(BaselineSaveService):
 
                 restored_model_info = RestoredModelInfo(model=base_model)
 
-                if check_recover_val:
-                    self._check_recover_val(base_model, recover_info)
-
                 # because we trained it here the base_model is the updated version
                 return restored_model_info
 
@@ -247,7 +225,7 @@ class ProvenanceSaveService(BaselineSaveService):
         # TODO
         pass
 
-    def _save_provenance_model(self, model_save_info, recover_val):
+    def _save_provenance_model(self, model_save_info):
         tw_class_name = model_save_info.prov_rec_info.train_info.train_wrapper_class_name
         tw_code = model_save_info.prov_rec_info.train_info.train_wrapper_code
         type_ = create_type(code=tw_code, type_name=tw_class_name)
@@ -269,8 +247,7 @@ class ProvenanceSaveService(BaselineSaveService):
             dataset=dataset,
             model_code_file_path=model_save_info.prov_rec_info.model_code,
             model_class_name=model_save_info.prov_rec_info.model_class_name,
-            train_info=train_info,
-            recover_validation=recover_val
+            train_info=train_info
         )
 
         derived_from = model_save_info.base_model if model_save_info.base_model else None
@@ -285,15 +262,10 @@ class ProvenanceSaveService(BaselineSaveService):
 
         return model_info_id
 
-    def _recover_base_model(self, base_model_id, base_model_store_type, check_recover_val):
+    def _recover_base_model(self, base_model_id, base_model_store_type):
         if base_model_store_type == ModelStoreType.PICKLED_WEIGHTS:
-            return super().recover_model(model_id=base_model_id, check_recover_val=check_recover_val)
+            return super().recover_model(model_id=base_model_id)
         elif base_model_store_type == ModelStoreType.PROVENANCE:
-            return self.recover_model(model_id=base_model_id, check_recover_val=check_recover_val)
+            return self.recover_model(model_id=base_model_id)
         else:
             raise NotImplementedError
-
-    def add_recover_val(self, model, model_id, dummy_input_shape):
-        recover_val = self._generate_recover_val(model, dummy_input_shape)
-
-

@@ -8,11 +8,11 @@ from bson import ObjectId
 from mmlib.deterministic import set_deterministic
 from mmlib.equal import model_equal
 from mmlib.persistence import MongoDictPersistenceService, FileSystemPersistenceService, DICT
+from mmlib.recover_validation import RecoverValidationService
 from mmlib.save import BaselineSaveService, ProvenanceSaveService
 from schema.environment import Environment
 from schema.model_info import RECOVER_INFO_ID, MODEL_INFO
 from schema.recover_info import RECOVER_INFO
-from schema.recover_val import RECOVER_VAL
 from schema.restorable_object import RestorableObjectWrapper, OptimizerWrapper
 from schema.save_info_builder import ModelSaveInfoBuilder
 from tests.inference_and_training.resnet_train import ResnetTrainService
@@ -47,6 +47,7 @@ class TestSave(unittest.TestCase):
         dict_pers_service = MongoDictPersistenceService()
         self.save_recover_service = BaselineSaveService(file_pers_service, dict_pers_service)
         self.provenance_save_service = ProvenanceSaveService(file_pers_service, dict_pers_service)
+        self.recover_val_service = RecoverValidationService(dict_pers_service)
 
         os.environ['MMLIB_CONFIG'] = CONFIG
 
@@ -109,7 +110,6 @@ class TestSave(unittest.TestCase):
         class_name = 'resnet18'
         save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(model, code_file, class_name)
-        save_info_builder.add_recover_val(dummy_input_shape=[10, 3, 300, 400])
         save_info = save_info_builder.build()
         base_model_id = self.provenance_save_service.save_model(save_info)
         # -------------------------------------------------------------
@@ -117,7 +117,6 @@ class TestSave(unittest.TestCase):
         # store provenance-0
         save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(code=code_file, model_class_name=class_name, base_model_id=base_model_id)
-        save_info_builder.add_recover_val(dummy_input_shape=[10, 3, 300, 400])
 
         resnet_ts = ResnetTrainService()
         self._add_resnet_prov_state_dict(resnet_ts, model)
@@ -145,15 +144,14 @@ class TestSave(unittest.TestCase):
         # transitions model and train service:
         # model-0, train_state-0 -> # model-1, train_state-1
         resnet_ts.train(model, **train_kwargs)
-
-        self.provenance_save_service.add_recover_val(model=model, model_id=model_id,
-                                                     dummy_input_shape=[10, 3, 300, 400])
+        self.recover_val_service.save_recover_val_info(model, model_id, dummy_input_shape=[10, 3, 300, 400])
 
         # "model" is in model_1
         # to recover model_1 we have saved train_state-0, and take it together with model_0
-        recovered_model_info = self.provenance_save_service.recover_model(model_id, check_recover_val=True)
+        recovered_model_info = self.provenance_save_service.recover_model(model_id)
 
         recovered_model_1 = recovered_model_info.model
+        self.assertTrue(self.recover_val_service.check_recover_val(model_id, recovered_model_1))
         self.assertTrue(model_equal(model, recovered_model_1, imagenet_input))
 
         # save: train_state-1
@@ -171,11 +169,13 @@ class TestSave(unittest.TestCase):
         # transitions model and train service:
         # model-1, train_state-1 -> # model-2, train_state-2
         resnet_ts.train(model, **train_kwargs)
+        self.recover_val_service.save_recover_val_info(model, model_id_2, dummy_input_shape=[10, 3, 300, 400])
 
         # "model" is in model_2
         # to recover model_2 we have saved train_state-1, and take it together with model_1
-        recovered_model_info = self.provenance_save_service.recover_model(model_id_2, check_recover_val=True)
+        recovered_model_info = self.provenance_save_service.recover_model(model_id_2)
 
+        self.assertTrue(self.recover_val_service.check_recover_val(model_id_2, recovered_model_info.model))
         self.assertTrue(model_equal(model, recovered_model_info.model, imagenet_input))
         self.assertFalse(model_equal(recovered_model_1, recovered_model_info.model, imagenet_input))
 
@@ -305,13 +305,14 @@ class TestSave(unittest.TestCase):
 
         save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
-        save_info_builder.add_recover_val(dummy_input_shape=[10, 3, 300, 400])
         save_info = save_info_builder.build()
 
         model_id = self.save_recover_service.save_model(save_info)
+        self.recover_val_service.save_recover_val_info(model, model_id, [10, 3, 300, 400])
 
-        restored_model_info = self.save_recover_service.recover_model(model_id, check_recover_val=True)
+        restored_model_info = self.save_recover_service.recover_model(model_id)
 
+        self.assertTrue(self.recover_val_service.check_recover_val(model_id, restored_model_info.model))
         self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
 
     def test_save_restore_model_version_and_recover_val(self):
@@ -328,48 +329,36 @@ class TestSave(unittest.TestCase):
 
         save_version_info_builder = ModelSaveInfoBuilder()
         save_version_info_builder.add_model_info(model_version, base_model_id=model_id)
-        save_version_info_builder.add_recover_val(dummy_input_shape=[10, 3, 300, 400])
         save_version_info = save_version_info_builder.build()
         model_version1_id = self.save_recover_service.save_model(save_version_info)
+        self.recover_val_service.save_recover_val_info(model_version, model_version1_id, [10, 3, 300, 400])
 
         model_version = resnet18(pretrained=True)
 
         save_version_info_builder = ModelSaveInfoBuilder()
         save_version_info_builder.add_model_info(model_version, base_model_id=model_version1_id)
-        save_version_info_builder.add_recover_val(dummy_input_shape=[10, 3, 300, 400])
         save_version_info = save_version_info_builder.build()
         model_version2_id = self.save_recover_service.save_model(save_version_info)
+        self.recover_val_service.save_recover_val_info(model_version, model_version2_id, [10, 3, 300, 400])
 
         restored_model_info = self.save_recover_service.recover_model(model_id)
-        restored_model_version1_info = self.save_recover_service.recover_model(model_version1_id,
-                                                                               check_recover_val=True)
-        restored_model_version2_info = self.save_recover_service.recover_model(model_version2_id,
-                                                                               check_recover_val=True)
+        restored_model_version1_info = self.save_recover_service.recover_model(model_version1_id)
+        restored_model_version2_info = self.save_recover_service.recover_model(model_version2_id)
 
+        self.assertTrue(self.recover_val_service.check_recover_val(model_version1_id, restored_model_info.model))
+        self.assertTrue(
+            self.recover_val_service.check_recover_val(model_version2_id, restored_model_version2_info.model))
         self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
         self.assertTrue(model_equal(model, restored_model_version1_info.model, imagenet_input))
         self.assertFalse(
             model_equal(restored_model_version1_info.model, restored_model_version2_info.model, imagenet_input))
 
     def test_model_save_size(self):
-        self._test_model_save_size()
-
-    def test_model_save_size_recover_val(self):
-        self._test_model_save_size(recover_val=True)
-
-    def _test_model_save_size(self, recover_val=False):
         model = resnet18(pretrained=True)
-        if recover_val:
-            save_info_builder = ModelSaveInfoBuilder()
-            save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
-            save_info_builder.add_recover_val(dummy_input_shape=[10, 3, 300, 400])
-            save_info = save_info_builder.build()
-            model_id = self.save_recover_service.save_model(save_info)
-        else:
-            save_info_builder = ModelSaveInfoBuilder()
-            save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
-            save_info = save_info_builder.build()
-            model_id = self.save_recover_service.save_model(save_info)
+        save_info_builder = ModelSaveInfoBuilder()
+        save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
+        save_info = save_info_builder.build()
+        model_id = self.save_recover_service.save_model(save_info)
 
         model_id = model_id.replace(DICT, '')
         save_size = self.save_recover_service.model_save_size(model_id)
@@ -394,11 +383,5 @@ class TestSave(unittest.TestCase):
             pickled_weights_size + \
             model_info_size + \
             restore_dict_size
-
-        if recover_val:
-            restore_info = self.mongo_service.get_dict(ObjectId(restore_info_id), RECOVER_INFO)
-            recover_val_id = restore_info[RECOVER_VAL].replace(DICT, '')
-            val_dict_size = self.mongo_service.document_size(ObjectId(recover_val_id), RECOVER_VAL)
-            expected_size += val_dict_size
 
         self.assertEqual(expected_size, save_size)

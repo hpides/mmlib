@@ -13,7 +13,6 @@ class ModelSaveInfoBuilder:
         self._base_model = None
         self._code = None
         self._class_name = None
-        self._recover_val = False
         self._dummy_input_shape = None
         self._inference_data_wrapper = None
         self._inference_dataloader = None
@@ -42,14 +41,6 @@ class ModelSaveInfoBuilder:
         self._base_model = base_model_id
         self._code = code
         self._class_name = model_class_name
-
-    def add_recover_val(self, dummy_input_shape: [int] = None):
-        """
-        Indicates that recover validation info should be saved and adds the required info.
-        :param dummy_input_shape: The shape of the dummy input that should be used to produce an inference result.
-        """
-        self._recover_val = True
-        self._dummy_input_shape = dummy_input_shape
 
     def add_inference_info(self, data_wrapper: RestorableObjectWrapper, dataloader: RestorableObjectWrapper,
                            pre_processor: RestorableObjectWrapper, environment: Environment):
@@ -96,8 +87,8 @@ class ModelSaveInfoBuilder:
                 train_info=prov_train_info
             )
 
-        save_info = ModelSaveInfo(self._model, self._base_model, self._code, self._class_name, self._recover_val,
-                                  self._dummy_input_shape, inference_info=inf_info, prov_rec_info=prov_save_info)
+        save_info = ModelSaveInfo(self._model, self._base_model, self._code, self._class_name, self._dummy_input_shape,
+                                  inference_info=inf_info, prov_rec_info=prov_save_info)
         return save_info
 
     def add_prov_data(self, raw_data_path: str, env: Environment, train_service: StateDictObj, train_kwargs: dict,

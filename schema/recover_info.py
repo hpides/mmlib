@@ -4,7 +4,6 @@ import os
 
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.dataset import Dataset
-from schema.recover_val import RecoverVal
 from schema.schema_obj import SchemaObj
 from schema.train_info import TrainInfo
 from util.helper import copy_all_data, clean
@@ -30,20 +29,17 @@ ID = 'id'
 WEIGHTS = 'weights'
 MODEL_CODE = 'model_code'
 MODEL_CLASS_NAME = 'model_class_name'
-RECOVER_VAL = 'recover_val'
 
 RECOVER_INFO = 'recover_info'
 
 
 class FullModelRecoverInfo(AbstractRecoverInfo):
 
-    def __init__(self, weights_file_path: str, model_code_file_path, model_class_name: str, store_id: str = None,
-                 recover_validation: RecoverVal = None):
+    def __init__(self, weights_file_path: str, model_code_file_path, model_class_name: str, store_id: str = None):
         super().__init__(store_id)
         self.weights_file_path = weights_file_path
         self.model_code_file_path = model_code_file_path
         self.model_class_name = model_class_name
-        self.recover_validation = recover_validation
 
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
@@ -60,10 +56,6 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
             MODEL_CODE: model_code_id,
             MODEL_CLASS_NAME: self.model_class_name
         }
-
-        if self.recover_validation:
-            recover_val_id = self.recover_validation.persist(file_pers_service, dict_pers_service)
-            dict_representation[RECOVER_VAL] = recover_val_id
 
         dict_pers_service.save_dict(dict_representation, RECOVER_INFO)
 
@@ -82,13 +74,8 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
         model_code_file_path = file_pers_service.recover_file(model_code_file_id, restore_root)
         model_class_name = restored_dict[MODEL_CLASS_NAME]
 
-        recover_validation = None
-        if RECOVER_VAL in restored_dict:
-            recover_val_id = restored_dict[RECOVER_VAL]
-            recover_validation = RecoverVal.load(recover_val_id, file_pers_service, dict_pers_service, restore_root)
-
         return cls(weights_file_path=weights_file_path, model_code_file_path=model_code_file_path,
-                   model_class_name=model_class_name, store_id=store_id, recover_validation=recover_validation)
+                   model_class_name=model_class_name, store_id=store_id)
 
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
                       dict_pers_service: AbstractDictPersistenceService) -> int:
@@ -102,8 +89,6 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
 
         result += file_pers_service.file_size(restored_dict[WEIGHTS])
         result += file_pers_service.file_size(restored_dict[MODEL_CODE])
-        if self.recover_validation:
-            result += self.recover_validation.size_in_bytes(file_pers_service, dict_pers_service)
 
         return result
 
@@ -114,13 +99,12 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
 class ProvenanceRecoverInfo(AbstractRecoverInfo):
 
     def __init__(self, dataset: Dataset, model_code_file_path, model_class_name: str, train_info: TrainInfo,
-                 store_id: str = None, recover_validation: RecoverVal = None):
+                 store_id: str = None):
         super().__init__(store_id)
         self.dataset = dataset
         self.model_code_file_path = model_code_file_path
         self.model_class_name = model_class_name
         self.train_info = train_info
-        self.recover_validation = recover_validation
 
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
@@ -139,10 +123,6 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
             MODEL_CLASS_NAME: self.model_class_name,
             TRAIN_INFO: train_info_id
         }
-
-        if self.recover_validation:
-            recover_val_id = self.recover_validation.persist(file_pers_service, dict_pers_service)
-            dict_representation[RECOVER_VAL] = recover_val_id
 
         dict_pers_service.save_dict(dict_representation, RECOVER_INFO)
 
@@ -171,13 +151,8 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
         train_info_id = restored_dict[TRAIN_INFO]
         train_info = TrainInfo.load(train_info_id, file_pers_service, dict_pers_service, restore_root)
 
-        recover_validation = None
-        if RECOVER_VAL in restored_dict:
-            recover_val_id = restored_dict[RECOVER_VAL]
-            recover_validation = RecoverVal.load(recover_val_id, file_pers_service, dict_pers_service, restore_root)
-
         return cls(dataset=dataset, model_class_name=model_class_name, train_info=train_info, store_id=store_id,
-                   recover_validation=recover_validation, model_code_file_path=model_code_file_path)
+                   model_code_file_path=model_code_file_path)
 
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
                       dict_pers_service: AbstractDictPersistenceService) -> int:
@@ -191,9 +166,6 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
         result += self.dataset.size_in_bytes(file_pers_service, dict_pers_service)
         result += file_pers_service.file_size(restored_dict[MODEL_CODE])
         result += self.train_info.size_in_bytes(file_pers_service, dict_pers_service)
-
-        if self.recover_validation:
-            result += self.recover_validation.size_in_bytes(file_pers_service, dict_pers_service)
 
         return result
 
