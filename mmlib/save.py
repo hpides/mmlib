@@ -15,7 +15,6 @@ from schema.recover_val import RecoverVal
 from schema.restorable_object import RestoredModelInfo
 from schema.store_type import ModelStoreType
 from schema.train_info import TrainInfo
-from tests.networks.mynets.resnet18 import resnet18
 from util.hash import state_dict_hash, inference_hash
 from util.init_from_file import create_object, create_type
 
@@ -189,6 +188,16 @@ class BaselineSaveService(AbstractSaveService):
 
         return state_dict
 
+    def _get_store_type(self, model_id: str):
+        with tempfile.TemporaryDirectory() as tmp_path:
+            model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path)
+            return model_info.store_type
+
+    def _get_base_model(self, model_id: str):
+        with tempfile.TemporaryDirectory() as tmp_path:
+            model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path)
+            return model_info.derived_from
+
 
 class ProvenanceSaveService(BaselineSaveService):
 
@@ -205,6 +214,10 @@ class ProvenanceSaveService(BaselineSaveService):
     def save_model(self, model_save_info: ModelSaveInfo) -> str:
         self._check_consistency(model_save_info)
 
+        if model_save_info.base_model is None:
+            # if there is no base model, we store the model as a full model
+            super().save_model(model_save_info)
+
         recover_val = None
         if model_save_info.recover_val:
             recover_val = self._generate_recover_val(model_save_info)
@@ -214,23 +227,35 @@ class ProvenanceSaveService(BaselineSaveService):
         return model_id
 
     def recover_model(self, model_id: str, check_recover_val=False) -> RestoredModelInfo:
-        # TODO this code is just for testing
-        # get model_0 - usually done by going through past models or just restore a full model version)
-        model_0 = resnet18(pretrained=True)
 
-        with tempfile.TemporaryDirectory() as tmp_path:
-            restore_dir = os.path.join(tmp_path, RESTORE_PATH)
-            os.mkdir(restore_dir)
+        base_model_id = self._get_base_model(model_id)
+        if base_model_id is None:
+            # if there is no base model the current model's store type must be PickledWeights
+            store_type = self._get_store_type(model_id)
+            assert store_type == ModelStoreType.PICKLED_WEIGHTS, \
+                'for all other model types then ModelStoreType.PICKLED_WEIGHTS we need a base model'
+            return super().recover_model(model_id, check_recover_val)
+        else:
+            # if there is a base model we first have to restore the base model to continue training base on it
+            base_model_store_type = self._get_store_type(base_model_id)
+            base_model_info = self._recover_base_model(base_model_id, base_model_store_type, check_recover_val)
+            base_model = base_model_info.model
 
-            model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, restore_dir)
-            rec_info: ProvenanceRecoverInfo = model_info.recover_info
+            with tempfile.TemporaryDirectory() as tmp_path:
+                restore_dir = os.path.join(tmp_path, RESTORE_PATH)
+                os.mkdir(restore_dir)
 
-            train_service = rec_info.train_info.train_service_wrapper.instance
-            train_kwargs = rec_info.train_info.train_kwargs
-            train_service.train(model_0, **train_kwargs)
+                model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, restore_dir)
+                rec_info: ProvenanceRecoverInfo = model_info.recover_info
 
-            # TODO check recover val if needed
-            return RestoredModelInfo(model=model_0)
+                train_service = rec_info.train_info.train_service_wrapper.instance
+                train_kwargs = rec_info.train_info.train_kwargs
+                train_service.train(base_model, **train_kwargs)
+
+                # TODO check recover val if needed
+
+                # because we trained it here the base_model is the updated version
+                return RestoredModelInfo(model=base_model)
 
     def model_save_size(self, model_id: str) -> int:
         pass
@@ -281,3 +306,11 @@ class ProvenanceSaveService(BaselineSaveService):
         model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
 
         return model_info_id
+
+    def _recover_base_model(self, base_model_id, base_model_store_type, check_recover_val):
+        if base_model_store_type == ModelStoreType.PICKLED_WEIGHTS:
+            return super().recover_model(model_id=base_model_id, check_recover_val=check_recover_val)
+        elif base_model_store_type == ModelStoreType.PROVENANCE:
+            return self.recover_model(model_id=base_model_id, check_recover_val=check_recover_val)
+        else:
+            raise NotImplementedError

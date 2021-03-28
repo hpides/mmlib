@@ -4,7 +4,6 @@ import unittest
 
 import torch
 from bson import ObjectId
-from torch.nn.modules import instancenorm
 
 from mmlib.deterministic import set_deterministic
 from mmlib.equal import model_equal
@@ -104,14 +103,21 @@ class TestSave(unittest.TestCase):
         self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
 
     def test_save_restore_provenance_model(self):
-
-        # model-0, is "stored" - we just use pretrain to model the stored model
+        # store model-0
         model = resnet18(pretrained=True)
         code_file = './networks/mynets/{}.py'.format('resnet18')
         code_name = 'resnet18'
-
         save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(model, code_file, code_name)
+        save_info = save_info_builder.build()
+        # TODO think if this is the correct way to do it
+        base_model_id = self.save_recover_service.save_model(save_info)
+        # -------------------------------------------------------------
+
+        # store provenance-0
+        save_info_builder = ModelSaveInfoBuilder()
+        # TODO think about making model optional
+        save_info_builder.add_model_info(None, code_file, code_name, base_model_id=base_model_id)
 
         resnet_ts = ResnetTrainService()
         self._add_resnet_prov_state_dict(resnet_ts, model)
@@ -121,8 +127,7 @@ class TestSave(unittest.TestCase):
         prov_train_wrapper_class_name = 'ResnetTrainWrapper'
         raw_data = './data/reduced-custom-coco-data'
         prov_env = Environment({})
-        train_kwargs = {}
-        # train_kwargs = {'number_batches': 1}
+        train_kwargs = {'number_batches': 2}
 
         # TODO specify correct env, atm env is empty
         save_info_builder.add_prov_data(
@@ -132,7 +137,10 @@ class TestSave(unittest.TestCase):
         save_info = save_info_builder.build()
 
         # save: train_state-0
+        # it is a bit unintuitive but we have to store the prov data before training because through the training we
+        # change the sate of the optimizer etc.
         model_id = self.provenance_save_service.save_model(save_info)
+        # -------------------------------------------------------------
 
         # transitions model and train service:
         # model-0, train_state-0 -> # model-1, train_state-1
@@ -140,7 +148,6 @@ class TestSave(unittest.TestCase):
 
         # "model" is in model_1
         # to recover model_1 we have saved train_state-0, and take it together with model_0 and the fixed command of
-        # "resnet_ts.train(model, number_batches=2)" to produce model_1
         recovered_model_info = self.provenance_save_service.recover_model(model_id)
 
         self.assertTrue(model_equal(model, recovered_model_info.model, imagenet_input))
@@ -170,12 +177,13 @@ class TestSave(unittest.TestCase):
             instance=data_wrapper
         )
 
-        dataloader = torch.utils.data.DataLoader(data_wrapper, batch_size=64, shuffle=False, num_workers=0,
+        # Note use batch size 5 to reduce speed up tests
+        dataloader = torch.utils.data.DataLoader(data_wrapper, batch_size=5, shuffle=False, num_workers=0,
                                                  pin_memory=True)
         state_dict['dataloader'] = RestorableObjectWrapper(
             import_cmd='from torch.utils.data import DataLoader',
             class_name='DataLoader',
-            init_args={'batch_size': 64, 'shuffle': False, 'num_workers': 0, 'pin_memory': True},
+            init_args={'batch_size': 5, 'shuffle': False, 'num_workers': 0, 'pin_memory': True},
             config_args={},
             init_ref_type_args=['dataset'],
             instance=dataloader
