@@ -66,7 +66,6 @@ class ModelSaveInfoBuilder:
         self._inference_environment = environment
 
     def build(self) -> ModelSaveInfo:
-        # TODO update build method for prov data
         inf_info = None
         if self._inference_data_wrapper or self._inference_dataloader or \
                 self._inference_pre_processor or self._inference_environment:
@@ -94,8 +93,7 @@ class ModelSaveInfoBuilder:
                 raw_dataset=self._prov_raw_data,
                 model_code=self._code,
                 model_class_name=self._class_name,
-                train_info=prov_train_info,
-                recover_val=False  # TODO not fixed
+                train_info=prov_train_info
             )
 
         save_info = ModelSaveInfo(self._model, self._base_model, self._code, self._class_name, self._recover_val,

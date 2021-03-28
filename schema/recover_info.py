@@ -115,7 +115,7 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
 
     def __init__(self, dataset: Dataset, model_code_file_path, model_class_name: str, train_info: TrainInfo,
                  store_id: str = None, recover_validation: RecoverVal = None):
-        self.store_id = store_id
+        super().__init__(store_id)
         self.dataset = dataset
         self.model_code_file_path = model_code_file_path
         self.model_class_name = model_class_name

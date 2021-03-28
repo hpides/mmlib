@@ -55,17 +55,7 @@ class AbstractSaveService(metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-    def _generate_recover_val(self, model_save_info):
-        model = model_save_info.model
-        dummy_input_shape = model_save_info.dummy_input_shape
 
-        weights_hash = state_dict_hash(model.state_dict())
-        inf_hash = inference_hash(model, dummy_input_shape)
-
-        recover_val = RecoverVal(weights_hash=weights_hash, inference_hash=inf_hash,
-                                 dummy_input_shape=dummy_input_shape)
-
-        return recover_val
 
 
 class BaselineSaveService(AbstractSaveService):
@@ -86,7 +76,7 @@ class BaselineSaveService(AbstractSaveService):
 
         recover_val = None
         if model_save_info.recover_val:
-            recover_val = self._generate_recover_val(model_save_info)
+            recover_val = self._generate_recover_val(model_save_info.model, model_save_info.dummy_input_shape)
 
         # usually we would consider at this bit how we best store the given model
         # but since this is the baseline service we just store the full model every time.
@@ -120,18 +110,7 @@ class BaselineSaveService(AbstractSaveService):
 
         return model_info.size_in_bytes(self._file_pers_service, self._dict_pers_service)
 
-    def _check_recover_val(self, model, recover_info):
-        # TODO maybe move to abstract super class
-        if recover_info.recover_validation is None:
-            warnings.warn('check recoverVal not possible - no recover validation info available')
-        else:
-            rec_val = recover_info.recover_validation
-            weights_hash = state_dict_hash(model.state_dict())
-            assert weights_hash == rec_val.weights_hash, 'check weight hash failed'
 
-            inp_shape = rec_val.dummy_input_shape
-            inf_hash = inference_hash(model, inp_shape)
-            assert inf_hash == rec_val.inference_hash, 'check inference hash failed'
 
     def _check_consistency(self, model_save_info):
         if model_save_info.recover_val:
@@ -218,13 +197,10 @@ class ProvenanceSaveService(BaselineSaveService):
         else:
             self._check_consistency(model_save_info)
 
-            if model_save_info.base_model is None:
-                # if there is no base model, we store the model as a full model
-                super().save_model(model_save_info)
-
-            recover_val = None
-            if model_save_info.recover_val:
-                recover_val = self._generate_recover_val(model_save_info)
+            # TODO print warning here, that recover val for provenance does not work
+            # recover_val = None
+            # if model_save_info.recover_val:
+            #     recover_val = self._generate_recover_val(model_save_info)
 
             model_id = self._save_provenance_model(model_save_info, recover_val)
 
@@ -250,16 +226,19 @@ class ProvenanceSaveService(BaselineSaveService):
                 os.mkdir(restore_dir)
 
                 model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, restore_dir)
-                rec_info: ProvenanceRecoverInfo = model_info.recover_info
+                recover_info: ProvenanceRecoverInfo = model_info.recover_info
 
-                train_service = rec_info.train_info.train_service_wrapper.instance
-                train_kwargs = rec_info.train_info.train_kwargs
+                train_service = recover_info.train_info.train_service_wrapper.instance
+                train_kwargs = recover_info.train_info.train_kwargs
                 train_service.train(base_model, **train_kwargs)
 
-                # TODO check recover val if needed
+                restored_model_info = RestoredModelInfo(model=base_model)
+
+                if check_recover_val:
+                    self._check_recover_val(base_model, recover_info)
 
                 # because we trained it here the base_model is the updated version
-                return RestoredModelInfo(model=base_model)
+                return restored_model_info
 
     def model_save_size(self, model_id: str) -> int:
         pass
@@ -286,17 +265,12 @@ class ProvenanceSaveService(BaselineSaveService):
             environment=model_save_info.prov_rec_info.train_info.environment
         )
 
-        prov_recover_val = None
-        if model_save_info.prov_rec_info.recover_val:
-            # TODO
-            pass
-
         prov_recover_info = ProvenanceRecoverInfo(
             dataset=dataset,
             model_code_file_path=model_save_info.prov_rec_info.model_code,
             model_class_name=model_save_info.prov_rec_info.model_class_name,
             train_info=train_info,
-            recover_validation=prov_recover_val
+            recover_validation=recover_val
         )
 
         derived_from = model_save_info.base_model if model_save_info.base_model else None
@@ -318,3 +292,8 @@ class ProvenanceSaveService(BaselineSaveService):
             return self.recover_model(model_id=base_model_id, check_recover_val=check_recover_val)
         else:
             raise NotImplementedError
+
+    def add_recover_val(self, model, model_id, dummy_input_shape):
+        recover_val = self._generate_recover_val(model, dummy_input_shape)
+
+

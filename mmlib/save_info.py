@@ -17,13 +17,11 @@ class TrainSaveInfo:
 
 
 class ProvRecoverInfo:
-    def __init__(self, raw_dataset: str, model_code: str, model_class_name: str, train_info: TrainSaveInfo,
-                 recover_val: bool):
+    def __init__(self, raw_dataset: str, model_code: str, model_class_name: str, train_info: TrainSaveInfo):
         self.raw_dataset = raw_dataset
         self.model_code = model_code
         self.model_class_name = model_class_name
         self.train_info = train_info
-        self.recover_val = recover_val
 
 
 class InferenceSaveInfo:

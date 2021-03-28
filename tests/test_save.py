@@ -109,6 +109,7 @@ class TestSave(unittest.TestCase):
         class_name = 'resnet18'
         save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(model, code_file, class_name)
+        save_info_builder.add_recover_val(dummy_input_shape=[10, 3, 300, 400])
         save_info = save_info_builder.build()
         base_model_id = self.provenance_save_service.save_model(save_info)
         # -------------------------------------------------------------
@@ -116,6 +117,7 @@ class TestSave(unittest.TestCase):
         # store provenance-0
         save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(code=code_file, model_class_name=class_name, base_model_id=base_model_id)
+        save_info_builder.add_recover_val(dummy_input_shape=[10, 3, 300, 400])
 
         resnet_ts = ResnetTrainService()
         self._add_resnet_prov_state_dict(resnet_ts, model)
@@ -144,9 +146,12 @@ class TestSave(unittest.TestCase):
         # model-0, train_state-0 -> # model-1, train_state-1
         resnet_ts.train(model, **train_kwargs)
 
+        self.provenance_save_service.add_recover_val(model=model, model_id=model_id,
+                                                     dummy_input_shape=[10, 3, 300, 400])
+
         # "model" is in model_1
         # to recover model_1 we have saved train_state-0, and take it together with model_0
-        recovered_model_info = self.provenance_save_service.recover_model(model_id)
+        recovered_model_info = self.provenance_save_service.recover_model(model_id, check_recover_val=True)
 
         recovered_model_1 = recovered_model_info.model
         self.assertTrue(model_equal(model, recovered_model_1, imagenet_input))
@@ -169,7 +174,7 @@ class TestSave(unittest.TestCase):
 
         # "model" is in model_2
         # to recover model_2 we have saved train_state-1, and take it together with model_1
-        recovered_model_info = self.provenance_save_service.recover_model(model_id_2)
+        recovered_model_info = self.provenance_save_service.recover_model(model_id_2, check_recover_val=True)
 
         self.assertTrue(model_equal(model, recovered_model_info.model, imagenet_input))
         self.assertFalse(model_equal(recovered_model_1, recovered_model_info.model, imagenet_input))
