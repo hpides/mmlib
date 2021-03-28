@@ -15,6 +15,9 @@ class Environment(SchemaObj):
 
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
+        if self.store_id and dict_pers_service.id_exists(self.store_id, self._representation_type()):
+            # if the id already exists, we do not have to persist again
+            return self.store_id
 
         super().persist(file_pers_service, dict_pers_service)
 
@@ -44,3 +47,6 @@ class Environment(SchemaObj):
         env_size = dict_pers_service.dict_size(restored_dict[ENVIRONMENT_DICT], ENVIRONMENT_DICT)
 
         return dict_pers_service.dict_size(self.store_id, ENVIRONMENT) + env_size
+
+    def _representation_type(self) -> str:
+        return ENVIRONMENT

@@ -17,10 +17,18 @@ class SchemaObj(metaclass=abc.ABCMeta):
         :param file_pers_service: An instance of AbstractFilePersistenceService that is used to store files.
         :param dict_pers_service: An instance of AbstractDictPersistenceService that is used to store metadata as dicts.
         """
+        if self.store_id and dict_pers_service.id_exists(self.store_id, self._representation_type()):
+            # if the id already exists, we do not have to persist again
+            return self.store_id
+
         if not self.store_id:
             self.store_id = dict_pers_service.generate_id()
 
         return self.store_id
+
+    @abc.abstractmethod
+    def _representation_type(self) -> str:
+        raise NotImplementedError
 
     @classmethod
     @abc.abstractmethod

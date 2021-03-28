@@ -15,6 +15,13 @@ DATASET = 'dataset'
 
 
 class AbstractRecoverInfo(SchemaObj, metaclass=abc.ABCMeta):
+
+    def __init__(self, store_id: str = None):
+        super().__init__(store_id)
+
+    def _representation_type(self) -> str:
+        return RECOVER_INFO
+
     # TODO see what of teh shared functionality can be put in this abstract class
     pass
 
@@ -30,9 +37,9 @@ RECOVER_INFO = 'recover_info'
 
 class FullModelRecoverInfo(AbstractRecoverInfo):
 
-    def __init__(self, weights_file_path: str, model_code_file_path, model_class_name: str,
-                 store_id: str = None, recover_validation: RecoverVal = None):
-        self.store_id = store_id
+    def __init__(self, weights_file_path: str, model_code_file_path, model_class_name: str, store_id: str = None,
+                 recover_validation: RecoverVal = None):
+        super().__init__(store_id)
         self.weights_file_path = weights_file_path
         self.model_code_file_path = model_code_file_path
         self.model_class_name = model_class_name
@@ -99,6 +106,9 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
             result += self.recover_validation.size_in_bytes(file_pers_service, dict_pers_service)
 
         return result
+
+    def _representation_type(self) -> str:
+        return RECOVER_INFO
 
 
 class ProvenanceRecoverInfo(AbstractRecoverInfo):

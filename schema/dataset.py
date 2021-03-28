@@ -18,7 +18,6 @@ class Dataset(SchemaObj):
 
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
-
         super().persist(file_pers_service, dict_pers_service)
 
         zip_file_path = zip_path(self.raw_data)
@@ -50,3 +49,6 @@ class Dataset(SchemaObj):
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
                       dict_pers_service: AbstractDictPersistenceService) -> int:
         return dict_pers_service.dict_size(self.store_id, DATASET)
+
+    def _representation_type(self) -> str:
+        return DATASET

@@ -63,6 +63,15 @@ class AbstractDictPersistenceService(AbstractPersistenceService, metaclass=abc.A
         """
 
     @abc.abstractmethod
+    def id_exists(self, dict_id: str, represent_type: str) -> bool:
+        """
+        Checks if the given id exists already
+        :param dict_id: the id to check for
+        :param represent_type: The type of the collection to get the ids for.
+        :return: true if the id already exists, false otherwise
+        """
+
+    @abc.abstractmethod
     def all_ids_for_type(self, represent_type: str) -> [str]:
         """
         Returns all ids for a given type.
@@ -184,6 +193,11 @@ class MongoDictPersistenceService(AbstractDictPersistenceService):
 
     def is_dict_ref(self, field: str) -> bool:
         return field.startswith(DICT)
+
+    def id_exists(self, dict_id: str, represent_type: str) -> bool:
+        dict_id = self._to_mongo_dict_id(dict_id)
+        return self._mongo_service.id_exists(dict_id, represent_type)
+
 
     def get_all_ids(self) -> [str]:
         # TODO

@@ -19,7 +19,6 @@ class RecoverVal(SchemaObj):
 
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
-
         super().persist(file_pers_service, dict_pers_service)
 
         dict_representation = {
@@ -48,3 +47,6 @@ class RecoverVal(SchemaObj):
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
                       dict_pers_service: AbstractDictPersistenceService) -> int:
         return dict_pers_service.dict_size(self.store_id, RECOVER_VAL)
+
+    def _representation_type(self) -> str:
+        return RECOVER_VAL

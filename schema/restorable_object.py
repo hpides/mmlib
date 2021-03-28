@@ -50,6 +50,10 @@ class RestorableObjectWrapper(SchemaObj):
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
 
+        if self.store_id and dict_pers_service.id_exists(self.store_id, self._representation_type()):
+            # if the id already exists, we do not have to persist again
+            return self.store_id
+
         super().persist(file_pers_service, dict_pers_service)
 
         dict_representation = self._persist_fields(dict_pers_service, file_pers_service)
@@ -140,6 +144,9 @@ class RestorableObjectWrapper(SchemaObj):
         return 'given parameters not match the expected parameters - expected: {}, given: {}'.format(
             self.init_ref_type_args, ref_type_args)
 
+    def _representation_type(self) -> str:
+        return RESTORABLE_OBJECT
+
 
 class StateDictObj(metaclass=abc.ABCMeta):
     def __init__(self):
@@ -156,7 +163,6 @@ class StateDictRestorableObjectWrapper(SchemaObj):
 
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
-
         super().persist(file_pers_service, dict_pers_service)
 
         # persist instance state dict
@@ -200,6 +206,9 @@ class StateDictRestorableObjectWrapper(SchemaObj):
                       dict_pers_service: AbstractDictPersistenceService) -> int:
         # TODO implement
         return 0
+
+    def _representation_type(self) -> str:
+        return RESTORABLE_OBJECT
 
 
 class StateFileRestorableObjectWrapper(RestorableObjectWrapper):

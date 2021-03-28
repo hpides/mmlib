@@ -22,7 +22,6 @@ class Function(SchemaObj):
         self.args = args
         self.ref_type_args = ref_type_args
 
-
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
 
@@ -56,3 +55,6 @@ class Function(SchemaObj):
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
                       dict_pers_service: AbstractDictPersistenceService) -> int:
         pass
+
+    def _representation_type(self) -> str:
+        return FUNCTION

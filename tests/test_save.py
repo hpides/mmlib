@@ -10,7 +10,7 @@ from mmlib.equal import model_equal
 from mmlib.persistence import MongoDictPersistenceService, FileSystemPersistenceService, DICT
 from mmlib.save import BaselineSaveService, ProvenanceSaveService
 from schema.environment import Environment
-from schema.model_info import RECOVER_INFO_ID, MODEL_INFO_REPRESENT_TYPE
+from schema.model_info import RECOVER_INFO_ID, MODEL_INFO
 from schema.recover_info import RECOVER_INFO
 from schema.recover_val import RECOVER_VAL
 from schema.restorable_object import RestorableObjectWrapper, OptimizerWrapper
@@ -148,30 +148,31 @@ class TestSave(unittest.TestCase):
         # to recover model_1 we have saved train_state-0, and take it together with model_0
         recovered_model_info = self.provenance_save_service.recover_model(model_id)
 
+        recovered_model_1 = recovered_model_info.model
+        self.assertTrue(model_equal(model, recovered_model_1, imagenet_input))
+
+        # save: train_state-1
+        save_info_builder = ModelSaveInfoBuilder()
+        save_info_builder.add_model_info(code=code_file, model_class_name=class_name, base_model_id=model_id)
+        save_info_builder.add_prov_data(
+            raw_data_path=raw_data, env=prov_env, train_service=resnet_ts, train_kwargs=train_kwargs,
+            code=prov_train_serv_code, class_name=prov_train_serv_class_name, wrapper_code=prov_train_wrapper_code,
+            wrapper_class_name=prov_train_wrapper_class_name)
+        save_info = save_info_builder.build()
+
+        model_id_2 = self.provenance_save_service.save_model(save_info)
+        # -------------------------------------------------------------
+
+        # transitions model and train service:
+        # model-1, train_state-1 -> # model-2, train_state-2
+        resnet_ts.train(model, **train_kwargs)
+
+        # "model" is in model_2
+        # to recover model_2 we have saved train_state-1, and take it together with model_1
+        recovered_model_info = self.provenance_save_service.recover_model(model_id_2)
+
         self.assertTrue(model_equal(model, recovered_model_info.model, imagenet_input))
-
-        # # save: train_state-1
-        # save_info_builder = ModelSaveInfoBuilder()
-        # save_info_builder.add_model_info(code=code_file, model_class_name=class_name, base_model_id=model_id)
-        # save_info_builder.add_prov_data(
-        #     raw_data_path=raw_data, env=prov_env, train_service=resnet_ts, train_kwargs=train_kwargs,
-        #     code=prov_train_serv_code, class_name=prov_train_serv_class_name, wrapper_code=prov_train_wrapper_code,
-        #     wrapper_class_name=prov_train_wrapper_class_name)
-        # save_info = save_info_builder.build()
-        #
-        # model_id_2 = self.provenance_save_service.save_model(save_info)
-        # # -------------------------------------------------------------
-        #
-        # # transitions model and train service:
-        # # model-1, train_state-1 -> # model-2, train_state-2
-        # resnet_ts.train(model, **train_kwargs)
-        #
-        # # "model" is in model_2
-        # # to recover model_2 we have saved train_state-1, and take it together with model_1
-        # recovered_model_info = self.provenance_save_service.recover_model(model_id_2)
-        #
-        # self.assertTrue(model_equal(model, recovered_model_info.model, imagenet_input))
-
+        self.assertFalse(model_equal(recovered_model_1, recovered_model_info.model, imagenet_input))
 
     def _add_resnet_prov_state_dict(self, resnet_ts, model):
         set_deterministic()
@@ -372,8 +373,8 @@ class TestSave(unittest.TestCase):
         code_file_size = 6802
         pickled_weights_size = 46837875
 
-        model_info_size = self.mongo_service.document_size(ObjectId(model_id), MODEL_INFO_REPRESENT_TYPE)
-        model_info_dict = self.mongo_service.get_dict(ObjectId(model_id), MODEL_INFO_REPRESENT_TYPE)
+        model_info_size = self.mongo_service.document_size(ObjectId(model_id), MODEL_INFO)
+        model_info_dict = self.mongo_service.get_dict(ObjectId(model_id), MODEL_INFO)
         restore_info_id = model_info_dict[RECOVER_INFO_ID].replace(DICT, '')
         restore_dict_size = self.mongo_service.document_size(ObjectId(restore_info_id), RECOVER_INFO)
 

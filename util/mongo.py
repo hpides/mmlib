@@ -86,6 +86,11 @@ class MongoService(object):
         item = collection.find({_ID: object_id})[0]
         return len(bson.BSON.encode(item))
 
+    def id_exists(self, object_id: ObjectId, collection: str) -> bool:
+        collection = self._get_collection(collection)
+
+        return collection.find({'$exists': {_ID: object_id}})
+
     def _get_collection(self, collection_name):
         collection_name = collection_name.lower()
         db = self._mongo_client[self._db_name]
