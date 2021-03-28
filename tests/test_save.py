@@ -110,8 +110,7 @@ class TestSave(unittest.TestCase):
         save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(model, code_file, class_name)
         save_info = save_info_builder.build()
-        # TODO think if this is the correct way to do it
-        base_model_id = self.save_recover_service.save_model(save_info)
+        base_model_id = self.provenance_save_service.save_model(save_info)
         # -------------------------------------------------------------
 
         # store provenance-0
