@@ -198,7 +198,6 @@ class MongoDictPersistenceService(AbstractDictPersistenceService):
         dict_id = self._to_mongo_dict_id(dict_id)
         return self._mongo_service.id_exists(dict_id, represent_type)
 
-
     def get_all_ids(self) -> [str]:
         # TODO
         pass
