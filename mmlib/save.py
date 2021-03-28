@@ -178,11 +178,6 @@ class ProvenanceSaveService(BaselineSaveService):
         else:
             self._check_consistency(model_save_info)
 
-            # TODO print warning here, that recover val for provenance does not work
-            # recover_val = None
-            # if model_save_info.recover_val:
-            #     recover_val = self._generate_recover_val(model_save_info)
-
             model_id = self._save_provenance_model(model_save_info)
 
             return model_id
