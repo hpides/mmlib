@@ -61,7 +61,7 @@ class RecoverValidationService:
 
         return recover_val
 
-    def _check_recover_val(self, model_id, model):
+    def check_recover_val(self, model_id, model):
         if not self.dict_save_service.id_exists(model_id, RECOVER_VAL):
             warnings.warn('check recoverVal not possible - no recover validation info available')
             return True
