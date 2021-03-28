@@ -106,9 +106,9 @@ class TestSave(unittest.TestCase):
         # store model-0
         model = resnet18(pretrained=True)
         code_file = './networks/mynets/{}.py'.format('resnet18')
-        code_name = 'resnet18'
+        class_name = 'resnet18'
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(model, code_file, code_name)
+        save_info_builder.add_model_info(model, code_file, class_name)
         save_info = save_info_builder.build()
         # TODO think if this is the correct way to do it
         base_model_id = self.save_recover_service.save_model(save_info)
@@ -116,8 +116,7 @@ class TestSave(unittest.TestCase):
 
         # store provenance-0
         save_info_builder = ModelSaveInfoBuilder()
-        # TODO think about making model optional
-        save_info_builder.add_model_info(None, code_file, code_name, base_model_id=base_model_id)
+        save_info_builder.add_model_info(code=code_file, model_class_name=class_name, base_model_id=base_model_id)
 
         resnet_ts = ResnetTrainService()
         self._add_resnet_prov_state_dict(resnet_ts, model)

@@ -28,7 +28,7 @@ class ModelSaveInfoBuilder:
         self._prov_train_wrapper_code = None
         self._prov_train_wrapper_class_name = None
 
-    def add_model_info(self, model: torch.nn.Module, code: str = None, model_class_name: str = None,
+    def add_model_info(self, model: torch.nn.Module = None, code: str = None, model_class_name: str = None,
                        base_model_id: str = None):
         """
         Adds the general model information
