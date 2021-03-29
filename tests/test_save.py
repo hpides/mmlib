@@ -183,6 +183,12 @@ class TestSave(unittest.TestCase):
         self.assertTrue(model_equal(model, recovered_model_info.model, imagenet_input))
         self.assertFalse(model_equal(recovered_model_1, recovered_model_info.model, imagenet_input))
 
+        # check that restore of second model has not influenced restore of first model
+        recovered_model_info = self.provenance_save_service.recover_model(model_id)
+
+        recovered_model_1 = recovered_model_info.model
+        self.assertTrue(self.recover_val_service.check_recover_val(model_id, recovered_model_info.model))
+
     def _add_resnet_prov_state_dict(self, resnet_ts, model):
         set_deterministic()
 
