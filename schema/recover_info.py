@@ -115,6 +115,8 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
         dataset_id = self.dataset.persist(file_pers_service, dict_pers_service)
         model_code_id = file_pers_service.save_file(self.model_code_file_path)
         train_info_id = self.train_info.persist(file_pers_service, dict_pers_service)
+        print('train_info_id')
+        print(train_info_id)
 
         dict_representation = {
             ID: self.store_id,

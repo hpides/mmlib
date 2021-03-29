@@ -139,6 +139,8 @@ class TestSave(unittest.TestCase):
         # it is a bit unintuitive but we have to store the prov data before training because through the training we
         # change the sate of the optimizer etc.
         model_id = self.provenance_save_service.save_model(save_info)
+        print('modelId')
+        print(model_id)
         # -------------------------------------------------------------
 
         # transitions model and train service:
@@ -164,6 +166,8 @@ class TestSave(unittest.TestCase):
         save_info = save_info_builder.build()
 
         model_id_2 = self.provenance_save_service.save_model(save_info)
+        print('modelId_2')
+        print(model_id_2)
         # -------------------------------------------------------------
 
         # transitions model and train service:

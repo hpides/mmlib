@@ -33,6 +33,8 @@ class ModelInfo(SchemaObj):
         super().persist(file_pers_service, dict_pers_service)
 
         recover_info_id = self.recover_info.persist(file_pers_service, dict_pers_service)
+        print('recover_info_id')
+        print(recover_info_id)
 
         # add mandatory fields
         dict_representation = {

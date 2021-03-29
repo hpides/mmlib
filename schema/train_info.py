@@ -32,6 +32,8 @@ class TrainInfo(SchemaObj):
 
         env_id = self.environment.persist(file_pers_service, dict_pers_service)
         train_service_id = self.train_service_wrapper.persist(file_pers_service, dict_pers_service)
+        print('train_service_ID')
+        print(train_service_id)
 
         dict_representation = {
             ID: self.store_id,

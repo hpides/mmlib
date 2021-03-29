@@ -220,8 +220,7 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
 
-        # TODO think about how to solve maybe update instead of insert new
-        # if not self.store_id:
+        # the state of the instance has probably changed -> need to store new version with new id
         self.store_id = dict_pers_service.generate_id()
 
         dict_representation = super()._persist_fields(dict_pers_service, file_pers_service)
@@ -259,8 +258,8 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
             state_file_id = restored_dict[STATE_FILE]
             state_file = file_pers_service.recover_file(state_file_id, restore_root)
 
-        obj = cls(class_name=class_name, code=code_file_path, config_args=config_args, import_cmd=import_cmd,
-                  init_args=init_args, init_ref_type_args=ref_type_args, state_file=state_file)
+        obj = cls(store_id=obj_id, class_name=class_name, code=code_file_path, config_args=config_args,
+                  import_cmd=import_cmd, init_args=init_args, init_ref_type_args=ref_type_args, state_file=state_file)
 
         return obj
 
