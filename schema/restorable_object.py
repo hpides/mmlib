@@ -2,6 +2,7 @@ import abc
 import configparser
 import os
 import tempfile
+from abc import ABCMeta
 from typing import Dict
 
 import torch
@@ -31,16 +32,22 @@ class RestoredModelInfo:
         self.inference_info = inference_info
 
 
-class RestorableObjectWrapper(SchemaObj):
+class AbstractRestorableObjectWrapper(SchemaObj, metaclass=ABCMeta):
+
+    def __init__(self, class_name: str, code: str, instance: object = None, store_id: str = None):
+        super().__init__(store_id)
+        self.instance = instance
+        self.code = code
+        self.class_name = class_name
+
+
+class RestorableObjectWrapper(AbstractRestorableObjectWrapper):
 
     def __init__(self, class_name: str, init_args: dict, init_ref_type_args: [str], config_args: dict, code: str = None,
                  import_cmd: str = None, instance: object = None, store_id: str = None):
 
-        super().__init__(store_id)
-        self.instance = instance
-        self.code = code
+        super().__init__(class_name, code, instance, store_id)
         self.import_cmd = import_cmd
-        self.class_name = class_name
         self.init_args = init_args
         self.config_args = config_args
         self.init_ref_type_args = init_ref_type_args
@@ -154,13 +161,11 @@ class StateDictObj(metaclass=abc.ABCMeta):
         self.state_objs: Dict[str, RestorableObjectWrapper] = {}
 
 
-class StateDictRestorableObjectWrapper(SchemaObj):
+class StateDictRestorableObjectWrapper(AbstractRestorableObjectWrapper):
 
     def __init__(self, class_name: str, code: str, instance: StateDictObj = None, store_id: str = None):
-        super().__init__(store_id)
-        self.instance = instance
-        self.code = code
-        self.class_name = class_name
+        super().__init__(class_name, code, instance, store_id)
+        self.instance: StateDictObj = instance
 
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
