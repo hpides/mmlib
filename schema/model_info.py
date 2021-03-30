@@ -17,7 +17,6 @@ MODEL_INFO = 'model_info'
 
 class ModelInfo(SchemaObj):
 
-
     def __init__(self, store_type: ModelStoreType, recover_info: AbstractRecoverInfo, store_id: str = None,
                  derived_from_id: str = None, inference_info: InferenceInfo = None, train_info: TrainInfo = None):
         super().__init__(store_id)
@@ -27,21 +26,15 @@ class ModelInfo(SchemaObj):
         self.inference_info = inference_info
         self.train_info = train_info
 
-    def persist(self, file_pers_service: AbstractFilePersistenceService,
-                dict_pers_service: AbstractDictPersistenceService) -> str:
-
-        super().persist(file_pers_service, dict_pers_service)
+    def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
 
         recover_info_id = self.recover_info.persist(file_pers_service, dict_pers_service)
         print('recover_info_id')
         print(recover_info_id)
 
         # add mandatory fields
-        dict_representation = {
-            ID: self.store_id,
-            STORE_TYPE: self.store_type.value,
-            RECOVER_INFO_ID: recover_info_id,
-        }
+        dict_representation[STORE_TYPE] = self.store_type.value
+        dict_representation[RECOVER_INFO_ID] = recover_info_id
 
         # add optional fields if set
         if self.derived_from:
@@ -52,10 +45,6 @@ class ModelInfo(SchemaObj):
         if self.train_info:
             train_info_id = self.train_info.persist(file_pers_service, dict_pers_service)
             dict_representation[TRAIN_INFO_ID] = train_info_id
-
-        dict_pers_service.save_dict(dict_representation, MODEL_INFO)
-
-        return self.store_id
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
@@ -113,4 +102,3 @@ class ModelInfo(SchemaObj):
 
     def _representation_type(self) -> str:
         return MODEL_INFO
-

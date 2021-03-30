@@ -1,9 +1,9 @@
 import warnings
 
+from mmlib.constants import ID
 from mmlib.persistence import AbstractDictPersistenceService
 from util.hash import state_dict_hash, inference_hash
 
-ID = 'id'
 WEIGHTS_HASH = 'weights_hash'
 INFERENCE_HASH = 'inference_hash'
 DUMMY_INPUT_SHAPE = 'dummy_input_shape'
