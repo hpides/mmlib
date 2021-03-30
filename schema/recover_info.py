@@ -2,6 +2,7 @@ import abc
 import configparser
 import os
 
+from mmlib.constants import MMLIB_CONFIG, CURRENT_DATA_ROOT, VALUES
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.dataset import Dataset
 from schema.schema_obj import SchemaObj
@@ -166,8 +167,8 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
 
 def _data_dst_path():
     # TODO magic strings
-    config_file = os.getenv('MMLIB_CONFIG')
+    config_file = os.getenv(MMLIB_CONFIG)
     config = configparser.ConfigParser()
     config.read(config_file)
 
-    return config['VALUES']['current_data_root']
+    return config[VALUES][CURRENT_DATA_ROOT]

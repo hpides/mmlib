@@ -6,6 +6,7 @@ from typing import Dict
 
 import torch
 
+from mmlib.constants import MMLIB_CONFIG, VALUES
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.schema_obj import SchemaObj
 from util.init_from_file import create_object_with_parameters
@@ -293,12 +294,12 @@ class TrainService(StateDictObj):
 
 
 def add_params_from_config(init_args, config_args):
-    config_file = os.getenv('MMLIB_CONFIG')
+    config_file = os.getenv(MMLIB_CONFIG)
     config = configparser.ConfigParser()
     config.read(config_file)
 
     for k, v in config_args.items():
-        init_args[k] = config['VALUES'][v]
+        init_args[k] = config[VALUES][v]
 
 
 class OptimizerWrapper(StateFileRestorableObjectWrapper):

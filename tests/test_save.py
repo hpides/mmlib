@@ -5,6 +5,7 @@ import unittest
 import torch
 from bson import ObjectId
 
+from mmlib.constants import MMLIB_CONFIG, CURRENT_DATA_ROOT
 from mmlib.deterministic import set_deterministic
 from mmlib.equal import model_equal
 from mmlib.persistence import MongoDictPersistenceService, FileSystemPersistenceService, DICT
@@ -22,6 +23,7 @@ from tests.networks.mynets.mobilenet import mobilenet_v2
 from tests.networks.mynets.resnet18 import resnet18
 from util.dummy_data import imagenet_input
 from util.mongo import MongoService
+
 
 MONGO_CONTAINER_NAME = 'mongo-test'
 COCO_ROOT = 'coco_root'
@@ -49,7 +51,7 @@ class TestSave(unittest.TestCase):
         self.provenance_save_service = ProvenanceSaveService(file_pers_service, dict_pers_service)
         self.recover_val_service = RecoverValidationService(dict_pers_service)
 
-        os.environ['MMLIB_CONFIG'] = CONFIG
+        os.environ[MMLIB_CONFIG] = CONFIG
 
     def tearDown(self) -> None:
         self.__clean_up()
@@ -209,7 +211,7 @@ class TestSave(unittest.TestCase):
             code='./networks/custom_coco.py',
             class_name='TrainCustomCoco',
             init_args={},
-            config_args={'root': 'current_data_root'},
+            config_args={'root': CURRENT_DATA_ROOT},
             init_ref_type_args=[],
             instance=data_wrapper
         )

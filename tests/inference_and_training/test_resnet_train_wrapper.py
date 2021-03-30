@@ -4,6 +4,7 @@ import unittest
 
 import torch
 
+from mmlib.constants import MMLIB_CONFIG
 from mmlib.equal import model_equal
 from mmlib.persistence import FileSystemPersistenceService, MongoDictPersistenceService
 from schema.restorable_object import RestorableObjectWrapper
@@ -18,7 +19,7 @@ class TestSave(unittest.TestCase):
 
     def test_resnet_train_wrapper(self):
         # set path for config file
-        os.environ['MMLIB_CONFIG'] = CONFIG
+        os.environ[MMLIB_CONFIG] = CONFIG
 
         # open a tmp path for filesystem pers service
         with tempfile.TemporaryDirectory() as tmp_path:
