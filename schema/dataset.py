@@ -1,10 +1,11 @@
 import os
 
+from mmlib.constants import ID
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.schema_obj import SchemaObj
 from util.zip import zip_path, unzip
 
-ID = 'id'
+
 RAW_DATA = 'raw_data'
 
 DATASET = 'dataset'

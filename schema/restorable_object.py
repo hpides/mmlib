@@ -7,14 +7,14 @@ from typing import Dict
 
 import torch
 
-from mmlib.constants import MMLIB_CONFIG, VALUES
+from mmlib.constants import MMLIB_CONFIG, VALUES, ID
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.schema_obj import SchemaObj
 from util.init_from_file import create_object_with_parameters
 
 STATE_DICT = 'state_dict'
 
-ID = 'id'
+
 CODE_FILE = 'code_file'
 CLASS_NAME = 'class_name'
 IMPORT_CMD = 'import_cmd'

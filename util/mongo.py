@@ -2,8 +2,9 @@ import bson
 from bson import ObjectId
 from pymongo import MongoClient
 
+from mmlib.constants import ID
+
 _ID = '_id'
-ID = 'id'
 SET = "$set"
 
 

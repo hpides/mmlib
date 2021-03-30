@@ -3,7 +3,7 @@ from schema.environment import Environment
 from schema.restorable_object import StateDictRestorableObjectWrapper
 from schema.schema_obj import SchemaObj
 
-ID = 'id'
+
 ENVIRONMENT = 'environment'
 INFERENCE_SERVICE = 'inference_service'
 
@@ -66,4 +66,3 @@ class InferenceInfo(SchemaObj):
 
     def _representation_type(self) -> str:
         return INFERENCE_INFO
-   

@@ -2,7 +2,7 @@ import abc
 import configparser
 import os
 
-from mmlib.constants import MMLIB_CONFIG, CURRENT_DATA_ROOT, VALUES
+from mmlib.constants import MMLIB_CONFIG, CURRENT_DATA_ROOT, VALUES, ID
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.dataset import Dataset
 from schema.schema_obj import SchemaObj
@@ -51,7 +51,7 @@ class AbstractRecoverInfo(SchemaObj, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
-ID = 'id'
+
 WEIGHTS = 'weights'
 MODEL_CODE = 'model_code'
 MODEL_CLASS_NAME = 'model_class_name'

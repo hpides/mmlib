@@ -1,10 +1,11 @@
+from mmlib.constants import ID
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.environment import Environment
 from schema.restorable_object import StateDictRestorableObjectWrapper
 from schema.schema_obj import SchemaObj
 from util.init_from_file import create_type
 
-ID = 'id'
+
 TRAIN_SERVICE = 'train_service'
 TRAIN_KWARGS = 'train_kwargs'
 WRAPPER_CODE = 'wrapper_code'

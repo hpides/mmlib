@@ -1,7 +1,7 @@
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.schema_obj import SchemaObj
 
-ID = 'id'
+
 CODE = 'code'
 IMPORT_CMD = 'import_cmd'
 CALL_NAME = 'call_name'

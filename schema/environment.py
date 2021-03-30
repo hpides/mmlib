@@ -1,7 +1,7 @@
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.schema_obj import SchemaObj
 
-ID = 'id'
+
 ENVIRONMENT_DICT = 'environment_dict'
 
 ENVIRONMENT = 'environment'

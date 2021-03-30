@@ -5,7 +5,7 @@ from schema.schema_obj import SchemaObj
 from schema.store_type import ModelStoreType
 from schema.train_info import TrainInfo
 
-ID = 'id'
+
 STORE_TYPE = 'store_type'
 RECOVER_INFO_ID = 'recover_info_id'
 DERIVED_FROM = 'derived_from'
