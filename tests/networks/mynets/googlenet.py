@@ -36,6 +36,7 @@ def googlenet(pretrained=False, progress=True, **kwargs):
         transform_input (bool): If True, preprocesses the input according to the method with which it
             was trained on ImageNet. Default: *False*
     """
+
     if pretrained:
         if 'transform_input' not in kwargs:
             kwargs['transform_input'] = True
@@ -78,7 +79,7 @@ class GoogLeNet(nn.Module):
         inception_block = blocks[1]
         inception_aux_block = blocks[2]
 
-        self.aux_logits = aux_logits
+        self.aux_logits = True
         self.transform_input = transform_input
 
         self.conv1 = conv_block(3, 64, kernel_size=7, stride=2, padding=3)

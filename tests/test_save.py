@@ -20,10 +20,13 @@ from tests.inference_and_training.imagenet_train import ImagenetTrainService
 from tests.networks.custom_coco import TrainCustomCoco
 from tests.networks.mynets.googlenet import googlenet
 from tests.networks.mynets.mobilenet import mobilenet_v2
+from tests.networks.mynets.resnet152 import resnet152
 from tests.networks.mynets.resnet18 import resnet18
 from tests.networks.mynets.resnet50 import resnet50
 from util.dummy_data import imagenet_input
 from util.mongo import MongoService
+
+MODEL_PATH = './networks/mynets/{}.py'
 
 MONGO_CONTAINER_NAME = 'mongo-test'
 COCO_ROOT = 'coco_root'
@@ -105,14 +108,35 @@ class TestSave(unittest.TestCase):
         restored_model_info = self.save_recover_service.recover_model(model_id)
         self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
 
-    def test_save_restore_provenance_model(self):
-        model_name = 'resnet50'
+    def test_save_restore_provenance_model_resnet18(self):
+        model_name = resnet18.__name__
         self._test_save_restore_provenance_specific_model(model_name)
 
-    def _test_save_restore_provenance_specific_model(self, model_name):
+    def test_save_restore_provenance_model_resnet50(self):
+        model_name = resnet50.__name__
+        self._test_save_restore_provenance_specific_model(model_name)
+
+    def test_save_restore_provenance_model_resnet152(self):
+        model_name = resnet152.__name__
+        self._test_save_restore_provenance_specific_model(model_name)
+
+    def test_save_restore_provenance_model_mobilenet(self):
+        model_name = mobilenet_v2.__name__
+        self._test_save_restore_provenance_specific_model(model_name, filename='mobilenet')
+
+    # googlenet has some problems when restored form state_dict with aux loss
+    # NOTE think about not using googlenet for experiments
+    # def test_save_restore_provenance_model_googlenet(self):
+    #     model_name = googlenet.__name__
+    #     self._test_save_restore_provenance_specific_model(model_name)
+
+    def _test_save_restore_provenance_specific_model(self, model_name, filename=None):
         # store model-0
         model = eval('{}(pretrained=True)'.format(model_name))
-        code_file = './networks/mynets/{}.py'.format(model_name)
+        if filename:
+            code_file = MODEL_PATH.format(filename)
+        else:
+            code_file = MODEL_PATH.format(model_name)
         class_name = model_name
         save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(model, code_file, class_name)
