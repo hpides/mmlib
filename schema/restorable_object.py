@@ -34,54 +34,20 @@ class RestoredModelInfo:
 
 class AbstractRestorableObjectWrapper(SchemaObj, metaclass=ABCMeta):
 
-    def __init__(self, class_name: str, code: str, instance: object = None, store_id: str = None):
+    def __init__(self, class_name: str, code: str, import_cmd: str = None, instance: object = None,
+                 store_id: str = None):
         super().__init__(store_id)
         self.instance = instance
         self.code = code
         self.class_name = class_name
-
-
-class RestorableObjectWrapper(AbstractRestorableObjectWrapper):
-
-    def __init__(self, class_name: str, init_args: dict, init_ref_type_args: [str], config_args: dict, code: str = None,
-                 import_cmd: str = None, instance: object = None, store_id: str = None):
-
-        super().__init__(class_name, code, instance, store_id)
         self.import_cmd = import_cmd
-        self.init_args = init_args
-        self.config_args = config_args
-        self.init_ref_type_args = init_ref_type_args
 
-    def set_instance(self, instance):
-        self.instance = instance
+    def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
 
-    def persist(self, file_pers_service: AbstractFilePersistenceService,
-                dict_pers_service: AbstractDictPersistenceService) -> str:
+        # mandatory fields
+        dict_representation[CLASS_NAME] = self.class_name
 
-        if self.store_id and dict_pers_service.id_exists(self.store_id, self._representation_type()):
-            # if the id already exists, we do not have to persist again
-            return self.store_id
-
-        super().persist(file_pers_service, dict_pers_service)
-
-        dict_representation = self._persist_fields(dict_pers_service, file_pers_service)
-
-        dict_pers_service.save_dict(dict_representation, RESTORABLE_OBJECT)
-
-        return self.store_id
-
-    def _persist_fields(self, dict_pers_service, file_pers_service):
-        dict_representation = {
-            ID: self.store_id,
-            CLASS_NAME: self.class_name,
-            INIT_ARGS: self.init_args,
-            CONFIG_ARGS: self.config_args,
-            INIT_REF_TYPE_ARGS: self.init_ref_type_args,
-        }
-        self._add_optional_fields(dict_representation, file_pers_service, dict_pers_service)
-        return dict_representation
-
-    def _add_optional_fields(self, dict_representation, file_pers_service, dict_pers_service):
+        # optional fields
         if self.code:
             assert self.import_cmd is None, 'if code is set then there should be no import cmd'
             code_file_id = file_pers_service.save_file(self.code)
@@ -89,6 +55,29 @@ class RestorableObjectWrapper(AbstractRestorableObjectWrapper):
         if self.import_cmd:
             assert self.code is None, 'if import_cmd is set then there should be no code'
             dict_representation[IMPORT_CMD] = self.import_cmd
+
+
+class RestorableObjectWrapper(AbstractRestorableObjectWrapper):
+
+    def __init__(self, class_name: str, init_args: dict, init_ref_type_args: [str], config_args: dict, code: str = None,
+                 import_cmd: str = None, instance: object = None, store_id: str = None):
+
+        super().__init__(class_name, code, import_cmd=import_cmd, instance=instance, store_id=store_id)
+
+        self.init_args = init_args
+        self.config_args = config_args
+        self.init_ref_type_args = init_ref_type_args
+
+    def set_instance(self, instance):
+        self.instance = instance
+
+    def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
+
+        super()._persist_class_specific_fields(dict_representation, file_pers_service, dict_pers_service)
+
+        dict_representation[INIT_ARGS] = self.init_args
+        dict_representation[CONFIG_ARGS] = self.config_args
+        dict_representation[INIT_REF_TYPE_ARGS] = self.init_ref_type_args
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
@@ -167,9 +156,8 @@ class StateDictRestorableObjectWrapper(AbstractRestorableObjectWrapper):
         super().__init__(class_name, code, instance, store_id)
         self.instance: StateDictObj = instance
 
-    def persist(self, file_pers_service: AbstractFilePersistenceService,
-                dict_pers_service: AbstractDictPersistenceService) -> str:
-        super().persist(file_pers_service, dict_pers_service)
+    def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
+        super()._persist_class_specific_fields(dict_representation, file_pers_service, dict_pers_service)
 
         # persist instance state dict
         state_dict_refs = {}
@@ -178,18 +166,7 @@ class StateDictRestorableObjectWrapper(AbstractRestorableObjectWrapper):
             obj_id = obj.persist(file_pers_service, dict_pers_service)
             state_dict_refs[k] = obj_id
 
-        code_file_id = file_pers_service.save_file(self.code)
-
-        dict_representation = {
-            ID: self.store_id,
-            CLASS_NAME: self.class_name,
-            CODE_FILE: code_file_id,
-            STATE_DICT: state_dict_refs
-        }
-
-        dict_pers_service.save_dict(dict_representation, RESTORABLE_OBJECT)
-
-        return self.store_id
+        dict_representation[STATE_DICT] = state_dict_refs
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
