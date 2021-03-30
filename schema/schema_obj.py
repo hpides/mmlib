@@ -1,8 +1,7 @@
 import abc
-import json
 
-from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from mmlib.constants import ID
+from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 
 
 class SchemaObj(metaclass=abc.ABCMeta):
@@ -66,14 +65,3 @@ class SchemaObj(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
         raise NotImplementedError
-
-
-def __eq__(self, other):
-    self_dict = self.to_dict()
-    other_dict = other.to_dict()
-
-    return self_dict == other_dict
-
-
-def __hash__(self):
-    return hash(json.dumps(self.to_dict(), sort_keys=True))
