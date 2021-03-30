@@ -8,7 +8,7 @@ from mmlib.constants import MMLIB_CONFIG, CURRENT_DATA_ROOT
 from mmlib.equal import model_equal
 from mmlib.persistence import FileSystemPersistenceService, MongoDictPersistenceService
 from schema.restorable_object import RestorableObjectWrapper
-from tests.inference_and_training.resnet_train import OptimizerWrapper, ResnetTrainService, ResnetTrainWrapper
+from tests.inference_and_training.imagenet_train import OptimizerWrapper, ImagenetTrainService, ImagenetTrainWrapper
 from tests.networks.custom_coco import TrainCustomCoco
 from tests.networks.mynets.resnet18 import resnet18
 from tests.test_dict_persistence import MONGO_CONTAINER_NAME
@@ -18,7 +18,7 @@ from util.dummy_data import imagenet_input
 
 class TestSave(unittest.TestCase):
 
-    def test_resnet_train_wrapper(self):
+    def test_imagenet_train_wrapper(self):
         # set path for config file
         os.environ[MMLIB_CONFIG] = CONFIG
 
@@ -32,7 +32,6 @@ class TestSave(unittest.TestCase):
 
             model = resnet18(pretrained=True)
 
-            # prepare state dict for ResnetTrainService
             state_dict = {}
 
             optimizer = torch.optim.SGD(model.parameters(), 1e-4, momentum=0.9, weight_decay=1e-4)
@@ -67,14 +66,14 @@ class TestSave(unittest.TestCase):
                 instance=dataloader
             )
 
-            # create ResnetTrainService and plug in the state dict
-            resnet_ts = ResnetTrainService()
+            # create ImagenetTrainService and plug in the state dict
+            resnet_ts = ImagenetTrainService()
             resnet_ts.state_objs = state_dict
 
             # wrap the resnet_ts in a wrapper to be restorable on other devices and persist teh wrapper
-            ts_wrapper = ResnetTrainWrapper(
-                code='./inference_and_training/resnet_train.py',
-                class_name='ResnetTrainService',
+            ts_wrapper = ImagenetTrainWrapper(
+                code='./inference_and_training/imagenet_train.py',
+                class_name='ImagenetTrainService',
                 instance=resnet_ts
             )
 
@@ -89,22 +88,22 @@ class TestSave(unittest.TestCase):
             ts_wrapper_id = ts_wrapper.persist(file_ps, dict_ps)
 
             # load the wrapper back to continue training
-            ts_wrapper_new = ResnetTrainWrapper.load(ts_wrapper_id, file_ps, dict_ps, tmp_path)
+            ts_wrapper_new = ImagenetTrainWrapper.load(ts_wrapper_id, file_ps, dict_ps, tmp_path)
             ts_wrapper_new.restore_instance(file_ps, dict_ps, tmp_path)
-            resnet_ts_new: ResnetTrainService = ts_wrapper_new.instance
+            resnet_ts_new: ImagenetTrainService = ts_wrapper_new.instance
 
             # train with another 2 batches
             resnet_ts_new.train(model, number_batches=2)
 
-            # restore model from before and restore ResnetTrainWrapper to compare results
+            # restore model from before and restore ImagenetTrainWrapper to compare results
             # we expect the resulting models to be the same
             second_model = resnet18()
             second_model.load_state_dict(torch.load(resnet_weights_path))
 
             # load the same wrapper back to continue second (identical) training
-            ts_wrapper_new = ResnetTrainWrapper.load(ts_wrapper_id, file_ps, dict_ps, tmp_path)
+            ts_wrapper_new = ImagenetTrainWrapper.load(ts_wrapper_id, file_ps, dict_ps, tmp_path)
             ts_wrapper_new.restore_instance(file_ps, dict_ps, tmp_path)
-            resnet_ts_new: ResnetTrainService = ts_wrapper_new.instance
+            resnet_ts_new: ImagenetTrainService = ts_wrapper_new.instance
 
             # train with another 2 batches
             resnet_ts_new.train(second_model, number_batches=2)

@@ -16,7 +16,7 @@ from schema.model_info import RECOVER_INFO_ID, MODEL_INFO
 from schema.recover_info import RECOVER_INFO
 from schema.restorable_object import RestorableObjectWrapper, OptimizerWrapper
 from schema.save_info_builder import ModelSaveInfoBuilder
-from tests.inference_and_training.resnet_train import ResnetTrainService
+from tests.inference_and_training.imagenet_train import ImagenetTrainService
 from tests.networks.custom_coco import TrainCustomCoco
 from tests.networks.mynets.googlenet import googlenet
 from tests.networks.mynets.mobilenet import mobilenet_v2
@@ -119,12 +119,12 @@ class TestSave(unittest.TestCase):
         save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(code=code_file, model_class_name=class_name, base_model_id=base_model_id)
 
-        resnet_ts = ResnetTrainService()
+        resnet_ts = ImagenetTrainService()
         self._add_resnet_prov_state_dict(resnet_ts, model)
-        prov_train_serv_code = './inference_and_training/resnet_train.py'
-        prov_train_serv_class_name = 'ResnetTrainService'
-        prov_train_wrapper_code = './inference_and_training/resnet_train.py'
-        prov_train_wrapper_class_name = 'ResnetTrainWrapper'
+        prov_train_serv_code = './inference_and_training/imagenet_train.py'
+        prov_train_serv_class_name = 'ImagenetTrainService'
+        prov_train_wrapper_code = './inference_and_training/imagenet_train.py'
+        prov_train_wrapper_class_name = 'ImagenetTrainWrapper'
         raw_data = './data/reduced-custom-coco-data'
         prov_env = Environment({})
         train_kwargs = {'number_batches': 2}

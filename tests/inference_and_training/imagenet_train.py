@@ -7,7 +7,7 @@ from schema.restorable_object import TrainService, OptimizerWrapper, StateDictRe
 from util.init_from_file import create_object
 
 
-class ResnetTrainService(TrainService):
+class ImagenetTrainService(TrainService):
     def train(self, model: torch.nn.Module, number_batches=None):
 
         set_deterministic()
@@ -50,7 +50,7 @@ class ResnetTrainService(TrainService):
         return optimizer_wrapper.instance
 
 
-class ResnetTrainWrapper(StateDictRestorableObjectWrapper):
+class ImagenetTrainWrapper(StateDictRestorableObjectWrapper):
 
     def restore_instance(self, file_pers_service: AbstractFilePersistenceService,
                          dict_pers_service: AbstractDictPersistenceService, restore_root: str):
