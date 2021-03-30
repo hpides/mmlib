@@ -1,45 +1,40 @@
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.inference_info import InferenceInfo
-from schema.recover_info import AbstractRecoverInfo, FullModelRecoverInfo
+from schema.recover_info import AbstractRecoverInfo, FullModelRecoverInfo, ProvenanceRecoverInfo
 from schema.schema_obj import SchemaObj
 from schema.store_type import ModelStoreType
 from schema.train_info import TrainInfo
 
-ID = 'id'
+
 STORE_TYPE = 'store_type'
 RECOVER_INFO_ID = 'recover_info_id'
 DERIVED_FROM = 'derived_from'
 INFERENCE_INFO_ID = 'inference_info_id'
 TRAIN_INFO_ID = 'train_info_id'
 
-MODEL_INFO_REPRESENT_TYPE = 'model_info'
+MODEL_INFO = 'model_info'
 
 
 class ModelInfo(SchemaObj):
 
     def __init__(self, store_type: ModelStoreType, recover_info: AbstractRecoverInfo, store_id: str = None,
                  derived_from_id: str = None, inference_info: InferenceInfo = None, train_info: TrainInfo = None):
-        self.store_id = store_id
+        super().__init__(store_id)
         self.store_type = store_type
         self.recover_info = recover_info
         self.derived_from = derived_from_id
         self.inference_info = inference_info
         self.train_info = train_info
 
-    def persist(self, file_pers_service: AbstractFilePersistenceService,
-                dict_pers_service: AbstractDictPersistenceService) -> str:
-
-        if not self.store_id:
-            self.store_id = dict_pers_service.generate_id()
+    def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
 
         recover_info_id = self.recover_info.persist(file_pers_service, dict_pers_service)
+        print('recover_info_id')
+        print(recover_info_id)
 
         # add mandatory fields
-        dict_representation = {
-            ID: self.store_id,
-            STORE_TYPE: self.store_type.value,
-            RECOVER_INFO_ID: recover_info_id,
-        }
+        dict_representation[STORE_TYPE] = self.store_type.value
+        dict_representation[RECOVER_INFO_ID] = recover_info_id
 
         # add optional fields if set
         if self.derived_from:
@@ -51,15 +46,11 @@ class ModelInfo(SchemaObj):
             train_info_id = self.train_info.persist(file_pers_service, dict_pers_service)
             dict_representation[TRAIN_INFO_ID] = train_info_id
 
-        dict_pers_service.save_dict(dict_representation, MODEL_INFO_REPRESENT_TYPE)
-
-        return self.store_id
-
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
              dict_pers_service: AbstractDictPersistenceService, restore_root: str):
 
-        restored_dict = dict_pers_service.recover_dict(obj_id, MODEL_INFO_REPRESENT_TYPE)
+        restored_dict = dict_pers_service.recover_dict(obj_id, MODEL_INFO)
 
         # mandatory fields
         store_type = ModelStoreType(restored_dict[STORE_TYPE])
@@ -70,8 +61,11 @@ class ModelInfo(SchemaObj):
         if store_type == ModelStoreType.PICKLED_WEIGHTS:
             recover_info = FullModelRecoverInfo.load(recover_info_id, file_pers_service, dict_pers_service,
                                                      restore_root)
+        elif store_type == ModelStoreType.PROVENANCE:
+            recover_info = ProvenanceRecoverInfo.load(recover_info_id, file_pers_service, dict_pers_service,
+                                                      restore_root)
         else:
-            assert 'Not implemented yet'
+            assert False, 'Not implemented yet'
 
         # optional fields
         derived_from_id = restored_dict[DERIVED_FROM] if DERIVED_FROM in restored_dict else None
@@ -94,7 +88,7 @@ class ModelInfo(SchemaObj):
         result = 0
 
         # size of the dict
-        result += dict_pers_service.dict_size(self.store_id, MODEL_INFO_REPRESENT_TYPE)
+        result += dict_pers_service.dict_size(self.store_id, MODEL_INFO)
 
         # size of all referenced files/objects
         # for now we leave out the size of the base model, we might have to implement this later
@@ -105,3 +99,6 @@ class ModelInfo(SchemaObj):
             result += self.train_info.size_in_bytes(file_pers_service, dict_pers_service)
 
         return result
+
+    def _representation_type(self) -> str:
+        return MODEL_INFO

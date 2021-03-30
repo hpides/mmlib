@@ -1,8 +1,8 @@
 import torch
 
-from mmlib.save_info import ModelSaveInfo, InferenceSaveInfo
+from mmlib.save_info import ModelSaveInfo, InferenceSaveInfo, ProvRecoverInfo, TrainSaveInfo
 from schema.environment import Environment
-from schema.restorable_object import RestorableObjectWrapper
+from schema.restorable_object import RestorableObjectWrapper, StateDictObj
 
 
 class ModelSaveInfoBuilder:
@@ -12,15 +12,22 @@ class ModelSaveInfoBuilder:
         self._model = None
         self._base_model = None
         self._code = None
-        self._code_name = None
-        self._recover_val = False
+        self._class_name = None
         self._dummy_input_shape = None
         self._inference_data_wrapper = None
         self._inference_dataloader = None
         self._inference_pre_processor = None
         self._inference_environment = None
+        self._prov_raw_data = None
+        self._prov_env = None
+        self._prov_train_service = None
+        self._prov_train_kwargs = None
+        self._prov_train_service_code = None
+        self._prov_train_service_class_name = None
+        self._prov_train_wrapper_code = None
+        self._prov_train_wrapper_class_name = None
 
-    def add_model_info(self, model: torch.nn.Module, code: str = None, model_class_name: str = None,
+    def add_model_info(self, model: torch.nn.Module = None, code: str = None, model_class_name: str = None,
                        base_model_id: str = None):
         """
         Adds the general model information
@@ -33,15 +40,7 @@ class ModelSaveInfoBuilder:
         self._model = model
         self._base_model = base_model_id
         self._code = code
-        self._code_name = model_class_name
-
-    def add_recover_val(self, dummy_input_shape: [int] = None):
-        """
-        Indicates that recover validation info should be saved and adds the required info.
-        :param dummy_input_shape: The shape of the dummy input that should be used to produce an inference result.
-        """
-        self._recover_val = True
-        self._dummy_input_shape = dummy_input_shape
+        self._class_name = model_class_name
 
     def add_inference_info(self, data_wrapper: RestorableObjectWrapper, dataloader: RestorableObjectWrapper,
                            pre_processor: RestorableObjectWrapper, environment: Environment):
@@ -59,9 +58,8 @@ class ModelSaveInfoBuilder:
 
     def build(self) -> ModelSaveInfo:
         inf_info = None
-        if self._inference_data_wrapper or self._inference_dataloader or\
+        if self._inference_data_wrapper or self._inference_dataloader or \
                 self._inference_pre_processor or self._inference_environment:
-
             assert self._inference_data_wrapper, 'if inference info shall be stored -> data wrapper must be given'
             assert self._inference_dataloader, 'if inference info shall be stored -> data loader must be given'
             assert self._inference_environment, 'if inference info shall be stored -> environment must be given'
@@ -71,6 +69,35 @@ class ModelSaveInfoBuilder:
                                          pre_processor=self._inference_pre_processor,
                                          environment=self._inference_environment)
 
-        save_info = ModelSaveInfo(self._model, self._base_model, self._code, self._code_name, self._recover_val,
-                                  self._dummy_input_shape, inference_info=inf_info)
+        prov_train_info = TrainSaveInfo(train_service=self._prov_train_service,
+                                        train_service_code=self._prov_train_service_code,
+                                        train_service_class_name=self._prov_train_service_class_name,
+                                        train_wrapper_code=self._prov_train_wrapper_code,
+                                        train_wrapper_class_name=self._prov_train_wrapper_class_name,
+                                        train_kwargs=self._prov_train_kwargs,
+                                        environment=self._prov_env)
+
+        prov_save_info = None
+        # TODO better if check and assertions
+        if self._prov_raw_data:
+            prov_save_info = ProvRecoverInfo(
+                raw_dataset=self._prov_raw_data,
+                model_code=self._code,
+                model_class_name=self._class_name,
+                train_info=prov_train_info
+            )
+
+        save_info = ModelSaveInfo(self._model, self._base_model, self._code, self._class_name, self._dummy_input_shape,
+                                  inference_info=inf_info, prov_rec_info=prov_save_info)
         return save_info
+
+    def add_prov_data(self, raw_data_path: str, env: Environment, train_service: StateDictObj, train_kwargs: dict,
+                      code: str, class_name: str, wrapper_code: str, wrapper_class_name: str):
+        self._prov_raw_data = raw_data_path
+        self._prov_env = env
+        self._prov_train_service = train_service
+        self._prov_train_kwargs = train_kwargs
+        self._prov_train_service_code = code
+        self._prov_train_service_class_name = class_name
+        self._prov_train_wrapper_code = wrapper_code
+        self._prov_train_wrapper_class_name = wrapper_class_name

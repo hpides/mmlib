@@ -1,0 +1,972 @@
+{
+  "coco_meta": [
+    {
+      "coco_image_id": 1818,
+      "coco_category_id": 24,
+      "coco_split": "val",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000001818.jpg"
+    },
+    {
+      "coco_image_id": 6012,
+      "coco_category_id": 52,
+      "coco_split": "val",
+      "imagenet_class_id": 954,
+      "imagenet_wnid": "n07753592",
+      "file_name": "000000006012.jpg"
+    },
+    {
+      "coco_image_id": 7784,
+      "coco_category_id": 38,
+      "coco_split": "val",
+      "imagenet_class_id": 21,
+      "imagenet_wnid": "n01608432",
+      "file_name": "000000007784.jpg"
+    },
+    {
+      "coco_image_id": 11760,
+      "coco_category_id": 24,
+      "coco_split": "val",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000011760.jpg"
+    },
+    {
+      "coco_image_id": 12667,
+      "coco_category_id": 52,
+      "coco_split": "val",
+      "imagenet_class_id": 954,
+      "imagenet_wnid": "n07753592",
+      "file_name": "000000012667.jpg"
+    },
+    {
+      "coco_image_id": 34,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000000034.jpg"
+    },
+    {
+      "coco_image_id": 154,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000000154.jpg"
+    },
+    {
+      "coco_image_id": 491,
+      "coco_category_id": 88,
+      "coco_split": "train",
+      "imagenet_class_id": 850,
+      "imagenet_wnid": "n04399382",
+      "file_name": "000000000491.jpg"
+    },
+    {
+      "coco_image_id": 699,
+      "coco_category_id": 10,
+      "coco_split": "train",
+      "imagenet_class_id": 920,
+      "imagenet_wnid": "n06874185",
+      "file_name": "000000000699.jpg"
+    },
+    {
+      "coco_image_id": 827,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000000827.jpg"
+    },
+    {
+      "coco_image_id": 1059,
+      "coco_category_id": 59,
+      "coco_split": "train",
+      "imagenet_class_id": 963,
+      "imagenet_wnid": "n07873807",
+      "file_name": "000000001059.jpg"
+    },
+    {
+      "coco_image_id": 1064,
+      "coco_category_id": 56,
+      "coco_split": "train",
+      "imagenet_class_id": 937,
+      "imagenet_wnid": "n07714990",
+      "file_name": "000000001064.jpg"
+    },
+    {
+      "coco_image_id": 1228,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000001228.jpg"
+    },
+    {
+      "coco_image_id": 1340,
+      "coco_category_id": 86,
+      "coco_split": "train",
+      "imagenet_class_id": 883,
+      "imagenet_wnid": "n04522168",
+      "file_name": "000000001340.jpg"
+    },
+    {
+      "coco_image_id": 1501,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000001501.jpg"
+    },
+    {
+      "coco_image_id": 1779,
+      "coco_category_id": 10,
+      "coco_split": "train",
+      "imagenet_class_id": 920,
+      "imagenet_wnid": "n06874185",
+      "file_name": "000000001779.jpg"
+    },
+    {
+      "coco_image_id": 1786,
+      "coco_category_id": 67,
+      "coco_split": "train",
+      "imagenet_class_id": 532,
+      "imagenet_wnid": "n03201208",
+      "file_name": "000000001786.jpg"
+    },
+    {
+      "coco_image_id": 1840,
+      "coco_category_id": 28,
+      "coco_split": "train",
+      "imagenet_class_id": 879,
+      "imagenet_wnid": "n04507155",
+      "file_name": "000000001840.jpg"
+    },
+    {
+      "coco_image_id": 1907,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000001907.jpg"
+    },
+    {
+      "coco_image_id": 2068,
+      "coco_category_id": 56,
+      "coco_split": "train",
+      "imagenet_class_id": 937,
+      "imagenet_wnid": "n07714990",
+      "file_name": "000000002068.jpg"
+    },
+    {
+      "coco_image_id": 2150,
+      "coco_category_id": 86,
+      "coco_split": "train",
+      "imagenet_class_id": 883,
+      "imagenet_wnid": "n04522168",
+      "file_name": "000000002150.jpg"
+    },
+    {
+      "coco_image_id": 2232,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000002232.jpg"
+    },
+    {
+      "coco_image_id": 2240,
+      "coco_category_id": 88,
+      "coco_split": "train",
+      "imagenet_class_id": 850,
+      "imagenet_wnid": "n04399382",
+      "file_name": "000000002240.jpg"
+    },
+    {
+      "coco_image_id": 2244,
+      "coco_category_id": 73,
+      "coco_split": "train",
+      "imagenet_class_id": 620,
+      "imagenet_wnid": "n03642806",
+      "file_name": "000000002244.jpg"
+    },
+    {
+      "coco_image_id": 2279,
+      "coco_category_id": 52,
+      "coco_split": "train",
+      "imagenet_class_id": 954,
+      "imagenet_wnid": "n07753592",
+      "file_name": "000000002279.jpg"
+    },
+    {
+      "coco_image_id": 2374,
+      "coco_category_id": 59,
+      "coco_split": "train",
+      "imagenet_class_id": 963,
+      "imagenet_wnid": "n07873807",
+      "file_name": "000000002374.jpg"
+    },
+    {
+      "coco_image_id": 2451,
+      "coco_category_id": 88,
+      "coco_split": "train",
+      "imagenet_class_id": 850,
+      "imagenet_wnid": "n04399382",
+      "file_name": "000000002451.jpg"
+    },
+    {
+      "coco_image_id": 2618,
+      "coco_category_id": 82,
+      "coco_split": "train",
+      "imagenet_class_id": 760,
+      "imagenet_wnid": "n04070727",
+      "file_name": "000000002618.jpg"
+    },
+    {
+      "coco_image_id": 2621,
+      "coco_category_id": 10,
+      "coco_split": "train",
+      "imagenet_class_id": 920,
+      "imagenet_wnid": "n06874185",
+      "file_name": "000000002621.jpg"
+    },
+    {
+      "coco_image_id": 2684,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000002684.jpg"
+    },
+    {
+      "coco_image_id": 2770,
+      "coco_category_id": 88,
+      "coco_split": "train",
+      "imagenet_class_id": 850,
+      "imagenet_wnid": "n04399382",
+      "file_name": "000000002770.jpg"
+    },
+    {
+      "coco_image_id": 3518,
+      "coco_category_id": 52,
+      "coco_split": "train",
+      "imagenet_class_id": 954,
+      "imagenet_wnid": "n07753592",
+      "file_name": "000000003518.jpg"
+    },
+    {
+      "coco_image_id": 3613,
+      "coco_category_id": 86,
+      "coco_split": "train",
+      "imagenet_class_id": 883,
+      "imagenet_wnid": "n04522168",
+      "file_name": "000000003613.jpg"
+    },
+    {
+      "coco_image_id": 3690,
+      "coco_category_id": 59,
+      "coco_split": "train",
+      "imagenet_class_id": 963,
+      "imagenet_wnid": "n07873807",
+      "file_name": "000000003690.jpg"
+    },
+    {
+      "coco_image_id": 3737,
+      "coco_category_id": 88,
+      "coco_split": "train",
+      "imagenet_class_id": 850,
+      "imagenet_wnid": "n04399382",
+      "file_name": "000000003737.jpg"
+    },
+    {
+      "coco_image_id": 3867,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000003867.jpg"
+    },
+    {
+      "coco_image_id": 4079,
+      "coco_category_id": 86,
+      "coco_split": "train",
+      "imagenet_class_id": 883,
+      "imagenet_wnid": "n04522168",
+      "file_name": "000000004079.jpg"
+    },
+    {
+      "coco_image_id": 4132,
+      "coco_category_id": 86,
+      "coco_split": "train",
+      "imagenet_class_id": 883,
+      "imagenet_wnid": "n04522168",
+      "file_name": "000000004132.jpg"
+    },
+    {
+      "coco_image_id": 4318,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000004318.jpg"
+    },
+    {
+      "coco_image_id": 4396,
+      "coco_category_id": 88,
+      "coco_split": "train",
+      "imagenet_class_id": 850,
+      "imagenet_wnid": "n04399382",
+      "file_name": "000000004396.jpg"
+    },
+    {
+      "coco_image_id": 4754,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000004754.jpg"
+    },
+    {
+      "coco_image_id": 5344,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000005344.jpg"
+    },
+    {
+      "coco_image_id": 5362,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000005362.jpg"
+    },
+    {
+      "coco_image_id": 5994,
+      "coco_category_id": 10,
+      "coco_split": "train",
+      "imagenet_class_id": 920,
+      "imagenet_wnid": "n06874185",
+      "file_name": "000000005994.jpg"
+    },
+    {
+      "coco_image_id": 6422,
+      "coco_category_id": 75,
+      "coco_split": "train",
+      "imagenet_class_id": 761,
+      "imagenet_wnid": "n04074963",
+      "file_name": "000000006422.jpg"
+    },
+    {
+      "coco_image_id": 6450,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000006450.jpg"
+    },
+    {
+      "coco_image_id": 6599,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000006599.jpg"
+    },
+    {
+      "coco_image_id": 6688,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000006688.jpg"
+    },
+    {
+      "coco_image_id": 7251,
+      "coco_category_id": 52,
+      "coco_split": "train",
+      "imagenet_class_id": 954,
+      "imagenet_wnid": "n07753592",
+      "file_name": "000000007251.jpg"
+    },
+    {
+      "coco_image_id": 7522,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000007522.jpg"
+    },
+    {
+      "coco_image_id": 7566,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000007566.jpg"
+    },
+    {
+      "coco_image_id": 7669,
+      "coco_category_id": 59,
+      "coco_split": "train",
+      "imagenet_class_id": 963,
+      "imagenet_wnid": "n07873807",
+      "file_name": "000000007669.jpg"
+    },
+    {
+      "coco_image_id": 7867,
+      "coco_category_id": 59,
+      "coco_split": "train",
+      "imagenet_class_id": 963,
+      "imagenet_wnid": "n07873807",
+      "file_name": "000000007867.jpg"
+    },
+    {
+      "coco_image_id": 8006,
+      "coco_category_id": 10,
+      "coco_split": "train",
+      "imagenet_class_id": 920,
+      "imagenet_wnid": "n06874185",
+      "file_name": "000000008006.jpg"
+    },
+    {
+      "coco_image_id": 8081,
+      "coco_category_id": 52,
+      "coco_split": "train",
+      "imagenet_class_id": 954,
+      "imagenet_wnid": "n07753592",
+      "file_name": "000000008081.jpg"
+    },
+    {
+      "coco_image_id": 8196,
+      "coco_category_id": 67,
+      "coco_split": "train",
+      "imagenet_class_id": 532,
+      "imagenet_wnid": "n03201208",
+      "file_name": "000000008196.jpg"
+    },
+    {
+      "coco_image_id": 8228,
+      "coco_category_id": 56,
+      "coco_split": "train",
+      "imagenet_class_id": 937,
+      "imagenet_wnid": "n07714990",
+      "file_name": "000000008228.jpg"
+    },
+    {
+      "coco_image_id": 8290,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000008290.jpg"
+    },
+    {
+      "coco_image_id": 8320,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000008320.jpg"
+    },
+    {
+      "coco_image_id": 8473,
+      "coco_category_id": 55,
+      "coco_split": "train",
+      "imagenet_class_id": 950,
+      "imagenet_wnid": "n07747607",
+      "file_name": "000000008473.jpg"
+    },
+    {
+      "coco_image_id": 8574,
+      "coco_category_id": 59,
+      "coco_split": "train",
+      "imagenet_class_id": 963,
+      "imagenet_wnid": "n07873807",
+      "file_name": "000000008574.jpg"
+    },
+    {
+      "coco_image_id": 8773,
+      "coco_category_id": 52,
+      "coco_split": "train",
+      "imagenet_class_id": 954,
+      "imagenet_wnid": "n07753592",
+      "file_name": "000000008773.jpg"
+    },
+    {
+      "coco_image_id": 8789,
+      "coco_category_id": 56,
+      "coco_split": "train",
+      "imagenet_class_id": 937,
+      "imagenet_wnid": "n07714990",
+      "file_name": "000000008789.jpg"
+    },
+    {
+      "coco_image_id": 8884,
+      "coco_category_id": 58,
+      "coco_split": "train",
+      "imagenet_class_id": 934,
+      "imagenet_wnid": "n07697537",
+      "file_name": "000000008884.jpg"
+    },
+    {
+      "coco_image_id": 8953,
+      "coco_category_id": 58,
+      "coco_split": "train",
+      "imagenet_class_id": 934,
+      "imagenet_wnid": "n07697537",
+      "file_name": "000000008953.jpg"
+    },
+    {
+      "coco_image_id": 9127,
+      "coco_category_id": 86,
+      "coco_split": "train",
+      "imagenet_class_id": 883,
+      "imagenet_wnid": "n04522168",
+      "file_name": "000000009127.jpg"
+    },
+    {
+      "coco_image_id": 9180,
+      "coco_category_id": 86,
+      "coco_split": "train",
+      "imagenet_class_id": 883,
+      "imagenet_wnid": "n04522168",
+      "file_name": "000000009180.jpg"
+    },
+    {
+      "coco_image_id": 9214,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000009214.jpg"
+    },
+    {
+      "coco_image_id": 9287,
+      "coco_category_id": 10,
+      "coco_split": "train",
+      "imagenet_class_id": 920,
+      "imagenet_wnid": "n06874185",
+      "file_name": "000000009287.jpg"
+    },
+    {
+      "coco_image_id": 9452,
+      "coco_category_id": 52,
+      "coco_split": "train",
+      "imagenet_class_id": 954,
+      "imagenet_wnid": "n07753592",
+      "file_name": "000000009452.jpg"
+    },
+    {
+      "coco_image_id": 9548,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000009548.jpg"
+    },
+    {
+      "coco_image_id": 9709,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000009709.jpg"
+    },
+    {
+      "coco_image_id": 9763,
+      "coco_category_id": 10,
+      "coco_split": "train",
+      "imagenet_class_id": 920,
+      "imagenet_wnid": "n06874185",
+      "file_name": "000000009763.jpg"
+    },
+    {
+      "coco_image_id": 9988,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000009988.jpg"
+    },
+    {
+      "coco_image_id": 10077,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000010077.jpg"
+    },
+    {
+      "coco_image_id": 10222,
+      "coco_category_id": 10,
+      "coco_split": "train",
+      "imagenet_class_id": 920,
+      "imagenet_wnid": "n06874185",
+      "file_name": "000000010222.jpg"
+    },
+    {
+      "coco_image_id": 10241,
+      "coco_category_id": 10,
+      "coco_split": "train",
+      "imagenet_class_id": 920,
+      "imagenet_wnid": "n06874185",
+      "file_name": "000000010241.jpg"
+    },
+    {
+      "coco_image_id": 10327,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000010327.jpg"
+    },
+    {
+      "coco_image_id": 10432,
+      "coco_category_id": 52,
+      "coco_split": "train",
+      "imagenet_class_id": 954,
+      "imagenet_wnid": "n07753592",
+      "file_name": "000000010432.jpg"
+    },
+    {
+      "coco_image_id": 10566,
+      "coco_category_id": 10,
+      "coco_split": "train",
+      "imagenet_class_id": 920,
+      "imagenet_wnid": "n06874185",
+      "file_name": "000000010566.jpg"
+    },
+    {
+      "coco_image_id": 10645,
+      "coco_category_id": 14,
+      "coco_split": "train",
+      "imagenet_class_id": 704,
+      "imagenet_wnid": "n03891332",
+      "file_name": "000000010645.jpg"
+    },
+    {
+      "coco_image_id": 10702,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000010702.jpg"
+    },
+    {
+      "coco_image_id": 10733,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000010733.jpg"
+    },
+    {
+      "coco_image_id": 10822,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000010822.jpg"
+    },
+    {
+      "coco_image_id": 10858,
+      "coco_category_id": 58,
+      "coco_split": "train",
+      "imagenet_class_id": 934,
+      "imagenet_wnid": "n07697537",
+      "file_name": "000000010858.jpg"
+    },
+    {
+      "coco_image_id": 10928,
+      "coco_category_id": 10,
+      "coco_split": "train",
+      "imagenet_class_id": 920,
+      "imagenet_wnid": "n06874185",
+      "file_name": "000000010928.jpg"
+    },
+    {
+      "coco_image_id": 11042,
+      "coco_category_id": 59,
+      "coco_split": "train",
+      "imagenet_class_id": 963,
+      "imagenet_wnid": "n07873807",
+      "file_name": "000000011042.jpg"
+    },
+    {
+      "coco_image_id": 11390,
+      "coco_category_id": 88,
+      "coco_split": "train",
+      "imagenet_class_id": 850,
+      "imagenet_wnid": "n04399382",
+      "file_name": "000000011390.jpg"
+    },
+    {
+      "coco_image_id": 11554,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000011554.jpg"
+    },
+    {
+      "coco_image_id": 11605,
+      "coco_category_id": 10,
+      "coco_split": "train",
+      "imagenet_class_id": 920,
+      "imagenet_wnid": "n06874185",
+      "file_name": "000000011605.jpg"
+    },
+    {
+      "coco_image_id": 11719,
+      "coco_category_id": 88,
+      "coco_split": "train",
+      "imagenet_class_id": 850,
+      "imagenet_wnid": "n04399382",
+      "file_name": "000000011719.jpg"
+    },
+    {
+      "coco_image_id": 11926,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000011926.jpg"
+    },
+    {
+      "coco_image_id": 11948,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000011948.jpg"
+    },
+    {
+      "coco_image_id": 12010,
+      "coco_category_id": 59,
+      "coco_split": "train",
+      "imagenet_class_id": 963,
+      "imagenet_wnid": "n07873807",
+      "file_name": "000000012010.jpg"
+    },
+    {
+      "coco_image_id": 12098,
+      "coco_category_id": 86,
+      "coco_split": "train",
+      "imagenet_class_id": 883,
+      "imagenet_wnid": "n04522168",
+      "file_name": "000000012098.jpg"
+    },
+    {
+      "coco_image_id": 12357,
+      "coco_category_id": 52,
+      "coco_split": "train",
+      "imagenet_class_id": 954,
+      "imagenet_wnid": "n07753592",
+      "file_name": "000000012357.jpg"
+    },
+    {
+      "coco_image_id": 12382,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000012382.jpg"
+    },
+    {
+      "coco_image_id": 12416,
+      "coco_category_id": 10,
+      "coco_split": "train",
+      "imagenet_class_id": 920,
+      "imagenet_wnid": "n06874185",
+      "file_name": "000000012416.jpg"
+    },
+    {
+      "coco_image_id": 12495,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000012495.jpg"
+    },
+    {
+      "coco_image_id": 12750,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000012750.jpg"
+    },
+    {
+      "coco_image_id": 12756,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000012756.jpg"
+    },
+    {
+      "coco_image_id": 12860,
+      "coco_category_id": 86,
+      "coco_split": "train",
+      "imagenet_class_id": 883,
+      "imagenet_wnid": "n04522168",
+      "file_name": "000000012860.jpg"
+    },
+    {
+      "coco_image_id": 12883,
+      "coco_category_id": 14,
+      "coco_split": "train",
+      "imagenet_class_id": 704,
+      "imagenet_wnid": "n03891332",
+      "file_name": "000000012883.jpg"
+    },
+    {
+      "coco_image_id": 12998,
+      "coco_category_id": 56,
+      "coco_split": "train",
+      "imagenet_class_id": 937,
+      "imagenet_wnid": "n07714990",
+      "file_name": "000000012998.jpg"
+    },
+    {
+      "coco_image_id": 13061,
+      "coco_category_id": 75,
+      "coco_split": "train",
+      "imagenet_class_id": 761,
+      "imagenet_wnid": "n04074963",
+      "file_name": "000000013061.jpg"
+    },
+    {
+      "coco_image_id": 13150,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000013150.jpg"
+    },
+    {
+      "coco_image_id": 13160,
+      "coco_category_id": 73,
+      "coco_split": "train",
+      "imagenet_class_id": 620,
+      "imagenet_wnid": "n03642806",
+      "file_name": "000000013160.jpg"
+    },
+    {
+      "coco_image_id": 13284,
+      "coco_category_id": 88,
+      "coco_split": "train",
+      "imagenet_class_id": 850,
+      "imagenet_wnid": "n04399382",
+      "file_name": "000000013284.jpg"
+    },
+    {
+      "coco_image_id": 13356,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000013356.jpg"
+    },
+    {
+      "coco_image_id": 13428,
+      "coco_category_id": 56,
+      "coco_split": "train",
+      "imagenet_class_id": 937,
+      "imagenet_wnid": "n07714990",
+      "file_name": "000000013428.jpg"
+    },
+    {
+      "coco_image_id": 13517,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000013517.jpg"
+    },
+    {
+      "coco_image_id": 13632,
+      "coco_category_id": 86,
+      "coco_split": "train",
+      "imagenet_class_id": 883,
+      "imagenet_wnid": "n04522168",
+      "file_name": "000000013632.jpg"
+    },
+    {
+      "coco_image_id": 13893,
+      "coco_category_id": 55,
+      "coco_split": "train",
+      "imagenet_class_id": 950,
+      "imagenet_wnid": "n07747607",
+      "file_name": "000000013893.jpg"
+    },
+    {
+      "coco_image_id": 13948,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000013948.jpg"
+    },
+    {
+      "coco_image_id": 14276,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000014276.jpg"
+    },
+    {
+      "coco_image_id": 14377,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000014377.jpg"
+    },
+    {
+      "coco_image_id": 14475,
+      "coco_category_id": 88,
+      "coco_split": "train",
+      "imagenet_class_id": 850,
+      "imagenet_wnid": "n04399382",
+      "file_name": "000000014475.jpg"
+    },
+    {
+      "coco_image_id": 14483,
+      "coco_category_id": 55,
+      "coco_split": "train",
+      "imagenet_class_id": 950,
+      "imagenet_wnid": "n07747607",
+      "file_name": "000000014483.jpg"
+    },
+    {
+      "coco_image_id": 14820,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000014820.jpg"
+    },
+    {
+      "coco_image_id": 14862,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000014862.jpg"
+    },
+    {
+      "coco_image_id": 14998,
+      "coco_category_id": 24,
+      "coco_split": "train",
+      "imagenet_class_id": 340,
+      "imagenet_wnid": "n02391049",
+      "file_name": "000000014998.jpg"
+    }
+  ]
+}
