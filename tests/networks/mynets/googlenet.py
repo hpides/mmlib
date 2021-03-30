@@ -79,7 +79,7 @@ class GoogLeNet(nn.Module):
         inception_block = blocks[1]
         inception_aux_block = blocks[2]
 
-        self.aux_logits = True
+        self.aux_logits = aux_logits
         self.transform_input = transform_input
 
         self.conv1 = conv_block(3, 64, kernel_size=7, stride=2, padding=3)
