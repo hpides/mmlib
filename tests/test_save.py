@@ -24,7 +24,6 @@ from tests.networks.mynets.resnet18 import resnet18
 from util.dummy_data import imagenet_input
 from util.mongo import MongoService
 
-
 MONGO_CONTAINER_NAME = 'mongo-test'
 COCO_ROOT = 'coco_root'
 COCO_ANNOT = 'coco_annotations'

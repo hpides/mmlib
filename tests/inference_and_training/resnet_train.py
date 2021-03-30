@@ -59,7 +59,6 @@ class ResnetTrainWrapper(StateDictRestorableObjectWrapper):
         restored_dict = dict_pers_service.recover_dict(self.store_id, RESTORABLE_OBJECT)
         state_objs = restored_dict[STATE_DICT]
 
-
         print('---------------###########--------------')
         # NOTE: Dataloader instance is loaded in the train routine
         state_dict['optimizer'] = OptimizerWrapper.load(
