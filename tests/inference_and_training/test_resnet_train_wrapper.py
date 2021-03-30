@@ -4,11 +4,12 @@ import unittest
 
 import torch
 
-from mmlib.constants import MMLIB_CONFIG
+from mmlib.constants import MMLIB_CONFIG, CURRENT_DATA_ROOT
 from mmlib.equal import model_equal
 from mmlib.persistence import FileSystemPersistenceService, MongoDictPersistenceService
 from schema.restorable_object import RestorableObjectWrapper
 from tests.inference_and_training.resnet_train import OptimizerWrapper, ResnetTrainService, ResnetTrainWrapper
+from tests.networks.custom_coco import TrainCustomCoco
 from tests.networks.mynets.resnet18 import resnet18
 from tests.test_dict_persistence import MONGO_CONTAINER_NAME
 from tests.test_save import CONFIG
@@ -44,18 +45,18 @@ class TestSave(unittest.TestCase):
                 instance=optimizer
             )
 
-            data_wrapper = RestorableObjectWrapper(
-                code='../networks/custom_coco.py',
-                class_name='InferenceCustomCoco',
+            data_wrapper = TrainCustomCoco('./data/reduced-custom-coco-data')
+            state_dict['data'] = RestorableObjectWrapper(
+                code='./networks/custom_coco.py',
+                class_name='TrainCustomCoco',
                 init_args={},
-                config_args={'root': 'coco_root', 'ann_file': 'coco_annotations'},
-                init_ref_type_args=[]
+                config_args={'root': CURRENT_DATA_ROOT},
+                init_ref_type_args=[],
+                instance=data_wrapper
             )
-            # restore instance ein this way so that we do not have to read manually from config file
-            data_wrapper.restore_instance()
-            state_dict['data'] = data_wrapper
 
-            dataloader = torch.utils.data.DataLoader(data_wrapper.instance, batch_size=64, shuffle=False, num_workers=0,
+            # Note use batch size 5 to reduce speed up tests
+            dataloader = torch.utils.data.DataLoader(data_wrapper, batch_size=5, shuffle=False, num_workers=0,
                                                      pin_memory=True)
             state_dict['dataloader'] = RestorableObjectWrapper(
                 import_cmd='from torch.utils.data import DataLoader',
@@ -72,7 +73,7 @@ class TestSave(unittest.TestCase):
 
             # wrap the resnet_ts in a wrapper to be restorable on other devices and persist teh wrapper
             ts_wrapper = ResnetTrainWrapper(
-                code='./resnet_train.py',
+                code='./inference_and_training/resnet_train.py',
                 class_name='ResnetTrainService',
                 instance=resnet_ts
             )
