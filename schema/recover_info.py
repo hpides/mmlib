@@ -15,8 +15,10 @@ DATASET = 'dataset'
 
 class AbstractRecoverInfo(SchemaObj, metaclass=abc.ABCMeta):
 
-    def __init__(self, store_id: str = None):
+    def __init__(self, model_code: str, model_class_name: str, store_id: str = None):
         super().__init__(store_id)
+        self.model_code_file_path = model_code
+        self.model_class_name = model_class_name
 
     def _representation_type(self) -> str:
         return RECOVER_INFO
@@ -36,14 +38,11 @@ RECOVER_INFO = 'recover_info'
 class FullModelRecoverInfo(AbstractRecoverInfo):
 
     def __init__(self, weights_file_path: str, model_code_file_path, model_class_name: str, store_id: str = None):
-        super().__init__(store_id)
+        super().__init__(model_code_file_path, model_class_name, store_id)
         self.weights_file_path = weights_file_path
-        self.model_code_file_path = model_code_file_path
-        self.model_class_name = model_class_name
 
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
-
         if not self.store_id:
             self.store_id = dict_pers_service.generate_id()
 
@@ -64,7 +63,6 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
              dict_pers_service: AbstractDictPersistenceService, restore_root: str):
-
         restored_dict = dict_pers_service.recover_dict(obj_id, RECOVER_INFO)
 
         store_id = restored_dict[ID]
@@ -100,15 +98,12 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
 
     def __init__(self, dataset: Dataset, model_code_file_path, model_class_name: str, train_info: TrainInfo,
                  store_id: str = None):
-        super().__init__(store_id)
+        super().__init__(model_code_file_path, model_class_name, store_id)
         self.dataset = dataset
-        self.model_code_file_path = model_code_file_path
-        self.model_class_name = model_class_name
         self.train_info = train_info
 
     def persist(self, file_pers_service: AbstractFilePersistenceService,
                 dict_pers_service: AbstractDictPersistenceService) -> str:
-
         if not self.store_id:
             self.store_id = dict_pers_service.generate_id()
 
@@ -133,7 +128,6 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
              dict_pers_service: AbstractDictPersistenceService, restore_root: str):
-
         restored_dict = dict_pers_service.recover_dict(obj_id, RECOVER_INFO)
 
         store_id = restored_dict[ID]
