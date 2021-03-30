@@ -84,7 +84,7 @@ class BaselineSaveService(AbstractSaveService):
 
             model = create_object(recover_info.model_code_file_path, recover_info.model_class_name)
             s_dict = self._recover_pickled_weights(recover_info.weights_file_path)
-            model.load_state_dict(s_dict, strict=False)
+            model.load_state_dict(s_dict)
 
             restored_model_info = RestoredModelInfo(model=model, inference_info=model_info.inference_info)
 
