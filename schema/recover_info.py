@@ -20,6 +20,29 @@ class AbstractRecoverInfo(SchemaObj, metaclass=abc.ABCMeta):
         self.model_code_file_path = model_code
         self.model_class_name = model_class_name
 
+    def persist(self, file_pers_service: AbstractFilePersistenceService,
+                dict_pers_service: AbstractDictPersistenceService) -> str:
+        if not self.store_id:
+            self.store_id = dict_pers_service.generate_id()
+
+        model_code_id = file_pers_service.save_file(self.model_code_file_path)
+
+        dict_representation = {
+            ID: self.store_id,
+            MODEL_CODE: model_code_id,
+            MODEL_CLASS_NAME: self.model_class_name,
+        }
+
+        self._persist_class_specific_fields(dict_representation, file_pers_service, dict_pers_service)
+
+        dict_pers_service.save_dict(dict_representation, RECOVER_INFO)
+
+        return self.store_id
+
+    @abc.abstractmethod
+    def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
+        raise NotImplementedError
+
     def _representation_type(self) -> str:
         return RECOVER_INFO
 
@@ -41,24 +64,10 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
         super().__init__(model_code_file_path, model_class_name, store_id)
         self.weights_file_path = weights_file_path
 
-    def persist(self, file_pers_service: AbstractFilePersistenceService,
-                dict_pers_service: AbstractDictPersistenceService) -> str:
-        if not self.store_id:
-            self.store_id = dict_pers_service.generate_id()
-
+    def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
         weights_id = file_pers_service.save_file(self.weights_file_path)
-        model_code_id = file_pers_service.save_file(self.model_code_file_path)
 
-        dict_representation = {
-            ID: self.store_id,
-            WEIGHTS: weights_id,
-            MODEL_CODE: model_code_id,
-            MODEL_CLASS_NAME: self.model_class_name
-        }
-
-        dict_pers_service.save_dict(dict_representation, RECOVER_INFO)
-
-        return self.store_id
+        dict_representation[WEIGHTS] = weights_id
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
@@ -102,28 +111,15 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
         self.dataset = dataset
         self.train_info = train_info
 
-    def persist(self, file_pers_service: AbstractFilePersistenceService,
-                dict_pers_service: AbstractDictPersistenceService) -> str:
-        if not self.store_id:
-            self.store_id = dict_pers_service.generate_id()
-
+    def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
         dataset_id = self.dataset.persist(file_pers_service, dict_pers_service)
-        model_code_id = file_pers_service.save_file(self.model_code_file_path)
         train_info_id = self.train_info.persist(file_pers_service, dict_pers_service)
+
         print('train_info_id')
         print(train_info_id)
 
-        dict_representation = {
-            ID: self.store_id,
-            DATASET: dataset_id,
-            MODEL_CODE: model_code_id,
-            MODEL_CLASS_NAME: self.model_class_name,
-            TRAIN_INFO: train_info_id
-        }
-
-        dict_pers_service.save_dict(dict_representation, RECOVER_INFO)
-
-        return self.store_id
+        dict_representation[DATASET] = dataset_id
+        dict_representation[TRAIN_INFO] = train_info_id
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
