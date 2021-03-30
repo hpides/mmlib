@@ -20,9 +20,13 @@ from tests.inference_and_training.imagenet_train import ImagenetTrainService
 from tests.networks.custom_coco import TrainCustomCoco
 from tests.networks.mynets.googlenet import googlenet
 from tests.networks.mynets.mobilenet import mobilenet_v2
+from tests.networks.mynets.resnet152 import resnet152
 from tests.networks.mynets.resnet18 import resnet18
+from tests.networks.mynets.resnet50 import resnet50
 from util.dummy_data import imagenet_input
 from util.mongo import MongoService
+
+MODEL_PATH = './networks/mynets/{}.py'
 
 MONGO_CONTAINER_NAME = 'mongo-test'
 COCO_ROOT = 'coco_root'
@@ -104,11 +108,36 @@ class TestSave(unittest.TestCase):
         restored_model_info = self.save_recover_service.recover_model(model_id)
         self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
 
-    def test_save_restore_provenance_model(self):
+    def test_save_restore_provenance_model_resnet18(self):
+        model_name = resnet18.__name__
+        self._test_save_restore_provenance_specific_model(model_name)
+
+    def test_save_restore_provenance_model_resnet50(self):
+        model_name = resnet50.__name__
+        self._test_save_restore_provenance_specific_model(model_name)
+
+    def test_save_restore_provenance_model_resnet152(self):
+        model_name = resnet152.__name__
+        self._test_save_restore_provenance_specific_model(model_name)
+
+    def test_save_restore_provenance_model_mobilenet(self):
+        model_name = mobilenet_v2.__name__
+        self._test_save_restore_provenance_specific_model(model_name, filename='mobilenet')
+
+    # googlenet has some problems when restored form state_dict with aux loss
+    # NOTE think about not using googlenet for experiments
+    # def test_save_restore_provenance_model_googlenet(self):
+    #     model_name = googlenet.__name__
+    #     self._test_save_restore_provenance_specific_model(model_name)
+
+    def _test_save_restore_provenance_specific_model(self, model_name, filename=None):
         # store model-0
-        model = resnet18(pretrained=True)
-        code_file = './networks/mynets/{}.py'.format('resnet18')
-        class_name = 'resnet18'
+        model = eval('{}(pretrained=True)'.format(model_name))
+        if filename:
+            code_file = MODEL_PATH.format(filename)
+        else:
+            code_file = MODEL_PATH.format(model_name)
+        class_name = model_name
         save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(model, code_file, class_name)
         save_info = save_info_builder.build()
@@ -119,8 +148,8 @@ class TestSave(unittest.TestCase):
         save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(code=code_file, model_class_name=class_name, base_model_id=base_model_id)
 
-        resnet_ts = ImagenetTrainService()
-        self._add_resnet_prov_state_dict(resnet_ts, model)
+        imagenet_ts = ImagenetTrainService()
+        self._add_imagenet_prov_state_dict(imagenet_ts, model)
         prov_train_serv_code = './inference_and_training/imagenet_train.py'
         prov_train_serv_class_name = 'ImagenetTrainService'
         prov_train_wrapper_code = './inference_and_training/imagenet_train.py'
@@ -131,7 +160,7 @@ class TestSave(unittest.TestCase):
 
         # TODO specify correct env, atm env is empty
         save_info_builder.add_prov_data(
-            raw_data_path=raw_data, env=prov_env, train_service=resnet_ts, train_kwargs=train_kwargs,
+            raw_data_path=raw_data, env=prov_env, train_service=imagenet_ts, train_kwargs=train_kwargs,
             code=prov_train_serv_code, class_name=prov_train_serv_class_name, wrapper_code=prov_train_wrapper_code,
             wrapper_class_name=prov_train_wrapper_class_name)
         save_info = save_info_builder.build()
@@ -146,7 +175,7 @@ class TestSave(unittest.TestCase):
 
         # transitions model and train service:
         # model-0, train_state-0 -> # model-1, train_state-1
-        resnet_ts.train(model, **train_kwargs)
+        imagenet_ts.train(model, **train_kwargs)
         self.recover_val_service.save_recover_val_info(model, model_id, dummy_input_shape=[10, 3, 300, 400])
 
         # "model" is in model_1
@@ -161,7 +190,7 @@ class TestSave(unittest.TestCase):
         save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(code=code_file, model_class_name=class_name, base_model_id=model_id)
         save_info_builder.add_prov_data(
-            raw_data_path=raw_data, env=prov_env, train_service=resnet_ts, train_kwargs=train_kwargs,
+            raw_data_path=raw_data, env=prov_env, train_service=imagenet_ts, train_kwargs=train_kwargs,
             code=prov_train_serv_code, class_name=prov_train_serv_class_name, wrapper_code=prov_train_wrapper_code,
             wrapper_class_name=prov_train_wrapper_class_name)
         save_info = save_info_builder.build()
@@ -173,7 +202,7 @@ class TestSave(unittest.TestCase):
 
         # transitions model and train service:
         # model-1, train_state-1 -> # model-2, train_state-2
-        resnet_ts.train(model, **train_kwargs)
+        imagenet_ts.train(model, **train_kwargs)
         self.recover_val_service.save_recover_val_info(model, model_id_2, dummy_input_shape=[10, 3, 300, 400])
 
         # "model" is in model_2
@@ -190,7 +219,7 @@ class TestSave(unittest.TestCase):
         recovered_model_1 = recovered_model_info.model
         self.assertTrue(self.recover_val_service.check_recover_val(model_id, recovered_model_info.model))
 
-    def _add_resnet_prov_state_dict(self, resnet_ts, model):
+    def _add_imagenet_prov_state_dict(self, resnet_ts, model):
         set_deterministic()
 
         state_dict = {}

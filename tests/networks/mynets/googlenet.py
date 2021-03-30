@@ -36,6 +36,7 @@ def googlenet(pretrained=False, progress=True, **kwargs):
         transform_input (bool): If True, preprocesses the input according to the method with which it
             was trained on ImageNet. Default: *False*
     """
+
     if pretrained:
         if 'transform_input' not in kwargs:
             kwargs['transform_input'] = True
