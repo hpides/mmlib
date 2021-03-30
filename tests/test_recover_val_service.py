@@ -31,4 +31,3 @@ class TestRecoverValidationService(unittest.TestCase):
 
         model2 = resnet18()
         self.assertFalse(self.recover_val_service.check_recover_val(model_id, model2))
-
