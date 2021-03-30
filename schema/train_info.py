@@ -26,27 +26,18 @@ class TrainInfo(SchemaObj):
         self.train_kwargs = train_kwargs
         self.environment = environment
 
-    def persist(self, file_pers_service: AbstractFilePersistenceService,
-                dict_pers_service: AbstractDictPersistenceService) -> str:
-        super().persist(file_pers_service, dict_pers_service)
-
+    def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
         env_id = self.environment.persist(file_pers_service, dict_pers_service)
         train_service_id = self.train_service_wrapper.persist(file_pers_service, dict_pers_service)
+
         print('train_service_ID')
         print(train_service_id)
 
-        dict_representation = {
-            ID: self.store_id,
-            TRAIN_SERVICE: train_service_id,
-            WRAPPER_CODE: self.train_service_wrapper_code,
-            WRAPPER_CLASS_NAME: self.train_service_wrapper_class_name,
-            TRAIN_KWARGS: self.train_kwargs,
-            ENVIRONMENT: env_id,
-        }
-
-        dict_pers_service.save_dict(dict_representation, TRAIN_INFO)
-
-        return self.store_id
+        dict_representation[TRAIN_SERVICE] = train_service_id
+        dict_representation[WRAPPER_CODE] = self.train_service_wrapper_code
+        dict_representation[WRAPPER_CLASS_NAME] = self.train_service_wrapper_class_name
+        dict_representation[TRAIN_KWARGS] = self.train_kwargs
+        dict_representation[ENVIRONMENT] = env_id
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,

@@ -13,24 +13,10 @@ class Environment(SchemaObj):
         super().__init__(store_id)
         self.environment_data = environment_data
 
-    def persist(self, file_pers_service: AbstractFilePersistenceService,
-                dict_pers_service: AbstractDictPersistenceService) -> str:
-        if self.store_id and dict_pers_service.id_exists(self.store_id, self._representation_type()):
-            # if the id already exists, we do not have to persist again
-            return self.store_id
-
-        super().persist(file_pers_service, dict_pers_service)
-
+    def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
         environment_data_id = dict_pers_service.save_dict(self.environment_data, ENVIRONMENT_DICT)
 
-        dict_representation = {
-            ID: self.store_id,
-            ENVIRONMENT_DICT: environment_data_id,
-        }
-
-        dict_pers_service.save_dict(dict_representation, ENVIRONMENT)
-
-        return self.store_id
+        dict_representation[ENVIRONMENT_DICT] = environment_data_id
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,

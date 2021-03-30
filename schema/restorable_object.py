@@ -49,11 +49,9 @@ class AbstractRestorableObjectWrapper(SchemaObj, metaclass=ABCMeta):
 
         # optional fields
         if self.code:
-            assert self.import_cmd is None, 'if code is set then there should be no import cmd'
             code_file_id = file_pers_service.save_file(self.code)
             dict_representation[CODE_FILE] = code_file_id
         if self.import_cmd:
-            assert self.code is None, 'if import_cmd is set then there should be no code'
             dict_representation[IMPORT_CMD] = self.import_cmd
 
 
@@ -153,7 +151,7 @@ class StateDictObj(metaclass=abc.ABCMeta):
 class StateDictRestorableObjectWrapper(AbstractRestorableObjectWrapper):
 
     def __init__(self, class_name: str, code: str, instance: StateDictObj = None, store_id: str = None):
-        super().__init__(class_name, code, instance, store_id)
+        super().__init__(class_name=class_name, code=code, instance=instance, store_id=store_id)
         self.instance: StateDictObj = instance
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
@@ -206,7 +204,19 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
         # the state of the instance has probably changed -> need to store new version with new id
         self.store_id = dict_pers_service.generate_id()
 
-        dict_representation = super()._persist_fields(dict_pers_service, file_pers_service)
+        dict_representation = {
+            ID: self.store_id,
+        }
+
+        self._persist_class_specific_fields(dict_representation, file_pers_service, dict_pers_service)
+
+        dict_pers_service.save_dict(dict_representation, self._representation_type())
+
+        return self.store_id
+
+    def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
+
+        super()._persist_class_specific_fields(dict_representation, file_pers_service, dict_pers_service)
 
         if self.instance:
             with tempfile.TemporaryDirectory() as tmp_path:
@@ -214,18 +224,6 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
                 self._save_instance_state(state_file)
                 state_file_id = file_pers_service.save_file(state_file)
 
-            dict_representation[STATE_FILE] = state_file_id
-
-        dict_pers_service.save_dict(dict_representation, RESTORABLE_OBJECT)
-
-        return self.store_id
-
-    def _add_optional_fields(self, dict_representation, file_pers_service, dict_pers_service):
-        super(StateFileRestorableObjectWrapper, self)._add_optional_fields(dict_representation, file_pers_service,
-                                                                           dict_pers_service)
-
-        if self.state_file:
-            state_file_id = file_pers_service.save_file(self.state_file)
             dict_representation[STATE_FILE] = state_file_id
 
     @classmethod
