@@ -18,13 +18,6 @@ class AbstractPersistenceService(metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def get_all_ids(self) -> [str]:
-        """
-        Returns all ids that are in use.
-        :return: ids as a list of strings.
-        """
-
-    @abc.abstractmethod
     def is_valid_id(self, pers_id: str) -> bool:
         """
         Checks if the given id is a valid id for the PersistenceService.
@@ -197,10 +190,6 @@ class MongoDictPersistenceService(AbstractDictPersistenceService):
     def id_exists(self, dict_id: str, represent_type: str) -> bool:
         dict_id = self._to_mongo_dict_id(dict_id)
         return self._mongo_service.id_exists(dict_id, represent_type)
-
-    def get_all_ids(self) -> [str]:
-        # TODO
-        pass
 
     def is_valid_id(self, pers_id: str) -> bool:
         # TODO

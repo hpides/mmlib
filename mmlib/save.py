@@ -8,7 +8,7 @@ from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersis
 from mmlib.save_info import ModelSaveInfo
 from schema.dataset import Dataset
 from schema.inference_info import InferenceInfo
-from schema.model_info import ModelInfo
+from schema.model_info import ModelInfo, MODEL_INFO
 from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo
 from schema.restorable_object import RestoredModelInfo
 from schema.store_type import ModelStoreType
@@ -47,6 +47,12 @@ class AbstractSaveService(metaclass=abc.ABCMeta):
         Calculates and returns the amount of bytes that are used for storing the model.
         :param model_id: The id to identify the model.
         :return: The amount of bytes used to store the model.
+        """
+        raise NotImplementedError
+
+    def all_model_ids(self) -> [str]:
+        """
+        Retuns a list of all stored model_ids
         """
         raise NotImplementedError
 
@@ -95,6 +101,9 @@ class BaselineSaveService(AbstractSaveService):
             model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path)
 
         return model_info.size_in_bytes(self._file_pers_service, self._dict_pers_service)
+
+    def all_model_ids(self) -> [str]:
+        return self._dict_pers_service.all_ids_for_type(MODEL_INFO)
 
     def _check_consistency(self, model_save_info):
         assert True, 'nothing checked so far'
