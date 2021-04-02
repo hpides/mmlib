@@ -5,7 +5,6 @@ from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersis
 from schema.schema_obj import SchemaObj
 from util.zip import zip_path, unzip
 
-
 RAW_DATA = 'raw_data'
 
 DATASET = 'dataset'
@@ -14,11 +13,11 @@ DATASET = 'dataset'
 class Dataset(SchemaObj):
 
     def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
-                        dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_ref_fields=True):
+                        dict_pers_service: AbstractDictPersistenceService, restore_root: str,
+                        load_recursive: bool = True, load_files: bool = True):
         pass
 
-
-    def __init__(self, raw_data: str, store_id: str = None):
+    def __init__(self, raw_data: str = None, store_id: str = None):
         super().__init__(store_id)
         self.raw_data = raw_data
 

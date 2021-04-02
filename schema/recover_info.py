@@ -119,11 +119,12 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
 class ProvenanceRecoverInfo(AbstractRecoverInfo):
 
     def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
-                        dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_ref_fields=True):
+                        dict_pers_service: AbstractDictPersistenceService, restore_root: str,
+                        load_recursive: bool = True, load_files: bool = True):
         pass
 
-    def __init__(self, dataset: Dataset, model_code_file_path, model_class_name: str, train_info: TrainInfo,
-                 store_id: str = None):
+    def __init__(self, dataset: Dataset = None, model_code_file_path=None, model_class_name: str = None,
+                 train_info: TrainInfo = None, store_id: str = None):
         super().__init__(model_code_file_path, model_class_name, store_id)
         self.dataset = dataset
         self.train_info = train_info

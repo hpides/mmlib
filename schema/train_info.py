@@ -5,7 +5,6 @@ from schema.restorable_object import StateDictRestorableObjectWrapper
 from schema.schema_obj import SchemaObj
 from util.init_from_file import create_type
 
-
 TRAIN_SERVICE = 'train_service'
 TRAIN_KWARGS = 'train_kwargs'
 WRAPPER_CODE = 'wrapper_code'
@@ -20,8 +19,6 @@ class TrainInfo(SchemaObj):
     def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
                         dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_ref_fields=True):
         pass
-
-
 
     def __init__(self, ts_wrapper: StateDictRestorableObjectWrapper, ts_wrapper_code: str, ts_wrapper_class_name: str,
                  train_kwargs: dict, environment: Environment,

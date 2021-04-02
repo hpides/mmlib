@@ -46,8 +46,6 @@ class ModelInfo(SchemaObj):
             train_info_id = self.train_info.persist(file_pers_service, dict_pers_service)
             dict_representation[TRAIN_INFO_ID] = train_info_id
 
-
-
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
              dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
