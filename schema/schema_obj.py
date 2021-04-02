@@ -37,6 +37,19 @@ class SchemaObj(metaclass=abc.ABCMeta):
     def _representation_type(self) -> str:
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
+                        dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_ref_fields=True):
+        """
+        Loads all fields that have not been loaded so far.
+        :param file_pers_service: An instance of AbstractFilePersistenceService that is used to store files.
+        :param dict_pers_service: An instance of AbstractDictPersistenceService that is used to store metadata as dicts.
+        :param restore_root: The path where restored files are stored to.
+        :param load_ref_fields: If True also the fields that are files or referenced SchemaObj are fully loaded,
+        if False only references will be loaded for these fields.
+        :return:
+        """
+
     @classmethod
     @abc.abstractmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
@@ -48,7 +61,16 @@ class SchemaObj(metaclass=abc.ABCMeta):
         :param dict_pers_service: An instance of AbstractDictPersistenceService that is used to store metadata as dicts.
         :param restore_root: The path where restored files are stored to.
         :param load_recursive: If set to True all referenced objects are loaded fully,
-         if set to False (default) only the references are restored
+        if set to False (default) only the references are restored
+        """
+        raise NotImplementedError
+
+    @classmethod
+    @abc.abstractmethod
+    def load_placeholder(cls, obj_id: str):
+        """
+        Loads the schema object from database/disk.
+        :param obj_id: The identifier for the SchemaObj in the database/disk.
         """
         raise NotImplementedError
 

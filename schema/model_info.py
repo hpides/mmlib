@@ -5,7 +5,6 @@ from schema.schema_obj import SchemaObj
 from schema.store_type import ModelStoreType
 from schema.train_info import TrainInfo
 
-
 STORE_TYPE = 'store_type'
 RECOVER_INFO_ID = 'recover_info_id'
 DERIVED_FROM = 'derived_from'
@@ -17,8 +16,9 @@ MODEL_INFO = 'model_info'
 
 class ModelInfo(SchemaObj):
 
-    def __init__(self, store_type: ModelStoreType, recover_info: AbstractRecoverInfo, store_id: str = None,
-                 derived_from_id: str = None, inference_info: InferenceInfo = None, train_info: TrainInfo = None):
+    def __init__(self, store_type: ModelStoreType = None, recover_info: AbstractRecoverInfo = None,
+                 store_id: str = None, derived_from_id: str = None, inference_info: InferenceInfo = None,
+                 train_info: TrainInfo = None):
         super().__init__(store_id)
         self.store_type = store_type
         self.recover_info = recover_info
@@ -47,8 +47,12 @@ class ModelInfo(SchemaObj):
             dict_representation[TRAIN_INFO_ID] = train_info_id
 
     @classmethod
+    def load_placeholder(cls, obj_id: str):
+        return cls(store_id=obj_id)
+
+    @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService, restore_root: str):
+             dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False):
 
         print('xxxxxxxxxxxxxxxxxLOAD MODEL INFO ')
 
@@ -56,7 +60,6 @@ class ModelInfo(SchemaObj):
 
         # mandatory fields
         store_type = ModelStoreType(restored_dict[STORE_TYPE])
-
         recover_info_id = restored_dict[RECOVER_INFO_ID]
 
         recover_info = None
