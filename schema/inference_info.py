@@ -38,7 +38,8 @@ class InferenceInfo(SchemaObj):
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService, restore_root: str):
+             dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
+             load_files: bool = False):
         restored_dict = dict_pers_service.recover_dict(obj_id, INFERENCE_INFO)
 
         store_id = restored_dict[ID]

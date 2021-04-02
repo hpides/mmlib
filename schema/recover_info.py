@@ -51,7 +51,6 @@ class AbstractRecoverInfo(SchemaObj, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
-
 WEIGHTS = 'weights'
 MODEL_CODE = 'model_code'
 MODEL_CLASS_NAME = 'model_class_name'
@@ -61,32 +60,44 @@ RECOVER_INFO = 'recover_info'
 
 class FullModelRecoverInfo(AbstractRecoverInfo):
 
-    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
-                        dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_ref_fields=True):
-        pass
-
-    @classmethod
-    def load_placeholder(cls, obj_id: str):
-        pass
-
-    def __init__(self, weights_file_path: str, model_code_file_path, model_class_name: str, store_id: str = None):
+    def __init__(self, weights_file_path: str = None, model_code_file_path=None, model_class_name: str = None,
+                 store_id: str = None):
         super().__init__(model_code_file_path, model_class_name, store_id)
         self.weights_file_path = weights_file_path
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService, restore_root: str):
+             dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
+             load_files: bool = False):
         restored_dict = dict_pers_service.recover_dict(obj_id, RECOVER_INFO)
 
         store_id = restored_dict[ID]
-        weights_file_id = restored_dict[WEIGHTS]
-        weights_file_path = file_pers_service.recover_file(weights_file_id, restore_root)
-        model_code_file_id = restored_dict[MODEL_CODE]
-        model_code_file_path = file_pers_service.recover_file(model_code_file_id, restore_root)
         model_class_name = restored_dict[MODEL_CLASS_NAME]
+
+        weights_file_path = None
+        model_code_file_path = None
+        if load_files:
+            weights_file_id = restored_dict[WEIGHTS]
+            weights_file_path = file_pers_service.recover_file(weights_file_id, restore_root)
+            model_code_file_id = restored_dict[MODEL_CODE]
+            model_code_file_path = file_pers_service.recover_file(model_code_file_id, restore_root)
 
         return cls(weights_file_path=weights_file_path, model_code_file_path=model_code_file_path,
                    model_class_name=model_class_name, store_id=store_id)
+
+    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
+                        dict_pers_service: AbstractDictPersistenceService, restore_root: str,
+                        load_recursive: bool = True, load_files: bool = True):
+        restored_dict = dict_pers_service.recover_dict(self.store_id, RECOVER_INFO)
+
+        self.model_class_name = restored_dict[MODEL_CLASS_NAME]
+
+        if load_files:
+            weights_file_id = restored_dict[WEIGHTS]
+            self.weights_file_path = file_pers_service.recover_file(weights_file_id, restore_root)
+
+            model_code_file_id = restored_dict[MODEL_CODE]
+            self.model_code_file_path = file_pers_service.recover_file(model_code_file_id, restore_root)
 
     def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
         result = 0
@@ -111,10 +122,6 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
                         dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_ref_fields=True):
         pass
 
-    @classmethod
-    def load_placeholder(cls, obj_id: str):
-        pass
-
     def __init__(self, dataset: Dataset, model_code_file_path, model_class_name: str, train_info: TrainInfo,
                  store_id: str = None):
         super().__init__(model_code_file_path, model_class_name, store_id)
@@ -123,7 +130,8 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService, restore_root: str):
+             dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
+             load_files: bool = False):
         restored_dict = dict_pers_service.recover_dict(obj_id, RECOVER_INFO)
 
         store_id = restored_dict[ID]

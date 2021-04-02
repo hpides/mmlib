@@ -46,13 +46,12 @@ class ModelInfo(SchemaObj):
             train_info_id = self.train_info.persist(file_pers_service, dict_pers_service)
             dict_representation[TRAIN_INFO_ID] = train_info_id
 
-    @classmethod
-    def load_placeholder(cls, obj_id: str):
-        return cls(store_id=obj_id)
+
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False):
+             dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
+             load_files: bool = False):
 
         print('xxxxxxxxxxxxxxxxxLOAD MODEL INFO ')
 
@@ -61,7 +60,7 @@ class ModelInfo(SchemaObj):
         # mandatory fields
         store_type = _recover_store_type(restored_dict)
         recover_info = _recover_recover_info(restored_dict, dict_pers_service, file_pers_service, restore_root,
-                                             store_type, load_recursive)
+                                             store_type, load_recursive, load_files)
 
         # optional fields
         derived_from_id = _recover_derived_from(restored_dict)
@@ -81,7 +80,8 @@ class ModelInfo(SchemaObj):
                    inference_info=inference_info, train_info=train_info)
 
     def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
-                        dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_ref_fields=True):
+                        dict_pers_service: AbstractDictPersistenceService, restore_root: str,
+                        load_recursive: bool = False, load_files: bool = False):
 
         restored_dict = _recover_stored_dict(dict_pers_service, self.store_id)
 
@@ -91,7 +91,7 @@ class ModelInfo(SchemaObj):
 
         if not self.recover_info:
             self.recover_info = _recover_recover_info(restored_dict, dict_pers_service, file_pers_service, restore_root,
-                                                      self.store_type, load_recursive=not load_ref_fields)
+                                                      self.store_type, load_recursive, load_files)
 
         # optional fields
         if not self.derived_from:
@@ -129,19 +129,19 @@ def _recover_store_type(restored_dict):
 
 
 def _recover_recover_info(restored_dict, dict_pers_service, file_pers_service, restore_root, store_type,
-                          load_recursive):
+                          load_recursive, load_files):
     recover_info_id = restored_dict[RECOVER_INFO_ID]
 
     if store_type == ModelStoreType.PICKLED_WEIGHTS:
         if load_recursive:
             recover_info = FullModelRecoverInfo.load(recover_info_id, file_pers_service, dict_pers_service,
-                                                     restore_root)
+                                                     restore_root, load_recursive, load_files)
         else:
             recover_info = FullModelRecoverInfo.load_placeholder(recover_info_id)
     elif store_type == ModelStoreType.PROVENANCE:
         if load_recursive:
             recover_info = ProvenanceRecoverInfo.load(recover_info_id, file_pers_service, dict_pers_service,
-                                                      restore_root)
+                                                      restore_root, load_recursive, load_files)
         else:
             recover_info = ProvenanceRecoverInfo.load_placeholder(recover_info_id)
     else:

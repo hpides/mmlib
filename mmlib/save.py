@@ -84,7 +84,7 @@ class BaselineSaveService(AbstractSaveService):
 
         with tempfile.TemporaryDirectory() as tmp_path:
             model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path,
-                                        load_recursive=True)
+                                        load_recursive=True, load_files=True)
 
             # recover model form info
             recover_info: FullModelRecoverInfo = model_info.recover_info
@@ -122,7 +122,10 @@ class BaselineSaveService(AbstractSaveService):
                 os.mkdir(restore_dir)
 
                 model_info = ModelInfo.load(derived_from, self._file_pers_service, self._dict_pers_service, restore_dir)
+                model_info.load_all_fields(self._file_pers_service, self._dict_pers_service, tmp_path)
                 recover_info: FullModelRecoverInfo = model_info.recover_info
+                recover_info.load_all_fields(self._file_pers_service, self._dict_pers_service, tmp_path,
+                                             load_files=True)
 
                 model_save_info.code = recover_info.model_code_file_path
                 model_save_info.class_name = recover_info.model_class_name

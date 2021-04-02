@@ -56,9 +56,6 @@ class ImagenetTrainWrapper(StateDictRestorableObjectWrapper):
                         dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_ref_fields=True):
         pass
 
-    @classmethod
-    def load_placeholder(cls, obj_id: str):
-        pass
 
     def restore_instance(self, file_pers_service: AbstractFilePersistenceService,
                          dict_pers_service: AbstractDictPersistenceService, restore_root: str):

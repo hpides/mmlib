@@ -39,21 +39,24 @@ class SchemaObj(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
-                        dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_ref_fields=True):
+                        dict_pers_service: AbstractDictPersistenceService, restore_root: str,
+                        load_recursive: bool = True, load_files: bool = True):
         """
         Loads all fields that have not been loaded so far.
         :param file_pers_service: An instance of AbstractFilePersistenceService that is used to store files.
         :param dict_pers_service: An instance of AbstractDictPersistenceService that is used to store metadata as dicts.
         :param restore_root: The path where restored files are stored to.
-        :param load_ref_fields: If True also the fields that are files or referenced SchemaObj are fully loaded,
-        if False only references will be loaded for these fields.
+        :param load_recursive: If set to True all referenced objects are loaded fully,
+        if set to False (default) only the references are restored
+        :param load_files: If True all referenced files are loaded, if False only id is loaded.
         :return:
         """
 
     @classmethod
     @abc.abstractmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False):
+             dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
+             load_files: bool = False):
         """
         Loads the schema object from database/disk.
         :param obj_id: The identifier for the SchemaObj in the database/disk.
@@ -62,17 +65,17 @@ class SchemaObj(metaclass=abc.ABCMeta):
         :param restore_root: The path where restored files are stored to.
         :param load_recursive: If set to True all referenced objects are loaded fully,
         if set to False (default) only the references are restored
+        :param load_files: If True all referenced files are loaded, if False only id is loaded.
         """
         raise NotImplementedError
 
     @classmethod
-    @abc.abstractmethod
     def load_placeholder(cls, obj_id: str):
         """
         Loads the schema object from database/disk.
         :param obj_id: The identifier for the SchemaObj in the database/disk.
         """
-        raise NotImplementedError
+        return cls(store_id=obj_id)
 
     @abc.abstractmethod
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,

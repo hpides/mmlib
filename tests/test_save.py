@@ -336,6 +336,7 @@ class TestSave(unittest.TestCase):
 
         self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
         self.assertTrue(model_equal(model, restored_model_info_version1.model, imagenet_input))
+        self.assertTrue(model_equal(model_version, restored_model_info_version2.model, imagenet_input))
         self.assertFalse(
             model_equal(restored_model_info_version1.model, restored_model_info_version2.model, imagenet_input))
 

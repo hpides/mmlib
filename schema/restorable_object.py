@@ -61,9 +61,6 @@ class RestorableObjectWrapper(AbstractRestorableObjectWrapper):
                         dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_ref_fields=True):
         pass
 
-    @classmethod
-    def load_placeholder(cls, obj_id: str):
-        pass
 
     def __init__(self, class_name: str, init_args: dict, init_ref_type_args: [str], config_args: dict, code: str = None,
                  import_cmd: str = None, instance: object = None, store_id: str = None):
@@ -87,7 +84,8 @@ class RestorableObjectWrapper(AbstractRestorableObjectWrapper):
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService, restore_root: str):
+             dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
+             load_files: bool = False):
         restored_dict = dict_pers_service.recover_dict(obj_id, RESTORABLE_OBJECT)
 
         class_name, code_file_path, config_args, import_cmd, init_args, ref_type_args = cls._restore_fields(
@@ -176,7 +174,8 @@ class StateDictRestorableObjectWrapper(AbstractRestorableObjectWrapper):
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService, restore_root: str):
+             dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
+             load_files: bool = False):
         restored_dict = dict_pers_service.recover_dict(obj_id, RESTORABLE_OBJECT)
 
         class_name = restored_dict[CLASS_NAME]
@@ -236,7 +235,8 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService, restore_root: str):
+             dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
+             load_files: bool = False):
         restored_dict = dict_pers_service.recover_dict(obj_id, RESTORABLE_OBJECT)
 
         class_name, code_file_path, config_args, import_cmd, init_args, ref_type_args = \

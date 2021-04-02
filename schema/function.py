@@ -49,7 +49,8 @@ class Function(SchemaObj):
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService, restore_root: str):
+             dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
+             load_files: bool = False):
         pass
 
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,

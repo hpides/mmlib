@@ -21,9 +21,7 @@ class TrainInfo(SchemaObj):
                         dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_ref_fields=True):
         pass
 
-    @classmethod
-    def load_placeholder(cls, obj_id: str):
-        pass
+
 
     def __init__(self, ts_wrapper: StateDictRestorableObjectWrapper, ts_wrapper_code: str, ts_wrapper_class_name: str,
                  train_kwargs: dict, environment: Environment,
@@ -50,7 +48,8 @@ class TrainInfo(SchemaObj):
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService, restore_root: str):
+             dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
+             load_files: bool = False):
         restored_dict = dict_pers_service.recover_dict(obj_id, TRAIN_INFO)
 
         store_id = restored_dict[ID]
