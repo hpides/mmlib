@@ -50,6 +50,8 @@ class ModelInfo(SchemaObj):
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
              dict_pers_service: AbstractDictPersistenceService, restore_root: str):
 
+        print('xxxxxxxxxxxxxxxxxLOAD MODEL INFO ')
+
         restored_dict = dict_pers_service.recover_dict(obj_id, MODEL_INFO)
 
         # mandatory fields
