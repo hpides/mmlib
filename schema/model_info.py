@@ -56,37 +56,48 @@ class ModelInfo(SchemaObj):
 
         print('xxxxxxxxxxxxxxxxxLOAD MODEL INFO ')
 
-        restored_dict = dict_pers_service.recover_dict(obj_id, MODEL_INFO)
+        restored_dict = _recover_stored_dict(dict_pers_service, obj_id)
 
         # mandatory fields
-        store_type = ModelStoreType(restored_dict[STORE_TYPE])
-        recover_info_id = restored_dict[RECOVER_INFO_ID]
-
-        recover_info = None
-        if store_type == ModelStoreType.PICKLED_WEIGHTS:
-            recover_info = FullModelRecoverInfo.load(recover_info_id, file_pers_service, dict_pers_service,
-                                                     restore_root)
-        elif store_type == ModelStoreType.PROVENANCE:
-            recover_info = ProvenanceRecoverInfo.load(recover_info_id, file_pers_service, dict_pers_service,
-                                                      restore_root)
-        else:
-            assert False, 'Not implemented yet'
+        store_type = _recover_store_type(restored_dict)
+        recover_info = _recover_recover_info(restored_dict, dict_pers_service, file_pers_service, restore_root,
+                                             store_type, load_recursive)
 
         # optional fields
-        derived_from_id = restored_dict[DERIVED_FROM] if DERIVED_FROM in restored_dict else None
+        derived_from_id = _recover_derived_from(restored_dict)
         inference_info = None
         train_info = None
 
-        if INFERENCE_INFO_ID in restored_dict:
-            inference_info_id = restored_dict[INFERENCE_INFO_ID]
-            inference_info = InferenceInfo.load(inference_info_id, file_pers_service, dict_pers_service, restore_root)
-
-        if TRAIN_INFO_ID in restored_dict:
-            train_info_id = restored_dict[TRAIN_INFO_ID]
-            train_info = TrainInfo.load(train_info_id, file_pers_service, dict_pers_service, restore_root)
+        # Note not implemented yet
+        # if INFERENCE_INFO_ID in restored_dict:
+        #     inference_info_id = restored_dict[INFERENCE_INFO_ID]
+        #     inference_info = InferenceInfo.load(inference_info_id, file_pers_service, dict_pers_service, restore_root)
+        #
+        # if TRAIN_INFO_ID in restored_dict:
+        #     train_info_id = restored_dict[TRAIN_INFO_ID]
+        #     train_info = TrainInfo.load(train_info_id, file_pers_service, dict_pers_service, restore_root)
 
         return cls(store_type=store_type, recover_info=recover_info, store_id=obj_id, derived_from_id=derived_from_id,
                    inference_info=inference_info, train_info=train_info)
+
+    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
+                        dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_ref_fields=True):
+
+        restored_dict = _recover_stored_dict(dict_pers_service, self.store_id)
+
+        # mandatory fields
+        if not self.store_type:
+            self.store_type = _recover_store_type(restored_dict)
+
+        if not self.recover_info:
+            self.recover_info = _recover_recover_info(restored_dict, dict_pers_service, file_pers_service, restore_root,
+                                                      self.store_type, load_recursive=not load_ref_fields)
+
+        # optional fields
+        if not self.derived_from:
+            self.derived_from = _recover_derived_from(restored_dict)
+
+        # NOTE: other fields not implemented yet
 
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
                       dict_pers_service: AbstractDictPersistenceService) -> int:
@@ -107,3 +118,36 @@ class ModelInfo(SchemaObj):
 
     def _representation_type(self) -> str:
         return MODEL_INFO
+
+
+def _recover_stored_dict(dict_pers_service, obj_id):
+    return dict_pers_service.recover_dict(obj_id, MODEL_INFO)
+
+
+def _recover_store_type(restored_dict):
+    return ModelStoreType(restored_dict[STORE_TYPE])
+
+
+def _recover_recover_info(restored_dict, dict_pers_service, file_pers_service, restore_root, store_type,
+                          load_recursive):
+    recover_info_id = restored_dict[RECOVER_INFO_ID]
+
+    if store_type == ModelStoreType.PICKLED_WEIGHTS:
+        if load_recursive:
+            recover_info = FullModelRecoverInfo.load(recover_info_id, file_pers_service, dict_pers_service,
+                                                     restore_root)
+        else:
+            recover_info = FullModelRecoverInfo.load_placeholder(recover_info_id)
+    elif store_type == ModelStoreType.PROVENANCE:
+        if load_recursive:
+            recover_info = ProvenanceRecoverInfo.load(recover_info_id, file_pers_service, dict_pers_service,
+                                                      restore_root)
+        else:
+            recover_info = ProvenanceRecoverInfo.load_placeholder(recover_info_id)
+    else:
+        assert False, 'Not implemented yet'
+    return recover_info
+
+
+def _recover_derived_from(restored_dict):
+    return restored_dict[DERIVED_FROM] if DERIVED_FROM in restored_dict else None
