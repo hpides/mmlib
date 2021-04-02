@@ -57,6 +57,14 @@ class AbstractRestorableObjectWrapper(SchemaObj, metaclass=ABCMeta):
 
 class RestorableObjectWrapper(AbstractRestorableObjectWrapper):
 
+    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
+                        dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_ref_fields=True):
+        pass
+
+    @classmethod
+    def load_placeholder(cls, obj_id: str):
+        pass
+
     def __init__(self, class_name: str, init_args: dict, init_ref_type_args: [str], config_args: dict, code: str = None,
                  import_cmd: str = None, instance: object = None, store_id: str = None):
 

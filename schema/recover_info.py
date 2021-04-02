@@ -61,6 +61,14 @@ RECOVER_INFO = 'recover_info'
 
 class FullModelRecoverInfo(AbstractRecoverInfo):
 
+    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
+                        dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_ref_fields=True):
+        pass
+
+    @classmethod
+    def load_placeholder(cls, obj_id: str):
+        pass
+
     def __init__(self, weights_file_path: str, model_code_file_path, model_class_name: str, store_id: str = None):
         super().__init__(model_code_file_path, model_class_name, store_id)
         self.weights_file_path = weights_file_path
@@ -98,6 +106,14 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
 
 
 class ProvenanceRecoverInfo(AbstractRecoverInfo):
+
+    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
+                        dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_ref_fields=True):
+        pass
+
+    @classmethod
+    def load_placeholder(cls, obj_id: str):
+        pass
 
     def __init__(self, dataset: Dataset, model_code_file_path, model_class_name: str, train_info: TrainInfo,
                  store_id: str = None):

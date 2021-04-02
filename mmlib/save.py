@@ -83,7 +83,8 @@ class BaselineSaveService(AbstractSaveService):
         # in this baseline approach we always store the full model (pickled weights + code)
 
         with tempfile.TemporaryDirectory() as tmp_path:
-            model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path)
+            model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path,
+                                        load_recursive=True)
 
             # recover model form info
             recover_info: FullModelRecoverInfo = model_info.recover_info
@@ -210,7 +211,8 @@ class ProvenanceSaveService(BaselineSaveService):
                 restore_dir = os.path.join(tmp_path, RESTORE_PATH)
                 os.mkdir(restore_dir)
 
-                model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, restore_dir)
+                model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, restore_dir,
+                                            load_recursive=True)
                 recover_info: ProvenanceRecoverInfo = model_info.recover_info
 
                 train_service = recover_info.train_info.train_service_wrapper.instance

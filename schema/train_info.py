@@ -17,6 +17,14 @@ TRAIN_INFO = 'train_info'
 
 class TrainInfo(SchemaObj):
 
+    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
+                        dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_ref_fields=True):
+        pass
+
+    @classmethod
+    def load_placeholder(cls, obj_id: str):
+        pass
+
     def __init__(self, ts_wrapper: StateDictRestorableObjectWrapper, ts_wrapper_code: str, ts_wrapper_class_name: str,
                  train_kwargs: dict, environment: Environment,
                  store_id: str = None):

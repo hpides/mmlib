@@ -9,6 +9,14 @@ ENVIRONMENT = 'environment'
 
 class Environment(SchemaObj):
 
+    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
+                        dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_ref_fields=True):
+        pass
+
+    @classmethod
+    def load_placeholder(cls, obj_id: str):
+        pass
+
     def __init__(self, environment_data: dict, store_id: str = None):
         super().__init__(store_id)
         self.environment_data = environment_data
