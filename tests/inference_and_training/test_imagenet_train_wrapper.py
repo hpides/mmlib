@@ -88,7 +88,8 @@ class TestSave(unittest.TestCase):
             ts_wrapper_id = ts_wrapper.persist(file_ps, dict_ps)
 
             # load the wrapper back to continue training
-            ts_wrapper_new = ImagenetTrainWrapper.load(ts_wrapper_id, file_ps, dict_ps, tmp_path)
+            ts_wrapper_new = ImagenetTrainWrapper.load(ts_wrapper_id, file_ps, dict_ps, tmp_path, load_recursive=True,
+                                                       load_files=True)
             ts_wrapper_new.restore_instance(file_ps, dict_ps, tmp_path)
             resnet_ts_new: ImagenetTrainService = ts_wrapper_new.instance
 
@@ -101,7 +102,8 @@ class TestSave(unittest.TestCase):
             second_model.load_state_dict(torch.load(resnet_weights_path))
 
             # load the same wrapper back to continue second (identical) training
-            ts_wrapper_new = ImagenetTrainWrapper.load(ts_wrapper_id, file_ps, dict_ps, tmp_path)
+            ts_wrapper_new = ImagenetTrainWrapper.load(ts_wrapper_id, file_ps, dict_ps, tmp_path, load_recursive=True,
+                                                       load_files=True)
             ts_wrapper_new.restore_instance(file_ps, dict_ps, tmp_path)
             resnet_ts_new: ImagenetTrainService = ts_wrapper_new.instance
 
