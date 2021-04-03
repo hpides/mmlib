@@ -1,4 +1,3 @@
-from mmlib.constants import ID
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.environment import Environment
 from schema.restorable_object import StateDictRestorableObjectWrapper
@@ -16,8 +15,8 @@ TRAIN_INFO = 'train_info'
 
 class TrainInfo(SchemaObj):
 
-    def __init__(self, ts_wrapper: StateDictRestorableObjectWrapper, ts_wrapper_code: str, ts_wrapper_class_name: str,
-                 train_kwargs: dict, environment: Environment,
+    def __init__(self, ts_wrapper: StateDictRestorableObjectWrapper = None, ts_wrapper_code: str = None,
+                 ts_wrapper_class_name: str = None, train_kwargs: dict = None, environment: Environment = None,
                  store_id: str = None):
         super().__init__(store_id)
         self.train_service_wrapper = ts_wrapper
@@ -43,25 +42,10 @@ class TrainInfo(SchemaObj):
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
              dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
              load_files: bool = False):
-        restored_dict = dict_pers_service.recover_dict(obj_id, TRAIN_INFO)
+        instance = cls.load_placeholder(obj_id)
+        instance.load_all_fields(file_pers_service, dict_pers_service, restore_root, load_recursive, load_files)
 
-        store_id = restored_dict[ID]
-        ts_wrapper_class_name = restored_dict[WRAPPER_CLASS_NAME]
-        train_kwargs = restored_dict[TRAIN_KWARGS]
-
-        train_service_id = restored_dict[TRAIN_SERVICE]
-        ts_wrapper_code = restored_dict[WRAPPER_CODE]
-        train_service_wrapper = \
-            _recover_train_service_wrapper(dict_pers_service, file_pers_service, restore_root,
-                                           train_service_id, ts_wrapper_class_name, ts_wrapper_code, load_recursive,
-                                           load_files)
-
-        env = _recover_environment(dict_pers_service, file_pers_service, load_recursive, restore_root,
-                                   restored_dict)
-
-        return cls(ts_wrapper=train_service_wrapper, ts_wrapper_code=ts_wrapper_code,
-                   ts_wrapper_class_name=ts_wrapper_class_name, train_kwargs=train_kwargs, environment=env,
-                   store_id=store_id)
+        return instance
 
     def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
                         dict_pers_service: AbstractDictPersistenceService, restore_root: str,
