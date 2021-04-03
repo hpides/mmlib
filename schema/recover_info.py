@@ -123,16 +123,6 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
         self.dataset = dataset
         self.train_info = train_info
 
-    @classmethod
-    def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
-             load_files: bool = False):
-
-        instance = cls.load_placeholder(obj_id)
-        instance.load_all_fields(file_pers_service, dict_pers_service, restore_root, load_recursive, load_files)
-
-        return instance
-
     def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
         result = 0
 

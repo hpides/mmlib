@@ -46,29 +46,6 @@ class ModelInfo(SchemaObj):
             train_info_id = self.train_info.persist(file_pers_service, dict_pers_service)
             dict_representation[TRAIN_INFO_ID] = train_info_id
 
-    @classmethod
-    def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
-             load_files: bool = False):
-
-        print('xxxxxxxxxxxxxxxxxLOAD MODEL INFO ')
-        print('load_recursive: {}'.format(load_recursive))
-        print('load_files: {}'.format(load_files))
-
-        instance = cls.load_placeholder(obj_id)
-        instance.load_all_fields(file_pers_service, dict_pers_service, restore_root, load_recursive, load_files)
-
-        # Note not implemented yet
-        # if INFERENCE_INFO_ID in restored_dict:
-        #     inference_info_id = restored_dict[INFERENCE_INFO_ID]
-        #     inference_info = InferenceInfo.load(inference_info_id, file_pers_service, dict_pers_service, restore_root)
-        #
-        # if TRAIN_INFO_ID in restored_dict:
-        #     train_info_id = restored_dict[TRAIN_INFO_ID]
-        #     train_info = TrainInfo.load(train_info_id, file_pers_service, dict_pers_service, restore_root)
-
-        return instance
-
     def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
                         dict_pers_service: AbstractDictPersistenceService, restore_root: str,
                         load_recursive: bool = False, load_files: bool = False):
@@ -88,6 +65,15 @@ class ModelInfo(SchemaObj):
             self.derived_from = _recover_derived_from(restored_dict)
 
         # NOTE: other fields not implemented yet
+
+        # Note not implemented yet
+        # if INFERENCE_INFO_ID in restored_dict:
+        #     inference_info_id = restored_dict[INFERENCE_INFO_ID]
+        #     inference_info = InferenceInfo.load(inference_info_id, file_pers_service, dict_pers_service, restore_root)
+        #
+        # if TRAIN_INFO_ID in restored_dict:
+        #     train_info_id = restored_dict[TRAIN_INFO_ID]
+        #     train_info = TrainInfo.load(train_info_id, file_pers_service, dict_pers_service, restore_root)
 
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
                       dict_pers_service: AbstractDictPersistenceService) -> int:

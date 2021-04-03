@@ -3,7 +3,6 @@ from schema.environment import Environment
 from schema.restorable_object import StateDictRestorableObjectWrapper
 from schema.schema_obj import SchemaObj
 
-
 ENVIRONMENT = 'environment'
 INFERENCE_SERVICE = 'inference_service'
 

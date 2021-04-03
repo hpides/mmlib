@@ -38,15 +38,6 @@ class TrainInfo(SchemaObj):
         dict_representation[TRAIN_KWARGS] = self.train_kwargs
         dict_representation[ENVIRONMENT] = env_id
 
-    @classmethod
-    def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
-             load_files: bool = False):
-        instance = cls.load_placeholder(obj_id)
-        instance.load_all_fields(file_pers_service, dict_pers_service, restore_root, load_recursive, load_files)
-
-        return instance
-
     def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
                         dict_pers_service: AbstractDictPersistenceService, restore_root: str,
                         load_recursive: bool = True, load_files: bool = True):

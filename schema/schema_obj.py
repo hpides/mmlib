@@ -53,7 +53,6 @@ class SchemaObj(metaclass=abc.ABCMeta):
         """
 
     @classmethod
-    @abc.abstractmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
              dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
              load_files: bool = False):
@@ -67,7 +66,11 @@ class SchemaObj(metaclass=abc.ABCMeta):
         if set to False (default) only the references are restored
         :param load_files: If True all referenced files are loaded, if False only id is loaded.
         """
-        raise NotImplementedError
+
+        instance = cls.load_placeholder(obj_id)
+        instance.load_all_fields(file_pers_service, dict_pers_service, restore_root, load_recursive, load_files)
+
+        return instance
 
     @classmethod
     def load_placeholder(cls, obj_id: str):
