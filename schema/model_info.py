@@ -55,17 +55,8 @@ class ModelInfo(SchemaObj):
         print('load_recursive: {}'.format(load_recursive))
         print('load_files: {}'.format(load_files))
 
-        restored_dict = _recover_stored_dict(dict_pers_service, obj_id)
-
-        # mandatory fields
-        store_type = _recover_store_type(restored_dict)
-        recover_info = _recover_recover_info(restored_dict, dict_pers_service, file_pers_service, restore_root,
-                                             store_type, load_recursive, load_files)
-
-        # optional fields
-        derived_from_id = _recover_derived_from(restored_dict)
-        inference_info = None
-        train_info = None
+        instance = cls.load_placeholder(obj_id)
+        instance.load_all_fields(file_pers_service, dict_pers_service, restore_root, load_recursive, load_files)
 
         # Note not implemented yet
         # if INFERENCE_INFO_ID in restored_dict:
@@ -76,8 +67,7 @@ class ModelInfo(SchemaObj):
         #     train_info_id = restored_dict[TRAIN_INFO_ID]
         #     train_info = TrainInfo.load(train_info_id, file_pers_service, dict_pers_service, restore_root)
 
-        return cls(store_type=store_type, recover_info=recover_info, store_id=obj_id, derived_from_id=derived_from_id,
-                   inference_info=inference_info, train_info=train_info)
+        return instance
 
     def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
                         dict_pers_service: AbstractDictPersistenceService, restore_root: str,

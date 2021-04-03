@@ -26,13 +26,11 @@ class Dataset(SchemaObj):
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
              dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
              load_files: bool = False):
-        restored_dict = dict_pers_service.recover_dict(obj_id, DATASET)
 
-        store_id = restored_dict[ID]
+        instance = cls.load_placeholder(obj_id)
+        instance.load_all_fields(file_pers_service, dict_pers_service, restore_root, load_recursive, load_files)
 
-        raw_data = _recover_data(file_pers_service, load_files, restore_root, restored_dict)
-
-        return cls(raw_data=raw_data, store_id=store_id)
+        return instance
 
     def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
                         dict_pers_service: AbstractDictPersistenceService, restore_root: str,

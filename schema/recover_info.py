@@ -127,20 +127,11 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
              dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
              load_files: bool = False):
-        restored_dict = dict_pers_service.recover_dict(obj_id, RECOVER_INFO)
 
-        store_id = restored_dict[ID]
-        dataset_id = restored_dict[DATASET]
-        dataset = _recover_data(dataset_id, dict_pers_service, file_pers_service, load_files, load_recursive,
-                                restore_root)
-        model_code_file_path = _recover_model_code(file_pers_service, load_files, restore_root, restored_dict)
-        model_class_name = restored_dict[MODEL_CLASS_NAME]
+        instance = cls.load_placeholder(obj_id)
+        instance.load_all_fields(file_pers_service, dict_pers_service, restore_root, load_recursive, load_files)
 
-        train_info = _restore_train_info(
-            dict_pers_service, file_pers_service, restore_root, restored_dict, load_recursive, load_files)
-
-        return cls(dataset=dataset, model_class_name=model_class_name, train_info=train_info, store_id=store_id,
-                   model_code_file_path=model_code_file_path)
+        return instance
 
     def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
         result = 0

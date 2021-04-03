@@ -79,17 +79,11 @@ class RestorableObjectWrapper(AbstractRestorableObjectWrapper):
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
              dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
              load_files: bool = False):
-        restored_dict = dict_pers_service.recover_dict(obj_id, RESTORABLE_OBJECT)
 
-        class_name, config_args, import_cmd, init_args, ref_type_args = \
-            _restore_non_ref_fields(restored_dict)
+        instance = cls.load_placeholder(obj_id)
+        instance.load_all_fields(file_pers_service, dict_pers_service, restore_root, load_recursive, load_files)
 
-        code_file_path = _restore_code(file_pers_service, restore_root, restored_dict, load_files)
-
-        restorable_obj_wrapper = cls(store_id=obj_id, code=code_file_path, class_name=class_name, import_cmd=import_cmd,
-                                     init_args=init_args, init_ref_type_args=ref_type_args, config_args=config_args)
-
-        return restorable_obj_wrapper
+        return instance
 
     def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
                         dict_pers_service: AbstractDictPersistenceService, restore_root: str,
