@@ -74,11 +74,8 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
         store_id = restored_dict[ID]
         model_class_name = restored_dict[MODEL_CLASS_NAME]
 
-        weights_file_path = _recover_model_code(file_pers_service, load_files, restore_root, restored_dict)
-        model_code_file_path = None
-        if load_files:
-            weights_file_id = restored_dict[WEIGHTS]
-            weights_file_path = file_pers_service.recover_file(weights_file_id, restore_root)
+        model_code_file_path = _recover_model_code(file_pers_service, load_files, restore_root, restored_dict)
+        weights_file_path = _recover_weights(file_pers_service, load_files, restore_root, restored_dict)
 
         return cls(weights_file_path=weights_file_path, model_code_file_path=model_code_file_path,
                    model_class_name=model_class_name, store_id=store_id)
@@ -90,12 +87,8 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
 
         self.model_class_name = restored_dict[MODEL_CLASS_NAME]
 
-        if load_files:
-            weights_file_id = restored_dict[WEIGHTS]
-            self.weights_file_path = file_pers_service.recover_file(weights_file_id, restore_root)
-
-            model_code_file_id = restored_dict[MODEL_CODE]
-            self.model_code_file_path = file_pers_service.recover_file(model_code_file_id, restore_root)
+        self.model_code_file_path = _recover_model_code(file_pers_service, load_files, restore_root, restored_dict)
+        self.weights_file_path = _recover_weights(file_pers_service, load_files, restore_root, restored_dict)
 
     def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
         result = 0
@@ -112,6 +105,14 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
 
     def _representation_type(self) -> str:
         return RECOVER_INFO
+
+
+def _recover_weights(file_pers_service, load_files, restore_root, restored_dict):
+    weights_file_path = None
+    if load_files:
+        weights_file_id = restored_dict[WEIGHTS]
+        weights_file_path = file_pers_service.recover_file(weights_file_id, restore_root)
+    return weights_file_path
 
 
 class ProvenanceRecoverInfo(AbstractRecoverInfo):
@@ -135,8 +136,8 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
         model_code_file_path = _recover_model_code(file_pers_service, load_files, restore_root, restored_dict)
         model_class_name = restored_dict[MODEL_CLASS_NAME]
 
-        train_info = _restore_train_info(dict_pers_service, file_pers_service, load_recursive, restore_root,
-                                         restored_dict)
+        train_info = _restore_train_info(
+            dict_pers_service, file_pers_service, restore_root, restored_dict, load_recursive, load_files)
 
         return cls(dataset=dataset, model_class_name=model_class_name, train_info=train_info, store_id=store_id,
                    model_code_file_path=model_code_file_path)
@@ -171,8 +172,8 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
         self.model_code_file_path = _recover_model_code(file_pers_service, load_files, restore_root, restored_dict)
         self.model_class_name = restored_dict[MODEL_CLASS_NAME]
 
-        self.train_info = _restore_train_info(dict_pers_service, file_pers_service, load_recursive, restore_root,
-                                              restored_dict)
+        self.train_info = _restore_train_info(
+            dict_pers_service, file_pers_service, restore_root, restored_dict, load_recursive, load_files)
 
 
 def _data_dst_path():
@@ -204,10 +205,11 @@ def _recover_model_code(file_pers_service, load_files, restore_root, restored_di
     return model_code_file_path
 
 
-def _restore_train_info(dict_pers_service, file_pers_service, load_recursive, restore_root, restored_dict):
+def _restore_train_info(dict_pers_service, file_pers_service, restore_root, restored_dict, load_recursive, load_files):
     train_info_id = restored_dict[TRAIN_INFO]
     if not load_recursive:
         train_info = TrainInfo.load_placeholder(train_info_id)
     else:
-        train_info = TrainInfo.load(train_info_id, file_pers_service, dict_pers_service, restore_root)
+        train_info = TrainInfo.load(
+            train_info_id, file_pers_service, dict_pers_service, restore_root, load_recursive, load_files)
     return train_info

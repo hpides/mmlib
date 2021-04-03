@@ -56,8 +56,9 @@ class AbstractRestorableObjectWrapper(SchemaObj, metaclass=ABCMeta):
 
 class RestorableObjectWrapper(AbstractRestorableObjectWrapper):
 
-    def __init__(self, class_name: str, init_args: dict, init_ref_type_args: [str], config_args: dict, code: str = None,
-                 import_cmd: str = None, instance: object = None, store_id: str = None):
+    def __init__(self, class_name: str = None, init_args: dict = None, init_ref_type_args: [str] = None,
+                 config_args: dict = None, code: str = None, import_cmd: str = None, instance: object = None,
+                 store_id: str = None):
         super().__init__(class_name, code, import_cmd=import_cmd, instance=instance, store_id=store_id)
 
         self.init_args = init_args
@@ -165,7 +166,7 @@ class StateDictObj(metaclass=abc.ABCMeta):
 
 class StateDictRestorableObjectWrapper(AbstractRestorableObjectWrapper):
 
-    def __init__(self, class_name: str, code: str, instance: StateDictObj = None, store_id: str = None):
+    def __init__(self, class_name: str = None, code: str = None, instance: StateDictObj = None, store_id: str = None):
         super().__init__(class_name=class_name, code=code, instance=instance, store_id=store_id)
         self.instance: StateDictObj = instance
 
@@ -217,8 +218,9 @@ class StateDictRestorableObjectWrapper(AbstractRestorableObjectWrapper):
 
 
 class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
-    def __init__(self, class_name: str, init_args: dict, init_ref_type_args: [str], config_args: dict, code: str = None,
-                 import_cmd: str = None, instance: object = None, store_id: str = None, state_file: str = None):
+    def __init__(self, class_name: str = None, init_args: dict = None, init_ref_type_args: [str] = None,
+                 config_args: dict = None, code: str = None, import_cmd: str = None, instance: object = None,
+                 store_id: str = None, state_file: str = None):
         super().__init__(class_name, init_args, init_ref_type_args, config_args, code, import_cmd, instance, store_id)
         self.state_file = state_file
 

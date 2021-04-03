@@ -52,8 +52,9 @@ class TrainInfo(SchemaObj):
         train_service_id = restored_dict[TRAIN_SERVICE]
         ts_wrapper_code = restored_dict[WRAPPER_CODE]
         train_service_wrapper = \
-            _recover_train_service_wrapper(dict_pers_service, file_pers_service, load_recursive, restore_root,
-                                           train_service_id, ts_wrapper_class_name, ts_wrapper_code)
+            _recover_train_service_wrapper(dict_pers_service, file_pers_service, restore_root,
+                                           train_service_id, ts_wrapper_class_name, ts_wrapper_code, load_recursive,
+                                           load_files)
 
         env = _recover_environment(dict_pers_service, file_pers_service, load_recursive, restore_root,
                                    restored_dict)
@@ -73,9 +74,9 @@ class TrainInfo(SchemaObj):
         train_service_id = restored_dict[TRAIN_SERVICE]
         self.train_service_wrapper_code = restored_dict[WRAPPER_CODE]
         self.train_service_wrapper = \
-            _recover_train_service_wrapper(dict_pers_service, file_pers_service, load_recursive, restore_root,
+            _recover_train_service_wrapper(dict_pers_service, file_pers_service, restore_root,
                                            train_service_id, self.train_service_wrapper_class_name,
-                                           self.train_service_wrapper_code)
+                                           self.train_service_wrapper_code, load_recursive, load_files)
 
         self.environment = _recover_environment(dict_pers_service, file_pers_service, load_recursive, restore_root,
                                                 restored_dict)
@@ -95,15 +96,16 @@ class TrainInfo(SchemaObj):
         return TRAIN_INFO
 
 
-def _recover_train_service_wrapper(dict_pers_service, file_pers_service, load_recursive, restore_root,
-                                   train_service_id, ts_wrapper_class_name, ts_wrapper_code):
+def _recover_train_service_wrapper(dict_pers_service, file_pers_service, restore_root, train_service_id,
+                                   ts_wrapper_class_name, ts_wrapper_code, load_recursive,
+                                   load_files):
+    wrapper_class = create_type(code=ts_wrapper_code, type_name=ts_wrapper_class_name)
     if load_recursive:
-        wrapper_class = create_type(code=ts_wrapper_code, type_name=ts_wrapper_class_name)
         train_service_wrapper = wrapper_class.load(train_service_id, file_pers_service,
-                                                   dict_pers_service, restore_root)
+                                                   dict_pers_service, restore_root, load_recursive, load_files)
         train_service_wrapper.restore_instance(file_pers_service, dict_pers_service, restore_root)
     else:
-        train_service_wrapper = StateDictRestorableObjectWrapper.load_placeholder(train_service_id)
+        train_service_wrapper = wrapper_class.load_placeholder(train_service_id)
     return train_service_wrapper
 
 

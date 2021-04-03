@@ -216,7 +216,7 @@ class ProvenanceSaveService(BaselineSaveService):
                 os.mkdir(restore_dir)
 
                 model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, restore_dir,
-                                            load_recursive=True)
+                                            load_recursive=True, load_files=True)
                 recover_info: ProvenanceRecoverInfo = model_info.recover_info
 
                 train_service = recover_info.train_info.train_service_wrapper.instance

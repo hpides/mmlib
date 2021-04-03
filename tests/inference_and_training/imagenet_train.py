@@ -52,10 +52,6 @@ class ImagenetTrainService(TrainService):
 
 class ImagenetTrainWrapper(StateDictRestorableObjectWrapper):
 
-    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
-                        dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_ref_fields=True):
-        pass
-
     def restore_instance(self, file_pers_service: AbstractFilePersistenceService,
                          dict_pers_service: AbstractDictPersistenceService, restore_root: str):
         state_dict = {}
@@ -66,17 +62,17 @@ class ImagenetTrainWrapper(StateDictRestorableObjectWrapper):
         print('---------------###########--------------')
         # NOTE: Dataloader instance is loaded in the train routine
         state_dict['optimizer'] = OptimizerWrapper.load(
-            state_objs['optimizer'], file_pers_service, dict_pers_service, restore_root)
+            state_objs['optimizer'], file_pers_service, dict_pers_service, restore_root, True, True)
         print('optimizer: {}'.format(state_dict['optimizer'].store_id))
 
         data_wrapper = RestorableObjectWrapper.load(
-            state_objs['data'], file_pers_service, dict_pers_service, restore_root)
+            state_objs['data'], file_pers_service, dict_pers_service, restore_root, True, True)
         state_dict['data'] = data_wrapper
         data_wrapper.restore_instance()
         print('data: {}'.format(state_dict['data'].store_id))
 
         dataloader = RestorableObjectWrapper.load(
-            state_objs['dataloader'], file_pers_service, dict_pers_service, restore_root)
+            state_objs['dataloader'], file_pers_service, dict_pers_service, restore_root, True, True)
         state_dict['dataloader'] = dataloader
         dataloader.restore_instance(ref_type_args={'dataset': data_wrapper.instance})
         print('dataloader: {}'.format(state_dict['dataloader'].store_id))
