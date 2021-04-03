@@ -16,10 +16,6 @@ TRAIN_INFO = 'train_info'
 
 class TrainInfo(SchemaObj):
 
-    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
-                        dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_ref_fields=True):
-        pass
-
     def __init__(self, ts_wrapper: StateDictRestorableObjectWrapper, ts_wrapper_code: str, ts_wrapper_class_name: str,
                  train_kwargs: dict, environment: Environment,
                  store_id: str = None):
@@ -50,25 +46,39 @@ class TrainInfo(SchemaObj):
         restored_dict = dict_pers_service.recover_dict(obj_id, TRAIN_INFO)
 
         store_id = restored_dict[ID]
-
-        train_service_id = restored_dict[TRAIN_SERVICE]
-
         ts_wrapper_class_name = restored_dict[WRAPPER_CLASS_NAME]
-        ts_wrapper_code = restored_dict[WRAPPER_CODE]
-        wrapper_class = create_type(code=ts_wrapper_code, type_name=ts_wrapper_class_name)
-
-        train_service_wrapper = wrapper_class.load(train_service_id, file_pers_service,
-                                                   dict_pers_service, restore_root)
-        train_service_wrapper.restore_instance(file_pers_service, dict_pers_service, restore_root)
-
         train_kwargs = restored_dict[TRAIN_KWARGS]
 
-        env_id = restored_dict[ENVIRONMENT]
-        env = Environment.load(env_id, file_pers_service, dict_pers_service, restore_root)
+        train_service_id = restored_dict[TRAIN_SERVICE]
+        ts_wrapper_code = restored_dict[WRAPPER_CODE]
+        train_service_wrapper = \
+            _recover_train_service_wrapper(dict_pers_service, file_pers_service, load_recursive, restore_root,
+                                           train_service_id, ts_wrapper_class_name, ts_wrapper_code)
+
+        env = _recover_environment(dict_pers_service, file_pers_service, load_recursive, restore_root,
+                                   restored_dict)
 
         return cls(ts_wrapper=train_service_wrapper, ts_wrapper_code=ts_wrapper_code,
                    ts_wrapper_class_name=ts_wrapper_class_name, train_kwargs=train_kwargs, environment=env,
                    store_id=store_id)
+
+    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
+                        dict_pers_service: AbstractDictPersistenceService, restore_root: str,
+                        load_recursive: bool = True, load_files: bool = True):
+        restored_dict = dict_pers_service.recover_dict(self.store_id, TRAIN_INFO)
+
+        self.train_service_wrapper_class_name = restored_dict[WRAPPER_CLASS_NAME]
+        self.train_kwargs = restored_dict[TRAIN_KWARGS]
+
+        train_service_id = restored_dict[TRAIN_SERVICE]
+        self.train_service_wrapper_code = restored_dict[WRAPPER_CODE]
+        self.train_service_wrapper = \
+            _recover_train_service_wrapper(dict_pers_service, file_pers_service, load_recursive, restore_root,
+                                           train_service_id, self.train_service_wrapper_class_name,
+                                           self.train_service_wrapper_code)
+
+        self.environment = _recover_environment(dict_pers_service, file_pers_service, load_recursive, restore_root,
+                                                restored_dict)
 
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
                       dict_pers_service: AbstractDictPersistenceService) -> int:
@@ -83,3 +93,24 @@ class TrainInfo(SchemaObj):
 
     def _representation_type(self) -> str:
         return TRAIN_INFO
+
+
+def _recover_train_service_wrapper(dict_pers_service, file_pers_service, load_recursive, restore_root,
+                                   train_service_id, ts_wrapper_class_name, ts_wrapper_code):
+    if load_recursive:
+        wrapper_class = create_type(code=ts_wrapper_code, type_name=ts_wrapper_class_name)
+        train_service_wrapper = wrapper_class.load(train_service_id, file_pers_service,
+                                                   dict_pers_service, restore_root)
+        train_service_wrapper.restore_instance(file_pers_service, dict_pers_service, restore_root)
+    else:
+        train_service_wrapper = StateDictRestorableObjectWrapper.load_placeholder(train_service_id)
+    return train_service_wrapper
+
+
+def _recover_environment(dict_pers_service, file_pers_service, load_recursive, restore_root, restored_dict):
+    env_id = restored_dict[ENVIRONMENT]
+    if load_recursive:
+        env = Environment.load(env_id, file_pers_service, dict_pers_service, restore_root)
+    else:
+        env = Environment.load_placeholder(env_id)
+    return env

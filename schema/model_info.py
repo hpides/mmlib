@@ -52,6 +52,8 @@ class ModelInfo(SchemaObj):
              load_files: bool = False):
 
         print('xxxxxxxxxxxxxxxxxLOAD MODEL INFO ')
+        print('load_recursive: {}'.format(load_recursive))
+        print('load_files: {}'.format(load_files))
 
         restored_dict = _recover_stored_dict(dict_pers_service, obj_id)
 

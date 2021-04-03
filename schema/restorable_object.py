@@ -14,7 +14,6 @@ from util.init_from_file import create_object_with_parameters
 
 STATE_DICT = 'state_dict'
 
-
 CODE_FILE = 'code_file'
 CLASS_NAME = 'class_name'
 IMPORT_CMD = 'import_cmd'
@@ -57,14 +56,8 @@ class AbstractRestorableObjectWrapper(SchemaObj, metaclass=ABCMeta):
 
 class RestorableObjectWrapper(AbstractRestorableObjectWrapper):
 
-    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
-                        dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_ref_fields=True):
-        pass
-
-
     def __init__(self, class_name: str, init_args: dict, init_ref_type_args: [str], config_args: dict, code: str = None,
                  import_cmd: str = None, instance: object = None, store_id: str = None):
-
         super().__init__(class_name, code, import_cmd=import_cmd, instance=instance, store_id=store_id)
 
         self.init_args = init_args
@@ -75,7 +68,6 @@ class RestorableObjectWrapper(AbstractRestorableObjectWrapper):
         self.instance = instance
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
-
         super()._persist_class_specific_fields(dict_representation, file_pers_service, dict_pers_service)
 
         dict_representation[INIT_ARGS] = self.init_args
@@ -88,26 +80,25 @@ class RestorableObjectWrapper(AbstractRestorableObjectWrapper):
              load_files: bool = False):
         restored_dict = dict_pers_service.recover_dict(obj_id, RESTORABLE_OBJECT)
 
-        class_name, code_file_path, config_args, import_cmd, init_args, ref_type_args = cls._restore_fields(
-            file_pers_service, restore_root, restored_dict)
+        class_name, config_args, import_cmd, init_args, ref_type_args = \
+            _restore_non_ref_fields(restored_dict)
+
+        code_file_path = _restore_code(file_pers_service, restore_root, restored_dict, load_files)
 
         restorable_obj_wrapper = cls(store_id=obj_id, code=code_file_path, class_name=class_name, import_cmd=import_cmd,
                                      init_args=init_args, init_ref_type_args=ref_type_args, config_args=config_args)
 
         return restorable_obj_wrapper
 
-    @classmethod
-    def _restore_fields(cls, file_pers_service, restore_root, restored_dict):
-        class_name = restored_dict[CLASS_NAME]
-        init_args = restored_dict[INIT_ARGS]
-        config_args = restored_dict[CONFIG_ARGS]
-        ref_type_args = restored_dict[INIT_REF_TYPE_ARGS]
-        code_file_path = None
-        if CODE_FILE in restored_dict:
-            code_file_id = restored_dict[CODE_FILE]
-            code_file_path = file_pers_service.recover_file(code_file_id, restore_root)
-        import_cmd = restored_dict[IMPORT_CMD] if IMPORT_CMD in restored_dict else None
-        return class_name, code_file_path, config_args, import_cmd, init_args, ref_type_args
+    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
+                        dict_pers_service: AbstractDictPersistenceService, restore_root: str,
+                        load_recursive: bool = True, load_files: bool = True):
+        restored_dict = dict_pers_service.recover_dict(self.store_id, RESTORABLE_OBJECT)
+
+        self.class_name, self.config_args, self.import_cmd, self.init_args, self.init_ref_type_args = \
+            _restore_non_ref_fields(restored_dict)
+
+        self.code = _restore_code(file_pers_service, restore_root, restored_dict, load_files)
 
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
                       dict_pers_service: AbstractDictPersistenceService) -> int:
@@ -149,6 +140,24 @@ class RestorableObjectWrapper(AbstractRestorableObjectWrapper):
         return RESTORABLE_OBJECT
 
 
+def _restore_non_ref_fields(restored_dict):
+    class_name = restored_dict[CLASS_NAME]
+    init_args = restored_dict[INIT_ARGS]
+    config_args = restored_dict[CONFIG_ARGS]
+    ref_type_args = restored_dict[INIT_REF_TYPE_ARGS]
+    import_cmd = restored_dict[IMPORT_CMD] if IMPORT_CMD in restored_dict else None
+    return class_name, config_args, import_cmd, init_args, ref_type_args
+
+
+def _restore_code(file_pers_service, restore_root, restored_dict, load_files):
+    code_file_path = None
+
+    if load_files and CODE_FILE in restored_dict:
+        code_file_id = restored_dict[CODE_FILE]
+        code_file_path = file_pers_service.recover_file(code_file_id, restore_root)
+    return code_file_path
+
+
 class StateDictObj(metaclass=abc.ABCMeta):
     def __init__(self):
         self.state_objs: Dict[str, RestorableObjectWrapper] = {}
@@ -179,11 +188,19 @@ class StateDictRestorableObjectWrapper(AbstractRestorableObjectWrapper):
         restored_dict = dict_pers_service.recover_dict(obj_id, RESTORABLE_OBJECT)
 
         class_name = restored_dict[CLASS_NAME]
-        code_file_path = file_pers_service.recover_file(restored_dict[CODE_FILE], restore_root)
+        code_file_path = _restore_code(file_pers_service, restore_root, restored_dict, load_files)
 
         restorable_obj_wrapper = cls(store_id=obj_id, code=code_file_path, class_name=class_name)
 
         return restorable_obj_wrapper
+
+    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
+                        dict_pers_service: AbstractDictPersistenceService, restore_root: str,
+                        load_recursive: bool = True, load_files: bool = True):
+        restored_dict = dict_pers_service.recover_dict(self.store_id, RESTORABLE_OBJECT)
+
+        self.class_name = restored_dict[CLASS_NAME]
+        self.code = _restore_code(file_pers_service, restore_root, restored_dict, load_files)
 
     @abc.abstractmethod
     def restore_instance(self, file_pers_service: AbstractFilePersistenceService,
@@ -239,18 +256,24 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
              load_files: bool = False):
         restored_dict = dict_pers_service.recover_dict(obj_id, RESTORABLE_OBJECT)
 
-        class_name, code_file_path, config_args, import_cmd, init_args, ref_type_args = \
-            RestorableObjectWrapper._restore_fields(file_pers_service, restore_root, restored_dict)
+        class_name, config_args, import_cmd, init_args, ref_type_args = _restore_non_ref_fields(restored_dict)
+        code_file_path = _restore_code(file_pers_service, restore_root, restored_dict, load_files)
 
-        state_file = None
-        if STATE_FILE in restored_dict:
-            state_file_id = restored_dict[STATE_FILE]
-            state_file = file_pers_service.recover_file(state_file_id, restore_root)
+        state_file = _recover_state_file(file_pers_service, load_files, restore_root, restored_dict)
 
         obj = cls(store_id=obj_id, class_name=class_name, code=code_file_path, config_args=config_args,
                   import_cmd=import_cmd, init_args=init_args, init_ref_type_args=ref_type_args, state_file=state_file)
 
         return obj
+
+    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
+                        dict_pers_service: AbstractDictPersistenceService, restore_root: str,
+                        load_recursive: bool = True, load_files: bool = True):
+
+        restored_dict = dict_pers_service.recover_dict(self.store_id, RESTORABLE_OBJECT)
+
+        super().load_all_fields(file_pers_service, dict_pers_service, restore_root, load_recursive, load_files)
+        self.state_file = _recover_state_file(file_pers_service, load_files, restore_root, restored_dict)
 
     def restore_instance(self, ref_type_args: dict = None):
         super(StateFileRestorableObjectWrapper, self).restore_instance(ref_type_args)
@@ -272,6 +295,14 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
         Loads the state for the internal instance from a file.
         """
         raise NotImplementedError
+
+
+def _recover_state_file(file_pers_service, load_files, restore_root, restored_dict):
+    state_file = None
+    if load_files and STATE_FILE in restored_dict:
+        state_file_id = restored_dict[STATE_FILE]
+        state_file = file_pers_service.recover_file(state_file_id, restore_root)
+    return state_file
 
 
 class TrainService(StateDictObj):
