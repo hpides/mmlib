@@ -2,6 +2,9 @@ import locale
 import platform
 import subprocess
 
+import torch
+from torch.utils.collect_env import get_pretty_env_info
+
 
 def get_python_platform_info():
     python_env_dict = {
@@ -45,3 +48,11 @@ def _run(command):
     output = raw_output.decode(enc)
     err = raw_err.decode(enc)
     return rc, output.strip(), err.strip()
+
+
+def get_pytorch_env():
+    return torch.utils.collect_env.get_env_info()
+
+
+if __name__ == '__main__':
+    get_pytorch_env()
