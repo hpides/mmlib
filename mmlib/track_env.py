@@ -1,4 +1,6 @@
+import locale
 import platform
+import subprocess
 
 
 def get_python_platform_info():
@@ -24,3 +26,22 @@ def get_python_platform_info():
     }
 
     return python_env_dict
+
+
+def get_python_libs():
+    output: str = _run('pip freeze')[1]
+    installed = output.split('\n')
+    return installed
+
+
+def _run(command):
+    # copied from torch.utils.collect_env
+    """Returns (return-code, stdout, stderr)"""
+    p = subprocess.Popen(command, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE, shell=True)
+    raw_output, raw_err = p.communicate()
+    rc = p.returncode
+    enc = locale.getpreferredencoding()
+    output = raw_output.decode(enc)
+    err = raw_err.decode(enc)
+    return rc, output.strip(), err.strip()
