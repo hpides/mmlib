@@ -26,9 +26,8 @@ RESTORABLE_OBJECT = 'restorable_object'
 
 
 class RestoredModelInfo:
-    def __init__(self, model: torch.nn.Module, inference_info=None):
+    def __init__(self, model: torch.nn.Module):
         self.model = model
-        self.inference_info = inference_info
 
 
 class AbstractRestorableObjectWrapper(SchemaObj, metaclass=ABCMeta):
