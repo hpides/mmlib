@@ -1,6 +1,14 @@
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from schema.schema_obj import SchemaObj
 
+PYTHON_VERSION = 'python_version'
+PYTORCH_VERSION = 'pytorch_version'
+PROCESSOR_INFO = 'processor_info'
+GPU_TYPES = 'gpu_types'
+PYTORCH_INFO = 'pytorch_info'
+PYTHON_PLATFORM_INFO = 'python_platform_info'
+PIP_FREEZE = 'pip_freeze'
+
 ENVIRONMENT = 'environment'
 
 
@@ -20,20 +28,28 @@ class Environment(SchemaObj):
 
     def load_all_fields(self, file_pers_service: FilePersistenceService, dict_pers_service: DictPersistenceService,
                         restore_root: str, load_recursive: bool = True, load_files: bool = True):
-        pass
+        restored_dict = dict_pers_service.recover_dict(self.store_id, ENVIRONMENT)
+
+        self.python_version = restored_dict[PYTHON_VERSION]
+        self.python_version = restored_dict[PYTORCH_VERSION]
+        self.processor_info = restored_dict[PROCESSOR_INFO]
+        self.gpu_types = restored_dict[GPU_TYPES]
+        self.pytorch_info = restored_dict[PYTORCH_INFO]
+        self.python_platform_info = restored_dict[PYTHON_PLATFORM_INFO]
+        self.pip_freeze = restored_dict[PIP_FREEZE]
 
     def size_in_bytes(self, file_pers_service: FilePersistenceService,
                       dict_pers_service: DictPersistenceService) -> int:
         raise NotImplementedError
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
-        dict_representation['python_version'] = self.python_version
-        dict_representation['pytorch_version'] = self.python_version
-        dict_representation['processor_info'] = self.processor_info
-        dict_representation['gpu_types'] = self.gpu_types
-        dict_representation['pytorch_info'] = self.pytorch_info
-        dict_representation['python_platform_info'] = self.python_platform_info
-        dict_representation['pytorch_version'] = self.pip_freeze
+        dict_representation[PYTHON_VERSION] = self.python_version
+        dict_representation[PYTORCH_VERSION] = self.python_version
+        dict_representation[PROCESSOR_INFO] = self.processor_info
+        dict_representation[GPU_TYPES] = self.gpu_types
+        dict_representation[PYTORCH_INFO] = self.pytorch_info
+        dict_representation[PYTHON_PLATFORM_INFO] = self.python_platform_info
+        dict_representation[PIP_FREEZE] = self.pip_freeze
 
     def _representation_type(self) -> str:
         return ENVIRONMENT
