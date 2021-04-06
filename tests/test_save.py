@@ -11,6 +11,7 @@ from mmlib.equal import model_equal
 from mmlib.persistence import MongoDictPersistenceService, FileSystemPersistenceService, DICT
 from mmlib.recover_validation import RecoverValidationService
 from mmlib.save import BaselineSaveService, ProvenanceSaveService
+from mmlib.track_env import track_current_environment
 from schema.environment import Environment
 from schema.model_info import RECOVER_INFO_ID, MODEL_INFO
 from schema.recover_info import RECOVER_INFO
@@ -155,7 +156,7 @@ class TestSave(unittest.TestCase):
         prov_train_wrapper_code = './inference_and_training/imagenet_train.py'
         prov_train_wrapper_class_name = 'ImagenetTrainWrapper'
         raw_data = './data/reduced-custom-coco-data'
-        prov_env = Environment({})
+        prov_env = track_current_environment()
         train_kwargs = {'number_batches': 2}
 
         # TODO specify correct env, atm env is empty

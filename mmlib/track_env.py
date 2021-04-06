@@ -5,6 +5,8 @@ import subprocess
 import torch
 from torch.utils.collect_env import get_pretty_env_info
 
+from schema.environment import Environment
+
 
 def get_python_platform_info():
     python_env_dict = {
@@ -52,6 +54,10 @@ def _run(command):
 
 def get_pytorch_env():
     return torch.utils.collect_env.get_env_info()
+
+
+def track_current_environment() -> Environment:
+    raise NotImplementedError
 
 
 if __name__ == '__main__':
