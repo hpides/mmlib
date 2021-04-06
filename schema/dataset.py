@@ -1,6 +1,6 @@
 import os
 
-from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
+from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from schema.schema_obj import SchemaObj
 from util.zip import zip_path, unzip
 
@@ -21,14 +21,14 @@ class Dataset(SchemaObj):
 
         dict_representation[RAW_DATA] = raw_data_id
 
-    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
-                        dict_pers_service: AbstractDictPersistenceService, restore_root: str,
+    def load_all_fields(self, file_pers_service: FilePersistenceService,
+                        dict_pers_service: DictPersistenceService, restore_root: str,
                         load_recursive: bool = True, load_files: bool = True):
         restored_dict = dict_pers_service.recover_dict(self.store_id, DATASET)
         self.raw_data = _recover_data(file_pers_service, load_files, restore_root, restored_dict)
 
-    def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
-                      dict_pers_service: AbstractDictPersistenceService) -> int:
+    def size_in_bytes(self, file_pers_service: FilePersistenceService,
+                      dict_pers_service: DictPersistenceService) -> int:
         return dict_pers_service.dict_size(self.store_id, DATASET)
 
     def _representation_type(self) -> str:

@@ -1,4 +1,4 @@
-from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
+from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from schema.recover_info import AbstractRecoverInfo, FullModelRecoverInfo, ProvenanceRecoverInfo
 from schema.schema_obj import SchemaObj
 from schema.store_type import ModelStoreType
@@ -35,8 +35,8 @@ class ModelInfo(SchemaObj):
         if self.derived_from:
             dict_representation[DERIVED_FROM] = self.derived_from
 
-    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
-                        dict_pers_service: AbstractDictPersistenceService, restore_root: str,
+    def load_all_fields(self, file_pers_service: FilePersistenceService,
+                        dict_pers_service: DictPersistenceService, restore_root: str,
                         load_recursive: bool = False, load_files: bool = False):
 
         restored_dict = _recover_stored_dict(dict_pers_service, self.store_id)
@@ -53,8 +53,8 @@ class ModelInfo(SchemaObj):
         if not self.derived_from:
             self.derived_from = _recover_derived_from(restored_dict)
 
-    def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
-                      dict_pers_service: AbstractDictPersistenceService) -> int:
+    def size_in_bytes(self, file_pers_service: FilePersistenceService,
+                      dict_pers_service: DictPersistenceService) -> int:
         result = 0
 
         # size of the dict

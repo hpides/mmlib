@@ -4,7 +4,7 @@ import tempfile
 
 import torch
 
-from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
+from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from mmlib.save_info import ModelSaveInfo
 from schema.dataset import Dataset
 from schema.model_info import ModelInfo, MODEL_INFO
@@ -60,11 +60,11 @@ class BaselineSaveService(AbstractSaveService):
     """A Service that offers functionality to store PyTorch models by making use of a persistence service.
          The metadata is stored in JSON like dictionaries, files and weights are stored as files."""
 
-    def __init__(self, file_pers_service: AbstractFilePersistenceService,
-                 dict_pers_service: AbstractDictPersistenceService):
+    def __init__(self, file_pers_service: FilePersistenceService,
+                 dict_pers_service: DictPersistenceService):
         """
-        :param file_pers_service: An instance of AbstractFilePersistenceService that is used to store files.
-        :param dict_pers_service: An instance of AbstractDictPersistenceService that is used to store metadata as dicts.
+        :param file_pers_service: An instance of FilePersistenceService that is used to store files.
+        :param dict_pers_service: An instance of DictPersistenceService that is used to store metadata as dicts.
         """
         self._file_pers_service = file_pers_service
         self._dict_pers_service = dict_pers_service
@@ -166,12 +166,12 @@ class BaselineSaveService(AbstractSaveService):
 
 class ProvenanceSaveService(BaselineSaveService):
 
-    def __init__(self, file_pers_service: AbstractFilePersistenceService,
-                 dict_pers_service: AbstractDictPersistenceService):
+    def __init__(self, file_pers_service: FilePersistenceService,
+                 dict_pers_service: DictPersistenceService):
         # baseline_save_service: BaselineSaveService):
         """
-        :param file_pers_service: An instance of AbstractFilePersistenceService that is used to store files.
-        :param dict_pers_service: An instance of AbstractDictPersistenceService that is used to store metadata as dicts.
+        :param file_pers_service: An instance of FilePersistenceService that is used to store files.
+        :param dict_pers_service: An instance of DictPersistenceService that is used to store metadata as dicts.
         # :param baseline_save_service: An instance of BaselineSaveService that is used to store "full models"
         """
         super().__init__(file_pers_service, dict_pers_service)

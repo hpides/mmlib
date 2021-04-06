@@ -1,4 +1,4 @@
-from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
+from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from schema.environment import Environment
 from schema.restorable_object import StateDictRestorableObjectWrapper
 from schema.schema_obj import SchemaObj
@@ -38,8 +38,8 @@ class TrainInfo(SchemaObj):
         dict_representation[TRAIN_KWARGS] = self.train_kwargs
         dict_representation[ENVIRONMENT] = env_id
 
-    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
-                        dict_pers_service: AbstractDictPersistenceService, restore_root: str,
+    def load_all_fields(self, file_pers_service: FilePersistenceService,
+                        dict_pers_service: DictPersistenceService, restore_root: str,
                         load_recursive: bool = True, load_files: bool = True):
         restored_dict = dict_pers_service.recover_dict(self.store_id, TRAIN_INFO)
 
@@ -56,8 +56,8 @@ class TrainInfo(SchemaObj):
         self.environment = _recover_environment(dict_pers_service, file_pers_service, load_recursive, restore_root,
                                                 restored_dict)
 
-    def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
-                      dict_pers_service: AbstractDictPersistenceService) -> int:
+    def size_in_bytes(self, file_pers_service: FilePersistenceService,
+                      dict_pers_service: DictPersistenceService) -> int:
         result = 0
 
         result += dict_pers_service.dict_size(self.store_id, TRAIN_INFO)

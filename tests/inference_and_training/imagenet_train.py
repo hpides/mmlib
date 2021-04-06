@@ -1,7 +1,7 @@
 import torch
 
 from mmlib.deterministic import set_deterministic
-from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
+from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from schema.restorable_object import TrainService, OptimizerWrapper, StateDictRestorableObjectWrapper, \
     RESTORABLE_OBJECT, STATE_DICT, RestorableObjectWrapper
 from util.init_from_file import create_object
@@ -52,8 +52,8 @@ class ImagenetTrainService(TrainService):
 
 class ImagenetTrainWrapper(StateDictRestorableObjectWrapper):
 
-    def restore_instance(self, file_pers_service: AbstractFilePersistenceService,
-                         dict_pers_service: AbstractDictPersistenceService, restore_root: str):
+    def restore_instance(self, file_pers_service: FilePersistenceService,
+                         dict_pers_service: DictPersistenceService, restore_root: str):
         state_dict = {}
 
         restored_dict = dict_pers_service.recover_dict(self.store_id, RESTORABLE_OBJECT)

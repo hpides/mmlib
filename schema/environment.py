@@ -1,4 +1,4 @@
-from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
+from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from schema.schema_obj import SchemaObj
 
 ENVIRONMENT_DICT = 'environment_dict'
@@ -8,8 +8,8 @@ ENVIRONMENT = 'environment'
 
 class Environment(SchemaObj):
 
-    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
-                        dict_pers_service: AbstractDictPersistenceService, restore_root: str,
+    def load_all_fields(self, file_pers_service: FilePersistenceService,
+                        dict_pers_service: DictPersistenceService, restore_root: str,
                         load_recursive: bool = True, load_files: bool = True):
         # TODO
         pass
@@ -24,8 +24,8 @@ class Environment(SchemaObj):
         dict_representation[ENVIRONMENT_DICT] = environment_data_id
 
     @classmethod
-    def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
+    def load(cls, obj_id: str, file_pers_service: FilePersistenceService,
+             dict_pers_service: DictPersistenceService, restore_root: str, load_recursive: bool = False,
              load_files: bool = False):
         restored_dict = dict_pers_service.recover_dict(obj_id, ENVIRONMENT)
 
@@ -33,8 +33,8 @@ class Environment(SchemaObj):
 
         return cls(store_id=obj_id, environment_data=env_dict)
 
-    def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
-                      dict_pers_service: AbstractDictPersistenceService) -> int:
+    def size_in_bytes(self, file_pers_service: FilePersistenceService,
+                      dict_pers_service: DictPersistenceService) -> int:
         restored_dict = dict_pers_service.recover_dict(self.store_id, ENVIRONMENT)
         env_size = dict_pers_service.dict_size(restored_dict[ENVIRONMENT_DICT], ENVIRONMENT_DICT)
 

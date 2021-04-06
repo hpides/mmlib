@@ -1,7 +1,7 @@
 import abc
 
 from mmlib.constants import ID
-from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
+from mmlib.persistence import FilePersistenceService, DictPersistenceService
 
 
 class SchemaObj(metaclass=abc.ABCMeta):
@@ -18,14 +18,14 @@ class SchemaObj(metaclass=abc.ABCMeta):
         return cls(store_id=obj_id)
 
     @classmethod
-    def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
+    def load(cls, obj_id: str, file_pers_service: FilePersistenceService,
+             dict_pers_service: DictPersistenceService, restore_root: str, load_recursive: bool = False,
              load_files: bool = False):
         """
         Loads the schema object from database/disk.
         :param obj_id: The identifier for the SchemaObj in the database/disk.
-        :param file_pers_service: An instance of AbstractFilePersistenceService that is used to store files.
-        :param dict_pers_service: An instance of AbstractDictPersistenceService that is used to store metadata as dicts.
+        :param file_pers_service: An instance of FilePersistenceService that is used to store files.
+        :param dict_pers_service: An instance of DictPersistenceService that is used to store metadata as dicts.
         :param restore_root: The path where restored files are stored to.
         :param load_recursive: If set to True all referenced objects are loaded fully,
         if set to False (default) only the references are restored
@@ -37,12 +37,12 @@ class SchemaObj(metaclass=abc.ABCMeta):
 
         return instance
 
-    def persist(self, file_pers_service: AbstractFilePersistenceService,
-                dict_pers_service: AbstractDictPersistenceService) -> str:
+    def persist(self, file_pers_service: FilePersistenceService,
+                dict_pers_service: DictPersistenceService) -> str:
         """
         Persists the schema object.
-        :param file_pers_service: An instance of AbstractFilePersistenceService that is used to store files.
-        :param dict_pers_service: An instance of AbstractDictPersistenceService that is used to store metadata as dicts.
+        :param file_pers_service: An instance of FilePersistenceService that is used to store files.
+        :param dict_pers_service: An instance of DictPersistenceService that is used to store metadata as dicts.
         """
         if self.store_id and dict_pers_service.id_exists(self.store_id, self._representation_type()):
             # if the id already exists, we do not have to persist again
@@ -62,13 +62,13 @@ class SchemaObj(metaclass=abc.ABCMeta):
         return self.store_id
 
     @abc.abstractmethod
-    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
-                        dict_pers_service: AbstractDictPersistenceService, restore_root: str,
+    def load_all_fields(self, file_pers_service: FilePersistenceService,
+                        dict_pers_service: DictPersistenceService, restore_root: str,
                         load_recursive: bool = True, load_files: bool = True):
         """
         Loads all fields that have not been loaded so far.
-        :param file_pers_service: An instance of AbstractFilePersistenceService that is used to store files.
-        :param dict_pers_service: An instance of AbstractDictPersistenceService that is used to store metadata as dicts.
+        :param file_pers_service: An instance of FilePersistenceService that is used to store files.
+        :param dict_pers_service: An instance of DictPersistenceService that is used to store metadata as dicts.
         :param restore_root: The path where restored files are stored to.
         :param load_recursive: If set to True all referenced objects are loaded fully,
         if set to False (default) only the references are restored
@@ -77,12 +77,12 @@ class SchemaObj(metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
-                      dict_pers_service: AbstractDictPersistenceService) -> int:
+    def size_in_bytes(self, file_pers_service: FilePersistenceService,
+                      dict_pers_service: DictPersistenceService) -> int:
         """
         Calculates and returns the size of the SchemaObj in bytes.
-        :param file_pers_service: An instance of AbstractFilePersistenceService that is used to store and load files.
-        :param dict_pers_service: An instance of AbstractDictPersistenceService that is used to store and load metadata
+        :param file_pers_service: An instance of FilePersistenceService that is used to store and load files.
+        :param dict_pers_service: An instance of DictPersistenceService that is used to store and load metadata
          as dicts.
         :return: The size in bytes.
         """
