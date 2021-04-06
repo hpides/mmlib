@@ -7,27 +7,46 @@ from torch.utils.collect_env import get_pretty_env_info
 
 from schema.environment import Environment
 
+ARCHITECTURE = 'architecture'
+MACHINE = 'machine'
+NODE = 'node'
+PLATFORM = 'platform'
+PROCESSOR = 'processor'
+PYTHON_BUILD = 'python_build'
+PYTHON_COMPILER = 'python_compiler'
+PYTHON_BRANCH = 'python_branch'
+PYTHON_IMPLEMENTATION = 'python_implementation'
+PYTHON_REVISION = 'python revision'
+PYTHON_VERSION = 'python_version'
+PYTHON_VERSION_TUPLE = 'python_version_tuple'
+RELEASE = 'release'
+SYSTEM = 'system'
+VERSION = 'version'
+UNAME = 'uname'
+MAC_VER = 'mac_ver'
+LIBC_VER = 'libc_ver'
+
 
 def get_python_platform_info():
     python_env_dict = {
-        'architecture': platform.architecture(),
-        'machine': platform.machine(),
-        'node': platform.node(),
-        'platform': platform.platform(),
-        'processor': platform.processor(),
-        'python_build': platform.python_build(),
-        'python_compiler': platform.python_compiler(),
-        'python_branch': platform.python_branch(),
-        'python_implementation': platform.python_implementation(),
-        'python revision': platform.python_revision(),
-        'python_version': platform.python_version(),
-        'python_version_tuple': platform.python_version_tuple(),
-        'release': platform.release(),
-        'system': platform.system(),
-        'version': platform.version(),
-        'uname': platform.uname(),
-        'mac_ver': platform.mac_ver(),
-        'libc_ver': platform.libc_ver()
+        ARCHITECTURE: platform.architecture(),
+        MACHINE: platform.machine(),
+        NODE: platform.node(),
+        PLATFORM: platform.platform(),
+        PROCESSOR: platform.processor(),
+        PYTHON_BUILD: platform.python_build(),
+        PYTHON_COMPILER: platform.python_compiler(),
+        PYTHON_BRANCH: platform.python_branch(),
+        PYTHON_IMPLEMENTATION: platform.python_implementation(),
+        PYTHON_REVISION: platform.python_revision(),
+        PYTHON_VERSION: platform.python_version(),
+        PYTHON_VERSION_TUPLE: platform.python_version_tuple(),
+        RELEASE: platform.release(),
+        SYSTEM: platform.system(),
+        VERSION: platform.version(),
+        UNAME: platform.uname(),
+        MAC_VER: platform.mac_ver(),
+        LIBC_VER: platform.libc_ver()
     }
 
     return python_env_dict
@@ -57,7 +76,17 @@ def get_pytorch_env():
 
 
 def track_current_environment() -> Environment:
-    raise NotImplementedError
+    pytorch_info = get_pytorch_env()
+    python_platform_info = get_python_platform_info()
+    python_version = pytorch_info.python_version
+    pytorch_version = pytorch_info.torch_version
+    processor_info = python_platform_info[PROCESSOR]
+    gpu_types = pytorch_info.nvidia_gpu_models
+    pip_freeze = get_python_libs()
+
+    return Environment(python_version=python_version, pytorch_version=pytorch_version, processor_info=processor_info,
+                       gpu_types=gpu_types, pytorch_info=pytorch_info, python_platform_info=python_platform_info,
+                       pip_freeze=pip_freeze)
 
 
 if __name__ == '__main__':
