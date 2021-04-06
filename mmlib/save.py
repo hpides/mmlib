@@ -4,10 +4,9 @@ import tempfile
 
 import torch
 
-from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
+from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from mmlib.save_info import ModelSaveInfo
 from schema.dataset import Dataset
-from schema.inference_info import InferenceInfo
 from schema.model_info import ModelInfo, MODEL_INFO
 from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo
 from schema.restorable_object import RestoredModelInfo
@@ -61,11 +60,11 @@ class BaselineSaveService(AbstractSaveService):
     """A Service that offers functionality to store PyTorch models by making use of a persistence service.
          The metadata is stored in JSON like dictionaries, files and weights are stored as files."""
 
-    def __init__(self, file_pers_service: AbstractFilePersistenceService,
-                 dict_pers_service: AbstractDictPersistenceService):
+    def __init__(self, file_pers_service: FilePersistenceService,
+                 dict_pers_service: DictPersistenceService):
         """
-        :param file_pers_service: An instance of AbstractFilePersistenceService that is used to store files.
-        :param dict_pers_service: An instance of AbstractDictPersistenceService that is used to store metadata as dicts.
+        :param file_pers_service: An instance of FilePersistenceService that is used to store files.
+        :param dict_pers_service: An instance of DictPersistenceService that is used to store metadata as dicts.
         """
         self._file_pers_service = file_pers_service
         self._dict_pers_service = dict_pers_service
@@ -89,11 +88,11 @@ class BaselineSaveService(AbstractSaveService):
             # recover model form info
             recover_info: FullModelRecoverInfo = model_info.recover_info
 
-            model = create_object(recover_info.model_code_file_path, recover_info.model_class_name)
-            s_dict = self._recover_pickled_weights(recover_info.weights_file_path)
+            model = create_object(recover_info.model_code, recover_info.model_class_name)
+            s_dict = self._recover_pickled_weights(recover_info.weights)
             model.load_state_dict(s_dict)
 
-            restored_model_info = RestoredModelInfo(model=model, inference_info=model_info.inference_info)
+            restored_model_info = RestoredModelInfo(model=model)
 
         return restored_model_info
 
@@ -110,7 +109,6 @@ class BaselineSaveService(AbstractSaveService):
         assert True, 'nothing checked so far'
 
     def _save_full_model(self, model_save_info: ModelSaveInfo) -> str:
-
         with tempfile.TemporaryDirectory() as tmp_path:
             weights_path = self._pickle_weights(model_save_info.model, tmp_path)
 
@@ -128,23 +126,16 @@ class BaselineSaveService(AbstractSaveService):
                 base_recover_info.load_all_fields(self._file_pers_service, self._dict_pers_service, restore_dir,
                                                   load_files=True)
 
-                model_save_info.code = base_recover_info.model_code_file_path
+                model_save_info.code = base_recover_info.model_code
                 model_save_info.class_name = base_recover_info.model_class_name
 
             # if the model to store is not derived from another model code and class name have to me defined
             recover_info = FullModelRecoverInfo(weights_file_path=weights_path,
-                                                model_code_file_path=model_save_info.code,
+                                                model_code=model_save_info.code,
                                                 model_class_name=model_save_info.class_name)
 
-            inference_info = None
-            if model_save_info.inference_info:
-                inference_info = InferenceInfo(data_wrapper=model_save_info.inference_info.data_wrapper,
-                                               dataloader=model_save_info.inference_info.dataloader,
-                                               pre_processor=model_save_info.inference_info.pre_processor,
-                                               environment=model_save_info.inference_info.environment)
-
             model_info = ModelInfo(store_type=ModelStoreType.PICKLED_WEIGHTS, recover_info=recover_info,
-                                   derived_from_id=derived_from, inference_info=inference_info)
+                                   derived_from_id=derived_from)
 
             model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
 
@@ -175,12 +166,12 @@ class BaselineSaveService(AbstractSaveService):
 
 class ProvenanceSaveService(BaselineSaveService):
 
-    def __init__(self, file_pers_service: AbstractFilePersistenceService,
-                 dict_pers_service: AbstractDictPersistenceService):
+    def __init__(self, file_pers_service: FilePersistenceService,
+                 dict_pers_service: DictPersistenceService):
         # baseline_save_service: BaselineSaveService):
         """
-        :param file_pers_service: An instance of AbstractFilePersistenceService that is used to store files.
-        :param dict_pers_service: An instance of AbstractDictPersistenceService that is used to store metadata as dicts.
+        :param file_pers_service: An instance of FilePersistenceService that is used to store files.
+        :param dict_pers_service: An instance of DictPersistenceService that is used to store metadata as dicts.
         # :param baseline_save_service: An instance of BaselineSaveService that is used to store "full models"
         """
         super().__init__(file_pers_service, dict_pers_service)
@@ -255,18 +246,15 @@ class ProvenanceSaveService(BaselineSaveService):
 
         prov_recover_info = ProvenanceRecoverInfo(
             dataset=dataset,
-            model_code_file_path=model_save_info.prov_rec_info.model_code,
+            model_code=model_save_info.prov_rec_info.model_code,
             model_class_name=model_save_info.prov_rec_info.model_class_name,
             train_info=train_info
         )
 
         derived_from = model_save_info.base_model if model_save_info.base_model else None
 
-        # TODO implement inference info
-        inference_info = None
-
         model_info = ModelInfo(store_type=ModelStoreType.PROVENANCE, recover_info=prov_recover_info,
-                               derived_from_id=derived_from, inference_info=inference_info)
+                               derived_from_id=derived_from)
 
         model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
 

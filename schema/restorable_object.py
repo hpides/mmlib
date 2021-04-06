@@ -8,7 +8,7 @@ from typing import Dict
 import torch
 
 from mmlib.constants import MMLIB_CONFIG, VALUES, ID
-from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
+from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from schema.schema_obj import SchemaObj
 from util.init_from_file import create_object_with_parameters
 
@@ -26,9 +26,8 @@ RESTORABLE_OBJECT = 'restorable_object'
 
 
 class RestoredModelInfo:
-    def __init__(self, model: torch.nn.Module, inference_info=None):
+    def __init__(self, model: torch.nn.Module):
         self.model = model
-        self.inference_info = inference_info
 
 
 class AbstractRestorableObjectWrapper(SchemaObj, metaclass=ABCMeta):
@@ -75,8 +74,8 @@ class RestorableObjectWrapper(AbstractRestorableObjectWrapper):
         dict_representation[CONFIG_ARGS] = self.config_args
         dict_representation[INIT_REF_TYPE_ARGS] = self.init_ref_type_args
 
-    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
-                        dict_pers_service: AbstractDictPersistenceService, restore_root: str,
+    def load_all_fields(self, file_pers_service: FilePersistenceService,
+                        dict_pers_service: DictPersistenceService, restore_root: str,
                         load_recursive: bool = True, load_files: bool = True):
         restored_dict = dict_pers_service.recover_dict(self.store_id, RESTORABLE_OBJECT)
 
@@ -85,8 +84,8 @@ class RestorableObjectWrapper(AbstractRestorableObjectWrapper):
 
         self.code = _restore_code(file_pers_service, restore_root, restored_dict, load_files)
 
-    def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
-                      dict_pers_service: AbstractDictPersistenceService) -> int:
+    def size_in_bytes(self, file_pers_service: FilePersistenceService,
+                      dict_pers_service: DictPersistenceService) -> int:
         result = 0
 
         # size of the dict
@@ -167,8 +166,8 @@ class StateDictRestorableObjectWrapper(AbstractRestorableObjectWrapper):
         dict_representation[STATE_DICT] = state_dict_refs
 
     @classmethod
-    def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
+    def load(cls, obj_id: str, file_pers_service: FilePersistenceService,
+             dict_pers_service: DictPersistenceService, restore_root: str, load_recursive: bool = False,
              load_files: bool = False):
         restored_dict = dict_pers_service.recover_dict(obj_id, RESTORABLE_OBJECT)
 
@@ -179,8 +178,8 @@ class StateDictRestorableObjectWrapper(AbstractRestorableObjectWrapper):
 
         return restorable_obj_wrapper
 
-    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
-                        dict_pers_service: AbstractDictPersistenceService, restore_root: str,
+    def load_all_fields(self, file_pers_service: FilePersistenceService,
+                        dict_pers_service: DictPersistenceService, restore_root: str,
                         load_recursive: bool = True, load_files: bool = True):
         restored_dict = dict_pers_service.recover_dict(self.store_id, RESTORABLE_OBJECT)
 
@@ -188,12 +187,12 @@ class StateDictRestorableObjectWrapper(AbstractRestorableObjectWrapper):
         self.code = _restore_code(file_pers_service, restore_root, restored_dict, load_files)
 
     @abc.abstractmethod
-    def restore_instance(self, file_pers_service: AbstractFilePersistenceService,
-                         dict_pers_service: AbstractDictPersistenceService, restore_root: str):
+    def restore_instance(self, file_pers_service: FilePersistenceService,
+                         dict_pers_service: DictPersistenceService, restore_root: str):
         raise NotImplementedError
 
-    def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
-                      dict_pers_service: AbstractDictPersistenceService) -> int:
+    def size_in_bytes(self, file_pers_service: FilePersistenceService,
+                      dict_pers_service: DictPersistenceService) -> int:
         # TODO implement
         return 0
 
@@ -208,8 +207,8 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
         super().__init__(class_name, init_args, init_ref_type_args, config_args, code, import_cmd, instance, store_id)
         self.state_file = state_file
 
-    def persist(self, file_pers_service: AbstractFilePersistenceService,
-                dict_pers_service: AbstractDictPersistenceService) -> str:
+    def persist(self, file_pers_service: FilePersistenceService,
+                dict_pers_service: DictPersistenceService) -> str:
 
         # the state of the instance has probably changed -> need to store new version with new id
         self.store_id = dict_pers_service.generate_id()
@@ -237,8 +236,8 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
             dict_representation[STATE_FILE] = state_file_id
 
     @classmethod
-    def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
+    def load(cls, obj_id: str, file_pers_service: FilePersistenceService,
+             dict_pers_service: DictPersistenceService, restore_root: str, load_recursive: bool = False,
              load_files: bool = False):
         restored_dict = dict_pers_service.recover_dict(obj_id, RESTORABLE_OBJECT)
 
@@ -252,8 +251,8 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
 
         return obj
 
-    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
-                        dict_pers_service: AbstractDictPersistenceService, restore_root: str,
+    def load_all_fields(self, file_pers_service: FilePersistenceService,
+                        dict_pers_service: DictPersistenceService, restore_root: str,
                         load_recursive: bool = True, load_files: bool = True):
 
         restored_dict = dict_pers_service.recover_dict(self.store_id, RESTORABLE_OBJECT)

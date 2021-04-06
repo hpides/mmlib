@@ -3,32 +3,32 @@ import configparser
 import os
 
 from mmlib.constants import MMLIB_CONFIG, CURRENT_DATA_ROOT, VALUES, ID
-from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
+from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from schema.dataset import Dataset
 from schema.schema_obj import SchemaObj
 from schema.train_info import TrainInfo
 from util.helper import copy_all_data, clean
 
-TRAIN_INFO = 'train_info'
-
-DATASET = 'dataset'
+RECOVER_INFO = 'recover_info'
+MODEL_CODE = 'model_code'
+MODEL_CLASS_NAME = 'model_class_name'
 
 
 class AbstractRecoverInfo(SchemaObj, metaclass=abc.ABCMeta):
 
     def __init__(self, model_code: str, model_class_name: str, store_id: str = None):
         super().__init__(store_id)
-        self.model_code_file_path = model_code
+        self.model_code = model_code
         self.model_class_name = model_class_name
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
-        model_code_id = file_pers_service.save_file(self.model_code_file_path)
+        model_code_id = file_pers_service.save_file(self.model_code)
 
         dict_representation[MODEL_CODE] = model_code_id
         dict_representation[MODEL_CLASS_NAME] = self.model_class_name
 
-    def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
-                      dict_pers_service: AbstractDictPersistenceService) -> int:
+    def size_in_bytes(self, file_pers_service: FilePersistenceService,
+                      dict_pers_service: DictPersistenceService) -> int:
         result = 0
 
         # size of the dict
@@ -52,43 +52,39 @@ class AbstractRecoverInfo(SchemaObj, metaclass=abc.ABCMeta):
 
 
 WEIGHTS = 'weights'
-MODEL_CODE = 'model_code'
-MODEL_CLASS_NAME = 'model_class_name'
-
-RECOVER_INFO = 'recover_info'
 
 
 class FullModelRecoverInfo(AbstractRecoverInfo):
 
-    def __init__(self, weights_file_path: str = None, model_code_file_path=None, model_class_name: str = None,
+    def __init__(self, weights_file_path: str = None, model_code=None, model_class_name: str = None,
                  store_id: str = None):
-        super().__init__(model_code_file_path, model_class_name, store_id)
-        self.weights_file_path = weights_file_path
+        super().__init__(model_code, model_class_name, store_id)
+        self.weights = weights_file_path
 
     @classmethod
-    def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
+    def load(cls, obj_id: str, file_pers_service: FilePersistenceService,
+             dict_pers_service: DictPersistenceService, restore_root: str, load_recursive: bool = False,
              load_files: bool = False):
         restored_dict = dict_pers_service.recover_dict(obj_id, RECOVER_INFO)
 
         store_id = restored_dict[ID]
         model_class_name = restored_dict[MODEL_CLASS_NAME]
 
-        model_code_file_path = _recover_model_code(file_pers_service, load_files, restore_root, restored_dict)
+        model_code = _recover_model_code(file_pers_service, load_files, restore_root, restored_dict)
         weights_file_path = _recover_weights(file_pers_service, load_files, restore_root, restored_dict)
 
-        return cls(weights_file_path=weights_file_path, model_code_file_path=model_code_file_path,
+        return cls(weights_file_path=weights_file_path, model_code=model_code,
                    model_class_name=model_class_name, store_id=store_id)
 
-    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
-                        dict_pers_service: AbstractDictPersistenceService, restore_root: str,
+    def load_all_fields(self, file_pers_service: FilePersistenceService,
+                        dict_pers_service: DictPersistenceService, restore_root: str,
                         load_recursive: bool = True, load_files: bool = True):
         restored_dict = dict_pers_service.recover_dict(self.store_id, RECOVER_INFO)
 
         self.model_class_name = restored_dict[MODEL_CLASS_NAME]
 
-        self.model_code_file_path = _recover_model_code(file_pers_service, load_files, restore_root, restored_dict)
-        self.weights_file_path = _recover_weights(file_pers_service, load_files, restore_root, restored_dict)
+        self.model_code = _recover_model_code(file_pers_service, load_files, restore_root, restored_dict)
+        self.weights = _recover_weights(file_pers_service, load_files, restore_root, restored_dict)
 
     def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
         result = 0
@@ -99,7 +95,7 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
         super()._persist_class_specific_fields(dict_representation, file_pers_service, dict_pers_service)
-        weights_id = file_pers_service.save_file(self.weights_file_path)
+        weights_id = file_pers_service.save_file(self.weights)
 
         dict_representation[WEIGHTS] = weights_id
 
@@ -115,11 +111,15 @@ def _recover_weights(file_pers_service, load_files, restore_root, restored_dict)
     return weights_file_path
 
 
+DATASET = 'dataset'
+TRAIN_INFO = 'train_info'
+
+
 class ProvenanceRecoverInfo(AbstractRecoverInfo):
 
-    def __init__(self, dataset: Dataset = None, model_code_file_path=None, model_class_name: str = None,
+    def __init__(self, dataset: Dataset = None, model_code=None, model_class_name: str = None,
                  train_info: TrainInfo = None, store_id: str = None):
-        super().__init__(model_code_file_path, model_class_name, store_id)
+        super().__init__(model_code, model_class_name, store_id)
         self.dataset = dataset
         self.train_info = train_info
 
@@ -142,15 +142,15 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
         dict_representation[DATASET] = dataset_id
         dict_representation[TRAIN_INFO] = train_info_id
 
-    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
-                        dict_pers_service: AbstractDictPersistenceService, restore_root: str,
+    def load_all_fields(self, file_pers_service: FilePersistenceService,
+                        dict_pers_service: DictPersistenceService, restore_root: str,
                         load_recursive: bool = True, load_files: bool = True):
         restored_dict = dict_pers_service.recover_dict(self.store_id, RECOVER_INFO)
 
         dataset_id = restored_dict[DATASET]
         self.dataset = _recover_data(dataset_id, dict_pers_service, file_pers_service, load_files, load_recursive,
                                      restore_root)
-        self.model_code_file_path = _recover_model_code(file_pers_service, load_files, restore_root, restored_dict)
+        self.model_code = _recover_model_code(file_pers_service, load_files, restore_root, restored_dict)
         self.model_class_name = restored_dict[MODEL_CLASS_NAME]
 
         self.train_info = _restore_train_info(
@@ -158,7 +158,6 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
 
 
 def _data_dst_path():
-    # TODO magic strings
     config_file = os.getenv(MMLIB_CONFIG)
     config = configparser.ConfigParser()
     config.read(config_file)
@@ -179,11 +178,11 @@ def _recover_data(dataset_id, dict_pers_service, file_pers_service, load_files, 
 
 
 def _recover_model_code(file_pers_service, load_files, restore_root, restored_dict):
-    model_code_file_path = None
+    model_code = None
     if load_files:
         model_code_id = restored_dict[MODEL_CODE]
-        model_code_file_path = file_pers_service.recover_file(model_code_id, restore_root)
-    return model_code_file_path
+        model_code = file_pers_service.recover_file(model_code_id, restore_root)
+    return model_code
 
 
 def _restore_train_info(dict_pers_service, file_pers_service, restore_root, restored_dict, load_recursive, load_files):

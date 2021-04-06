@@ -1,7 +1,7 @@
 import warnings
 
 from mmlib.constants import ID
-from mmlib.persistence import AbstractDictPersistenceService
+from mmlib.persistence import DictPersistenceService
 from util.hash import state_dict_hash, inference_hash
 
 WEIGHTS_HASH = 'weights_hash'
@@ -38,7 +38,7 @@ class RecoverVal:
 
 class RecoverValidationService:
 
-    def __init__(self, dict_save_service: AbstractDictPersistenceService):
+    def __init__(self, dict_save_service: DictPersistenceService):
         self.dict_save_service = dict_save_service
 
     def save_recover_val_info(self, model, model_id, dummy_input_shape):

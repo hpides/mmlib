@@ -8,7 +8,7 @@ from util.helper import find_file
 from util.mongo import MongoService
 
 
-class AbstractPersistenceService(metaclass=abc.ABCMeta):
+class PersistenceService(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def generate_id(self) -> str:
@@ -17,16 +17,8 @@ class AbstractPersistenceService(metaclass=abc.ABCMeta):
         :return: The generated id.
         """
 
-    @abc.abstractmethod
-    def is_valid_id(self, pers_id: str) -> bool:
-        """
-        Checks if the given id is a valid id for the PersistenceService.
-        :param pers_id: The type of the collection to get the ids for.
-        :return: True if the pers_id is valid.
-        """
 
-
-class AbstractDictPersistenceService(AbstractPersistenceService, metaclass=abc.ABCMeta):
+class DictPersistenceService(PersistenceService, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def save_dict(self, insert_dict: dict, represent_type: str) -> str:
@@ -73,7 +65,7 @@ class AbstractDictPersistenceService(AbstractPersistenceService, metaclass=abc.A
         """
 
 
-class AbstractFilePersistenceService(AbstractPersistenceService, metaclass=abc.ABCMeta):
+class FilePersistenceService(PersistenceService, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def save_file(self, file_path: str) -> str:
@@ -105,7 +97,7 @@ FILE = 'file-'
 MMLIB = 'mmlib'
 
 
-class FileSystemPersistenceService(AbstractFilePersistenceService):
+class FileSystemPersistenceService(FilePersistenceService):
 
     def __init__(self, base_path):
         self._base_path = os.path.abspath(base_path)
@@ -141,14 +133,6 @@ class FileSystemPersistenceService(AbstractFilePersistenceService):
     def is_file_ref(self, field: str) -> bool:
         return field.startswith(FILE)
 
-    def get_all_ids(self) -> [str]:
-        # TODO
-        pass
-
-    def is_valid_id(self, pers_id: str) -> bool:
-        # TODO
-        pass
-
     def _to_internal_file_id(self, file_id):
         return file_id.replace(FILE, '')
 
@@ -160,7 +144,7 @@ class FileSystemPersistenceService(AbstractFilePersistenceService):
 DICT = 'dict-'
 
 
-class MongoDictPersistenceService(AbstractDictPersistenceService):
+class MongoDictPersistenceService(DictPersistenceService):
 
     def __init__(self, host='127.0.0.1'):
         self._mongo_service = MongoService(host, MMLIB)
@@ -190,10 +174,6 @@ class MongoDictPersistenceService(AbstractDictPersistenceService):
     def id_exists(self, dict_id: str, represent_type: str) -> bool:
         dict_id = self._to_mongo_dict_id(dict_id)
         return self._mongo_service.id_exists(dict_id, represent_type)
-
-    def is_valid_id(self, pers_id: str) -> bool:
-        # TODO
-        pass
 
     def _to_mongo_dict_id(self, dict_id):
         return ObjectId(dict_id.replace(DICT, ''))
