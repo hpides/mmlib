@@ -83,7 +83,8 @@ class BaselineSaveService(AbstractSaveService):
         # in this baseline approach we always store the full model (pickled weights + code)
 
         with tempfile.TemporaryDirectory() as tmp_path:
-            model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path)
+            model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path,
+                                        load_recursive=True, load_files=True)
 
             # recover model form info
             recover_info: FullModelRecoverInfo = model_info.recover_info
@@ -120,11 +121,15 @@ class BaselineSaveService(AbstractSaveService):
                 restore_dir = os.path.join(tmp_path, 'restore')
                 os.mkdir(restore_dir)
 
-                model_info = ModelInfo.load(derived_from, self._file_pers_service, self._dict_pers_service, restore_dir)
-                recover_info: FullModelRecoverInfo = model_info.recover_info
+                base_model_info = ModelInfo.load(derived_from, self._file_pers_service, self._dict_pers_service,
+                                                 restore_dir)
+                base_model_info.load_all_fields(self._file_pers_service, self._dict_pers_service, restore_dir)
+                base_recover_info: FullModelRecoverInfo = base_model_info.recover_info
+                base_recover_info.load_all_fields(self._file_pers_service, self._dict_pers_service, restore_dir,
+                                                  load_files=True)
 
-                model_save_info.code = recover_info.model_code_file_path
-                model_save_info.class_name = recover_info.model_class_name
+                model_save_info.code = base_recover_info.model_code_file_path
+                model_save_info.class_name = base_recover_info.model_class_name
 
             # if the model to store is not derived from another model code and class name have to me defined
             recover_info = FullModelRecoverInfo(weights_file_path=weights_path,
@@ -210,7 +215,8 @@ class ProvenanceSaveService(BaselineSaveService):
                 restore_dir = os.path.join(tmp_path, RESTORE_PATH)
                 os.mkdir(restore_dir)
 
-                model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, restore_dir)
+                model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, restore_dir,
+                                            load_recursive=True, load_files=True)
                 recover_info: ProvenanceRecoverInfo = model_info.recover_info
 
                 train_service = recover_info.train_info.train_service_wrapper.instance

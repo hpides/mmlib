@@ -1,10 +1,8 @@
 import os
 
-from mmlib.constants import ID
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.schema_obj import SchemaObj
 from util.zip import zip_path, unzip
-
 
 RAW_DATA = 'raw_data'
 
@@ -13,7 +11,7 @@ DATASET = 'dataset'
 
 class Dataset(SchemaObj):
 
-    def __init__(self, raw_data: str, store_id: str = None):
+    def __init__(self, raw_data: str = None, store_id: str = None):
         super().__init__(store_id)
         self.raw_data = raw_data
 
@@ -23,19 +21,11 @@ class Dataset(SchemaObj):
 
         dict_representation[RAW_DATA] = raw_data_id
 
-    @classmethod
-    def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService, restore_root: str):
-        restored_dict = dict_pers_service.recover_dict(obj_id, DATASET)
-
-        store_id = restored_dict[ID]
-        raw_data_id = restored_dict[RAW_DATA]
-
-        zip_file_path = file_pers_service.recover_file(raw_data_id, restore_root)
-        restore_path = os.path.join(restore_root, 'data')
-        unzipped_path = unzip(zip_file_path, restore_path)
-
-        return cls(raw_data=unzipped_path, store_id=store_id)
+    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
+                        dict_pers_service: AbstractDictPersistenceService, restore_root: str,
+                        load_recursive: bool = True, load_files: bool = True):
+        restored_dict = dict_pers_service.recover_dict(self.store_id, DATASET)
+        self.raw_data = _recover_data(file_pers_service, load_files, restore_root, restored_dict)
 
     def size_in_bytes(self, file_pers_service: AbstractFilePersistenceService,
                       dict_pers_service: AbstractDictPersistenceService) -> int:
@@ -43,3 +33,13 @@ class Dataset(SchemaObj):
 
     def _representation_type(self) -> str:
         return DATASET
+
+
+def _recover_data(file_pers_service, load_files, restore_root, restored_dict):
+    raw_data_id = restored_dict[RAW_DATA]
+    raw_data = None
+    if load_files:
+        zip_file_path = file_pers_service.recover_file(raw_data_id, restore_root)
+        restore_path = os.path.join(restore_root, 'data')
+        raw_data = unzip(zip_file_path, restore_path)
+    return raw_data

@@ -1,7 +1,6 @@
 from mmlib.persistence import AbstractFilePersistenceService, AbstractDictPersistenceService
 from schema.schema_obj import SchemaObj
 
-
 ENVIRONMENT_DICT = 'environment_dict'
 
 ENVIRONMENT = 'environment'
@@ -9,7 +8,13 @@ ENVIRONMENT = 'environment'
 
 class Environment(SchemaObj):
 
-    def __init__(self, environment_data: dict, store_id: str = None):
+    def load_all_fields(self, file_pers_service: AbstractFilePersistenceService,
+                        dict_pers_service: AbstractDictPersistenceService, restore_root: str,
+                        load_recursive: bool = True, load_files: bool = True):
+        # TODO
+        pass
+
+    def __init__(self, environment_data: dict = None, store_id: str = None):
         super().__init__(store_id)
         self.environment_data = environment_data
 
@@ -20,7 +25,8 @@ class Environment(SchemaObj):
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
-             dict_pers_service: AbstractDictPersistenceService, restore_root: str):
+             dict_pers_service: AbstractDictPersistenceService, restore_root: str, load_recursive: bool = False,
+             load_files: bool = False):
         restored_dict = dict_pers_service.recover_dict(obj_id, ENVIRONMENT)
 
         env_dict = dict_pers_service.recover_dict(restored_dict[ENVIRONMENT_DICT], ENVIRONMENT_DICT)

@@ -51,7 +51,7 @@ def get_device(device):
 def clean(path):
     if os.path.isdir(path):
         shutil.rmtree(path)
-    else:
+    elif os.path.exists(path):
         os.remove(path)
 
 

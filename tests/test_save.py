@@ -258,55 +258,6 @@ class TestSave(unittest.TestCase):
 
         resnet_ts.state_objs = state_dict
 
-    # def test_save_restore_model_inf_info(self):
-    #     file_names = ['mobilenet', 'resnet18']
-    #     models = [mobilenet_v2, resnet18]
-    #     for file_name, model in zip(file_names, models):
-    #         code_name = model.__name__
-    #         model = model()
-    #         code_file = './networks/mynets/{}.py'.format(file_name)
-    #
-    #         self._test_save_restore_model_inference_info(code_file, code_name, model)
-
-    # def _test_save_restore_model_inference_info(self, code_file, code_name, model):
-    #     save_info_builder = ModelSaveInfoBuilder()
-    #     save_info_builder.add_model_info(model, code_file, code_name)
-    #     save_info_builder.add_recover_val(dummy_input_shape=[10, 3, 300, 400])
-    #     data_wrapper = RestorableObjectWrapper(
-    #         code='./networks/custom_coco.py',
-    #         class_name='InferenceCustomCoco',
-    #         init_args={},
-    #         config_args={'root': COCO_ROOT, 'ann_file': COCO_ANNOT},
-    #         init_ref_type_args=[]
-    #     )
-    #     dataloader = RestorableObjectWrapper(
-    #         import_cmd='from torch.utils.data import DataLoader',
-    #         class_name='DataLoader',
-    #         init_args={'batch_size': 64, 'shuffle': False, 'num_workers': 0, 'pin_memory': True},
-    #         config_args={},
-    #         init_ref_type_args=['dataset']
-    #     )
-    #     preprocessor = RestorableObjectWrapper(
-    #         code='./networks/dummy_preprocessor.py',
-    #         class_name='DummyPreprocessor',
-    #         init_args={},
-    #         config_args={},
-    #         init_ref_type_args=[]
-    #     )
-    #     environment = Environment(environment_data={'cpu': 'test'})
-    #     save_info_builder.add_inference_info(data_wrapper, dataloader, preprocessor, environment)
-    #     save_info = save_info_builder.build()
-    #
-    #     model_id = self.save_recover_service.save_model(save_info)
-    #     restored_model_info = self.save_recover_service.recover_model(model_id, inference_info=True)
-    #
-    #     self.assertTrue(restored_model_info.inference_info.data_wrapper.instance)
-    #     self.assertTrue(restored_model_info.inference_info.dataloader.instance)
-    #     self.assertTrue(restored_model_info.inference_info.pre_processor.instance)
-    #     self.assertTrue(restored_model_info.inference_info.environment)
-    #
-    #     self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
-
     def test_save_restore_model_version(self):
         set_deterministic()
         model = resnet18()
@@ -336,6 +287,7 @@ class TestSave(unittest.TestCase):
 
         self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
         self.assertTrue(model_equal(model, restored_model_info_version1.model, imagenet_input))
+        self.assertTrue(model_equal(model_version, restored_model_info_version2.model, imagenet_input))
         self.assertFalse(
             model_equal(restored_model_info_version1.model, restored_model_info_version2.model, imagenet_input))
 
