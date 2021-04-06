@@ -9,20 +9,20 @@ from schema.schema_obj import SchemaObj
 from schema.train_info import TrainInfo
 from util.helper import copy_all_data, clean
 
-TRAIN_INFO = 'train_info'
-
-DATASET = 'dataset'
+RECOVER_INFO = 'recover_info'
+MODEL_CODE = 'model_code'
+MODEL_CLASS_NAME = 'model_class_name'
 
 
 class AbstractRecoverInfo(SchemaObj, metaclass=abc.ABCMeta):
 
     def __init__(self, model_code: str, model_class_name: str, store_id: str = None):
         super().__init__(store_id)
-        self.model_code_file_path = model_code
+        self.model_code = model_code
         self.model_class_name = model_class_name
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
-        model_code_id = file_pers_service.save_file(self.model_code_file_path)
+        model_code_id = file_pers_service.save_file(self.model_code)
 
         dict_representation[MODEL_CODE] = model_code_id
         dict_representation[MODEL_CLASS_NAME] = self.model_class_name
@@ -52,10 +52,6 @@ class AbstractRecoverInfo(SchemaObj, metaclass=abc.ABCMeta):
 
 
 WEIGHTS = 'weights'
-MODEL_CODE = 'model_code'
-MODEL_CLASS_NAME = 'model_class_name'
-
-RECOVER_INFO = 'recover_info'
 
 
 class FullModelRecoverInfo(AbstractRecoverInfo):
@@ -63,7 +59,7 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
     def __init__(self, weights_file_path: str = None, model_code_file_path=None, model_class_name: str = None,
                  store_id: str = None):
         super().__init__(model_code_file_path, model_class_name, store_id)
-        self.weights_file_path = weights_file_path
+        self.weights = weights_file_path
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: AbstractFilePersistenceService,
@@ -87,8 +83,8 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
 
         self.model_class_name = restored_dict[MODEL_CLASS_NAME]
 
-        self.model_code_file_path = _recover_model_code(file_pers_service, load_files, restore_root, restored_dict)
-        self.weights_file_path = _recover_weights(file_pers_service, load_files, restore_root, restored_dict)
+        self.model_code = _recover_model_code(file_pers_service, load_files, restore_root, restored_dict)
+        self.weights = _recover_weights(file_pers_service, load_files, restore_root, restored_dict)
 
     def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
         result = 0
@@ -99,7 +95,7 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
         super()._persist_class_specific_fields(dict_representation, file_pers_service, dict_pers_service)
-        weights_id = file_pers_service.save_file(self.weights_file_path)
+        weights_id = file_pers_service.save_file(self.weights)
 
         dict_representation[WEIGHTS] = weights_id
 
@@ -113,6 +109,10 @@ def _recover_weights(file_pers_service, load_files, restore_root, restored_dict)
         weights_file_id = restored_dict[WEIGHTS]
         weights_file_path = file_pers_service.recover_file(weights_file_id, restore_root)
     return weights_file_path
+
+
+DATASET = 'dataset'
+TRAIN_INFO = 'train_info'
 
 
 class ProvenanceRecoverInfo(AbstractRecoverInfo):
@@ -150,7 +150,7 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
         dataset_id = restored_dict[DATASET]
         self.dataset = _recover_data(dataset_id, dict_pers_service, file_pers_service, load_files, load_recursive,
                                      restore_root)
-        self.model_code_file_path = _recover_model_code(file_pers_service, load_files, restore_root, restored_dict)
+        self.model_code = _recover_model_code(file_pers_service, load_files, restore_root, restored_dict)
         self.model_class_name = restored_dict[MODEL_CLASS_NAME]
 
         self.train_info = _restore_train_info(
@@ -158,7 +158,6 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
 
 
 def _data_dst_path():
-    # TODO magic strings
     config_file = os.getenv(MMLIB_CONFIG)
     config = configparser.ConfigParser()
     config.read(config_file)
