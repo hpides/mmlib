@@ -159,7 +159,6 @@ class TestSave(unittest.TestCase):
         prov_env = track_current_environment()
         train_kwargs = {'number_batches': 2}
 
-        # TODO specify correct env, atm env is empty
         save_info_builder.add_prov_data(
             raw_data_path=raw_data, env=prov_env, train_service=imagenet_ts, train_kwargs=train_kwargs,
             code=prov_train_serv_code, class_name=prov_train_serv_class_name, wrapper_code=prov_train_wrapper_code,
