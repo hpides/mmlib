@@ -27,7 +27,13 @@ class Environment(SchemaObj):
         raise NotImplementedError
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
-        pass
+        dict_representation['python_version'] = self.python_version
+        dict_representation['pytorch_version'] = self.python_version
+        dict_representation['processor_info'] = self.processor_info
+        dict_representation['gpu_types'] = self.gpu_types
+        dict_representation['pytorch_info'] = self.pytorch_info
+        dict_representation['python_platform_info'] = self.python_platform_info
+        dict_representation['pytorch_version'] = self.pip_freeze
 
     def _representation_type(self) -> str:
         return ENVIRONMENT
