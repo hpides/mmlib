@@ -1,44 +1,55 @@
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from schema.schema_obj import SchemaObj
 
-ENVIRONMENT_DICT = 'environment_dict'
+PYTHON_VERSION = 'python_version'
+PYTORCH_VERSION = 'pytorch_version'
+PROCESSOR_INFO = 'processor_info'
+GPU_TYPES = 'gpu_types'
+PYTORCH_INFO = 'pytorch_info'
+PYTHON_PLATFORM_INFO = 'python_platform_info'
+PIP_FREEZE = 'pip_freeze'
 
 ENVIRONMENT = 'environment'
 
 
 class Environment(SchemaObj):
 
-    def load_all_fields(self, file_pers_service: FilePersistenceService,
-                        dict_pers_service: DictPersistenceService, restore_root: str,
-                        load_recursive: bool = True, load_files: bool = True):
-        # TODO
-        pass
-
-    def __init__(self, environment_data: dict = None, store_id: str = None):
+    def __init__(self, store_id: str = None, python_version: str = None, pytorch_version: str = None,
+                 processor_info: str = None, gpu_types: str = None, pytorch_info: str = None,
+                 python_platform_info: str = None, pip_freeze: list = None):
         super().__init__(store_id)
-        self.environment_data = environment_data
+        self.python_version = python_version
+        self.pytorch_version = pytorch_version
+        self.processor_info = processor_info
+        self.gpu_types = gpu_types
+        self.pytorch_info = pytorch_info
+        self.python_platform_info = python_platform_info
+        self.pip_freeze = pip_freeze
 
-    def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
-        environment_data_id = dict_pers_service.save_dict(self.environment_data, ENVIRONMENT_DICT)
+    def load_all_fields(self, file_pers_service: FilePersistenceService, dict_pers_service: DictPersistenceService,
+                        restore_root: str, load_recursive: bool = True, load_files: bool = True):
+        restored_dict = dict_pers_service.recover_dict(self.store_id, ENVIRONMENT)
 
-        dict_representation[ENVIRONMENT_DICT] = environment_data_id
-
-    @classmethod
-    def load(cls, obj_id: str, file_pers_service: FilePersistenceService,
-             dict_pers_service: DictPersistenceService, restore_root: str, load_recursive: bool = False,
-             load_files: bool = False):
-        restored_dict = dict_pers_service.recover_dict(obj_id, ENVIRONMENT)
-
-        env_dict = dict_pers_service.recover_dict(restored_dict[ENVIRONMENT_DICT], ENVIRONMENT_DICT)
-
-        return cls(store_id=obj_id, environment_data=env_dict)
+        self.python_version = restored_dict[PYTHON_VERSION]
+        self.pytorch_version = restored_dict[PYTORCH_VERSION]
+        self.processor_info = restored_dict[PROCESSOR_INFO]
+        self.gpu_types = restored_dict[GPU_TYPES]
+        self.pytorch_info = restored_dict[PYTORCH_INFO]
+        self.python_platform_info = restored_dict[PYTHON_PLATFORM_INFO]
+        self.pip_freeze = restored_dict[PIP_FREEZE]
 
     def size_in_bytes(self, file_pers_service: FilePersistenceService,
                       dict_pers_service: DictPersistenceService) -> int:
-        restored_dict = dict_pers_service.recover_dict(self.store_id, ENVIRONMENT)
-        env_size = dict_pers_service.dict_size(restored_dict[ENVIRONMENT_DICT], ENVIRONMENT_DICT)
+        raise NotImplementedError
 
-        return dict_pers_service.dict_size(self.store_id, ENVIRONMENT) + env_size
+    def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
+        dict_representation[PYTHON_VERSION] = self.python_version
+        dict_representation[PYTORCH_VERSION] = self.pytorch_version
+        dict_representation[PROCESSOR_INFO] = self.processor_info
+        dict_representation[GPU_TYPES] = self.gpu_types
+        dict_representation[PYTORCH_INFO] = self.pytorch_info
+        dict_representation[PYTHON_PLATFORM_INFO] = self.python_platform_info
+        dict_representation[PIP_FREEZE] = self.pip_freeze
 
     def _representation_type(self) -> str:
         return ENVIRONMENT

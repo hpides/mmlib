@@ -11,6 +11,7 @@ from mmlib.equal import model_equal
 from mmlib.persistence import MongoDictPersistenceService, FileSystemPersistenceService, DICT
 from mmlib.recover_validation import RecoverValidationService
 from mmlib.save import BaselineSaveService, ProvenanceSaveService
+from mmlib.track_env import track_current_environment
 from schema.environment import Environment
 from schema.model_info import RECOVER_INFO_ID, MODEL_INFO
 from schema.recover_info import RECOVER_INFO
@@ -155,10 +156,9 @@ class TestSave(unittest.TestCase):
         prov_train_wrapper_code = './inference_and_training/imagenet_train.py'
         prov_train_wrapper_class_name = 'ImagenetTrainWrapper'
         raw_data = './data/reduced-custom-coco-data'
-        prov_env = Environment({})
+        prov_env = track_current_environment()
         train_kwargs = {'number_batches': 2}
 
-        # TODO specify correct env, atm env is empty
         save_info_builder.add_prov_data(
             raw_data_path=raw_data, env=prov_env, train_service=imagenet_ts, train_kwargs=train_kwargs,
             code=prov_train_serv_code, class_name=prov_train_serv_class_name, wrapper_code=prov_train_wrapper_code,
@@ -180,7 +180,7 @@ class TestSave(unittest.TestCase):
 
         # "model" is in model_1
         # to recover model_1 we have saved train_state-0, and take it together with model_0
-        recovered_model_info = self.provenance_save_service.recover_model(model_id)
+        recovered_model_info = self.provenance_save_service.recover_model(model_id, execute_checks=True)
 
         recovered_model_1 = recovered_model_info.model
         self.assertTrue(self.recover_val_service.check_recover_val(model_id, recovered_model_1))
@@ -207,14 +207,14 @@ class TestSave(unittest.TestCase):
 
         # "model" is in model_2
         # to recover model_2 we have saved train_state-1, and take it together with model_1
-        recovered_model_info = self.provenance_save_service.recover_model(model_id_2)
+        recovered_model_info = self.provenance_save_service.recover_model(model_id_2, execute_checks=True)
 
         self.assertTrue(self.recover_val_service.check_recover_val(model_id_2, recovered_model_info.model))
         self.assertTrue(model_equal(model, recovered_model_info.model, imagenet_input))
         self.assertFalse(model_equal(recovered_model_1, recovered_model_info.model, imagenet_input))
 
         # check that restore of second model has not influenced restore of first model
-        recovered_model_info = self.provenance_save_service.recover_model(model_id)
+        recovered_model_info = self.provenance_save_service.recover_model(model_id, execute_checks=True)
 
         recovered_model_1 = recovered_model_info.model
         self.assertTrue(self.recover_val_service.check_recover_val(model_id, recovered_model_info.model))
