@@ -12,7 +12,6 @@ from mmlib.persistence import MongoDictPersistenceService, FileSystemPersistence
 from mmlib.recover_validation import RecoverValidationService
 from mmlib.save import BaselineSaveService, ProvenanceSaveService
 from mmlib.track_env import track_current_environment
-from schema.environment import Environment
 from schema.model_info import RECOVER_INFO_ID, MODEL_INFO
 from schema.recover_info import RECOVER_INFO
 from schema.restorable_object import RestorableObjectWrapper, OptimizerWrapper
@@ -51,9 +50,9 @@ class TestSave(unittest.TestCase):
         os.mkdir(self.abs_tmp_path)
         file_pers_service = FileSystemPersistenceService(self.tmp_path)
         dict_pers_service = MongoDictPersistenceService()
-        self.save_recover_service = BaselineSaveService(file_pers_service, dict_pers_service)
-        self.provenance_save_service = ProvenanceSaveService(file_pers_service, dict_pers_service)
-        self.recover_val_service = RecoverValidationService(dict_pers_service)
+        recover_val_service = RecoverValidationService(dict_pers_service)
+        self.save_recover_service = BaselineSaveService(file_pers_service, dict_pers_service, recover_val_service)
+        self.provenance_save_service = ProvenanceSaveService(file_pers_service, dict_pers_service, recover_val_service)
 
         os.environ[MMLIB_CONFIG] = CONFIG
 
@@ -142,7 +141,7 @@ class TestSave(unittest.TestCase):
         save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(model, code_file, class_name)
         save_info = save_info_builder.build()
-        base_model_id = self.provenance_save_service.save_model(save_info)
+        base_model_id = self.provenance_save_service.save_model(save_info, save_validation_info=True)
         # -------------------------------------------------------------
 
         # store provenance-0
@@ -168,7 +167,7 @@ class TestSave(unittest.TestCase):
         # save: train_state-0
         # it is a bit unintuitive but we have to store the prov data before training because through the training we
         # change the sate of the optimizer etc.
-        model_id = self.provenance_save_service.save_model(save_info)
+        model_id = self.provenance_save_service.save_model(save_info, save_validation_info=True)
         print('modelId')
         print(model_id)
         # -------------------------------------------------------------
@@ -176,14 +175,12 @@ class TestSave(unittest.TestCase):
         # transitions model and train service:
         # model-0, train_state-0 -> # model-1, train_state-1
         imagenet_ts.train(model, **train_kwargs)
-        self.recover_val_service.save_recover_val_info(model, model_id, dummy_input_shape=[10, 3, 300, 400])
 
         # "model" is in model_1
         # to recover model_1 we have saved train_state-0, and take it together with model_0
         recovered_model_info = self.provenance_save_service.recover_model(model_id, execute_checks=True)
 
         recovered_model_1 = recovered_model_info.model
-        self.assertTrue(self.recover_val_service.check_recover_val(model_id, recovered_model_1))
         self.assertTrue(model_equal(model, recovered_model_1, imagenet_input))
 
         # save: train_state-1
@@ -195,7 +192,7 @@ class TestSave(unittest.TestCase):
             wrapper_class_name=prov_train_wrapper_class_name)
         save_info = save_info_builder.build()
 
-        model_id_2 = self.provenance_save_service.save_model(save_info)
+        model_id_2 = self.provenance_save_service.save_model(save_info, save_validation_info=True)
         print('modelId_2')
         print(model_id_2)
         # -------------------------------------------------------------
@@ -203,13 +200,11 @@ class TestSave(unittest.TestCase):
         # transitions model and train service:
         # model-1, train_state-1 -> # model-2, train_state-2
         imagenet_ts.train(model, **train_kwargs)
-        self.recover_val_service.save_recover_val_info(model, model_id_2, dummy_input_shape=[10, 3, 300, 400])
 
         # "model" is in model_2
         # to recover model_2 we have saved train_state-1, and take it together with model_1
         recovered_model_info = self.provenance_save_service.recover_model(model_id_2, execute_checks=True)
 
-        self.assertTrue(self.recover_val_service.check_recover_val(model_id_2, recovered_model_info.model))
         self.assertTrue(model_equal(model, recovered_model_info.model, imagenet_input))
         self.assertFalse(model_equal(recovered_model_1, recovered_model_info.model, imagenet_input))
 
@@ -217,7 +212,6 @@ class TestSave(unittest.TestCase):
         recovered_model_info = self.provenance_save_service.recover_model(model_id, execute_checks=True)
 
         recovered_model_1 = recovered_model_info.model
-        self.assertTrue(self.recover_val_service.check_recover_val(model_id, recovered_model_info.model))
 
     def _add_imagenet_prov_state_dict(self, resnet_ts, model):
         set_deterministic()

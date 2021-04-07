@@ -1,6 +1,7 @@
 import abc
 import os
 import tempfile
+import warnings
 
 import torch
 
@@ -25,10 +26,12 @@ MODEL_WEIGHTS = 'model_weights'
 class AbstractSaveService(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def save_model(self, model_save_info: ModelSaveInfo) -> str:
+    def save_model(self, model_save_info: ModelSaveInfo, save_validation_info=False) -> str:
         """
         Saves a model together with the given metadata.
         :param model_save_info: An instance of ModelSaveInfo providing all the info needed to save the model.
+        :param save_validation_info: Indicates if additional info should be stored to later validate the recover
+         process. - If set, time consumption for save process might rise.
         :return: Returns the id that was used to store the model.
         """
         raise NotImplementedError
@@ -65,7 +68,7 @@ class BaselineSaveService(AbstractSaveService):
          The metadata is stored in JSON like dictionaries, files and weights are stored as files."""
 
     def __init__(self, file_pers_service: FilePersistenceService,
-                 dict_pers_service: DictPersistenceService, recover_val_service: RecoverValidationService):
+                 dict_pers_service: DictPersistenceService, recover_val_service: RecoverValidationService = None):
         """
         :param file_pers_service: An instance of FilePersistenceService that is used to store files.
         :param dict_pers_service: An instance of DictPersistenceService that is used to store metadata as dicts.
@@ -75,12 +78,15 @@ class BaselineSaveService(AbstractSaveService):
         self._dict_pers_service = dict_pers_service
         self._recover_val_service = recover_val_service
 
-    def save_model(self, model_save_info: ModelSaveInfo) -> str:
+    def save_model(self, model_save_info: ModelSaveInfo, save_validation_info=False) -> str:
         self._check_consistency(model_save_info)
 
         # usually we would consider at this bit how we best store the given model
         # but since this is the baseline service we just store the full model every time.
         model_id = self._save_full_model(model_save_info)
+
+        if save_validation_info:
+            self._save_validation_info(model_save_info, model_id)
 
         return model_id
 
@@ -170,23 +176,36 @@ class BaselineSaveService(AbstractSaveService):
             return model_info.derived_from
 
     def _execute_checks(self, model: torch.nn.Module, model_info: ModelInfo):
-        model_id = model_info.store_id
-        valid_recovery = self._recover_val_service.check_recover_val(model_id, model)
-        assert valid_recovery, 'The current given model differs from the model that was stored'
+        if self._recover_val_service:
+            model_id = model_info.store_id
+            try:
+                valid_recovery = self._recover_val_service.check_recover_val(model_id, model)
+                assert valid_recovery, 'The current given model differs from the model that was stored'
+            except IndexError:
+                warnings.warn('no recover validation info found'
+                              ' - check that save_validation_info=True when saving model')
+        else:
+            warnings.warn('no recover_val_service given -> check can not be performed')
+
+    def _save_validation_info(self, model_save_info, model_id):
+        if self._recover_val_service:
+            model = model_save_info.model
+            self._recover_val_service.save_recover_val_info(model, model_id, model_save_info.dummy_input_shape)
+        else:
+            warnings.warn('no recover_val_service given -> model restore validation info can not be stored')
 
 
 class ProvenanceSaveService(BaselineSaveService):
 
     def __init__(self, file_pers_service: FilePersistenceService,
-                 dict_pers_service: DictPersistenceService):
+                 dict_pers_service: DictPersistenceService, recover_val_service: RecoverValidationService = None):
         """
         :param file_pers_service: An instance of FilePersistenceService that is used to store files.
         :param dict_pers_service: An instance of DictPersistenceService that is used to store metadata as dicts.
-        # :param baseline_save_service: An instance of BaselineSaveService that is used to store "full models"
         """
-        super().__init__(file_pers_service, dict_pers_service)
+        super().__init__(file_pers_service, dict_pers_service, recover_val_service)
 
-    def save_model(self, model_save_info: ModelSaveInfo) -> str:
+    def save_model(self, model_save_info: ModelSaveInfo, save_validation_info=False) -> str:
         if model_save_info.base_model is None:
             # if the base model is none, then we have to store the model as a full model
             return super().save_model(model_save_info)
@@ -194,6 +213,9 @@ class ProvenanceSaveService(BaselineSaveService):
             self._check_consistency(model_save_info)
 
             model_id = self._save_provenance_model(model_save_info)
+
+            if save_validation_info:
+                self._save_validation_info(model_save_info, model_id)
 
             return model_id
 
