@@ -180,7 +180,7 @@ class TestSave(unittest.TestCase):
 
         # "model" is in model_1
         # to recover model_1 we have saved train_state-0, and take it together with model_0
-        recovered_model_info = self.provenance_save_service.recover_model(model_id)
+        recovered_model_info = self.provenance_save_service.recover_model(model_id, execute_checks=True)
 
         recovered_model_1 = recovered_model_info.model
         self.assertTrue(self.recover_val_service.check_recover_val(model_id, recovered_model_1))
@@ -207,14 +207,14 @@ class TestSave(unittest.TestCase):
 
         # "model" is in model_2
         # to recover model_2 we have saved train_state-1, and take it together with model_1
-        recovered_model_info = self.provenance_save_service.recover_model(model_id_2)
+        recovered_model_info = self.provenance_save_service.recover_model(model_id_2, execute_checks=True)
 
         self.assertTrue(self.recover_val_service.check_recover_val(model_id_2, recovered_model_info.model))
         self.assertTrue(model_equal(model, recovered_model_info.model, imagenet_input))
         self.assertFalse(model_equal(recovered_model_1, recovered_model_info.model, imagenet_input))
 
         # check that restore of second model has not influenced restore of first model
-        recovered_model_info = self.provenance_save_service.recover_model(model_id)
+        recovered_model_info = self.provenance_save_service.recover_model(model_id, execute_checks=True)
 
         recovered_model_1 = recovered_model_info.model
         self.assertTrue(self.recover_val_service.check_recover_val(model_id, recovered_model_info.model))

@@ -10,7 +10,6 @@ from schema.environment import Environment
 
 ARCHITECTURE = 'architecture'
 MACHINE = 'machine'
-NODE = 'node'
 PLATFORM = 'platform'
 PROCESSOR = 'processor'
 PYTHON_BUILD = 'python_build'
@@ -32,7 +31,6 @@ def get_python_platform_info():
     python_env_dict = {
         ARCHITECTURE: platform.architecture(),
         MACHINE: platform.machine(),
-        NODE: platform.node(),
         PLATFORM: platform.platform(),
         PROCESSOR: platform.processor(),
         PYTHON_BUILD: platform.python_build(),
@@ -78,6 +76,7 @@ def get_pytorch_env():
 
 def track_current_environment() -> Environment:
     pytorch_info = get_pytorch_env()
+
     python_platform_info = get_python_platform_info()
     python_version = pytorch_info.python_version
     pytorch_version = pytorch_info.torch_version
@@ -86,8 +85,8 @@ def track_current_environment() -> Environment:
     pip_freeze = get_python_libs()
 
     return Environment(python_version=python_version, pytorch_version=pytorch_version, processor_info=processor_info,
-                       gpu_types=gpu_types, pytorch_info=pytorch_info, python_platform_info=python_platform_info,
-                       pip_freeze=pip_freeze)
+                       gpu_types=str(gpu_types), pytorch_info=str(pytorch_info),
+                       python_platform_info=str(python_platform_info), pip_freeze=pip_freeze)
 
 
 def compare_env_to_current(to_compare: Environment) -> bool:

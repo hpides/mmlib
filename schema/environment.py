@@ -15,8 +15,8 @@ ENVIRONMENT = 'environment'
 class Environment(SchemaObj):
 
     def __init__(self, store_id: str = None, python_version: str = None, pytorch_version: str = None,
-                 processor_info: str = None, gpu_types: [str] = None, pytorch_info: str = None,
-                 python_platform_info: dict = None, pip_freeze: list = None):
+                 processor_info: str = None, gpu_types: str = None, pytorch_info: str = None,
+                 python_platform_info: str = None, pip_freeze: list = None):
         super().__init__(store_id)
         self.python_version = python_version
         self.pytorch_version = pytorch_version
@@ -31,7 +31,7 @@ class Environment(SchemaObj):
         restored_dict = dict_pers_service.recover_dict(self.store_id, ENVIRONMENT)
 
         self.python_version = restored_dict[PYTHON_VERSION]
-        self.python_version = restored_dict[PYTORCH_VERSION]
+        self.pytorch_version = restored_dict[PYTORCH_VERSION]
         self.processor_info = restored_dict[PROCESSOR_INFO]
         self.gpu_types = restored_dict[GPU_TYPES]
         self.pytorch_info = restored_dict[PYTORCH_INFO]
@@ -44,7 +44,7 @@ class Environment(SchemaObj):
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
         dict_representation[PYTHON_VERSION] = self.python_version
-        dict_representation[PYTORCH_VERSION] = self.python_version
+        dict_representation[PYTORCH_VERSION] = self.pytorch_version
         dict_representation[PROCESSOR_INFO] = self.processor_info
         dict_representation[GPU_TYPES] = self.gpu_types
         dict_representation[PYTORCH_INFO] = self.pytorch_info
