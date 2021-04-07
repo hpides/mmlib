@@ -5,6 +5,7 @@ import tempfile
 import torch
 
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
+from mmlib.recover_validation import RecoverValidationService
 from mmlib.save_info import ModelSaveInfo
 from mmlib.track_env import compare_env_to_current
 from schema.dataset import Dataset
@@ -64,13 +65,15 @@ class BaselineSaveService(AbstractSaveService):
          The metadata is stored in JSON like dictionaries, files and weights are stored as files."""
 
     def __init__(self, file_pers_service: FilePersistenceService,
-                 dict_pers_service: DictPersistenceService):
+                 dict_pers_service: DictPersistenceService, recover_val_service: RecoverValidationService):
         """
         :param file_pers_service: An instance of FilePersistenceService that is used to store files.
         :param dict_pers_service: An instance of DictPersistenceService that is used to store metadata as dicts.
+        :type recover_val_service: An instance of RecoverValidationService that is used to validate recovered models.
         """
         self._file_pers_service = file_pers_service
         self._dict_pers_service = dict_pers_service
+        self._recover_val_service = recover_val_service
 
     def save_model(self, model_save_info: ModelSaveInfo) -> str:
         self._check_consistency(model_save_info)
@@ -166,8 +169,10 @@ class BaselineSaveService(AbstractSaveService):
             model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path)
             return model_info.derived_from
 
-    def _execute_checks(self, model_info: ModelInfo):
-        pass
+    def _execute_checks(self, model: torch.nn.Module, model_info: ModelInfo):
+        model_id = model_info.store_id
+        valid_recovery = self._recover_val_service.check_recover_val(model_id, model)
+        assert valid_recovery, 'The current given model differs from the model that was stored'
 
 
 class ProvenanceSaveService(BaselineSaveService):
@@ -219,12 +224,13 @@ class ProvenanceSaveService(BaselineSaveService):
                 train_kwargs = recover_info.train_info.train_kwargs
                 train_service.train(base_model, **train_kwargs)
 
-                restored_model_info = RestoredModelInfo(model=base_model)
+                # because we trained it here the base_model is the updated version
+                restored_model = base_model
+                restored_model_info = RestoredModelInfo(model=restored_model)
 
                 if execute_checks:
-                    self._execute_checks(model_info)
+                    self._execute_checks(restored_model, model_info)
 
-                # because we trained it here the base_model is the updated version
                 return restored_model_info
 
     def model_save_size(self, model_id: str) -> int:
@@ -276,8 +282,8 @@ class ProvenanceSaveService(BaselineSaveService):
         else:
             raise NotImplementedError
 
-    def _execute_checks(self, model_info: ModelInfo):
-        super()._execute_checks(model_info)
+    def _execute_checks(self, model: torch.nn.Module, model_info: ModelInfo):
+        super()._execute_checks(model, model_info)
 
         # check environment
         recover_info: ProvenanceRecoverInfo = model_info.recover_info
