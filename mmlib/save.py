@@ -6,6 +6,7 @@ import torch
 
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from mmlib.save_info import ModelSaveInfo
+from mmlib.track_env import compare_env_to_current
 from schema.dataset import Dataset
 from schema.model_info import ModelInfo, MODEL_INFO
 from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo
@@ -32,10 +33,12 @@ class AbstractSaveService(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def recover_model(self, model_id: str) -> RestoredModelInfo:
+    def recover_model(self, model_id: str, execute_checks: bool = False) -> RestoredModelInfo:
         """
         Recovers a the model and metadata identified by the given model id.
         :param model_id: The id to identify the model with.
+        :param execute_checks: Indicates if additional checks should be performed to ensure a correct recovery of
+        the model - setting it to True might decrease the performance.
         :return: The recovered model and metadata bundled in an object of type ModelRestoreInfo.
         """
         raise NotImplementedError
@@ -78,7 +81,7 @@ class BaselineSaveService(AbstractSaveService):
 
         return model_id
 
-    def recover_model(self, model_id: str) -> RestoredModelInfo:
+    def recover_model(self, model_id: str, execute_checks: bool = False) -> RestoredModelInfo:
         # in this baseline approach we always store the full model (pickled weights + code)
 
         with tempfile.TemporaryDirectory() as tmp_path:
@@ -163,12 +166,14 @@ class BaselineSaveService(AbstractSaveService):
             model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path)
             return model_info.derived_from
 
+    def _execute_checks(self, model_info: ModelInfo):
+        pass
+
 
 class ProvenanceSaveService(BaselineSaveService):
 
     def __init__(self, file_pers_service: FilePersistenceService,
                  dict_pers_service: DictPersistenceService):
-        # baseline_save_service: BaselineSaveService):
         """
         :param file_pers_service: An instance of FilePersistenceService that is used to store files.
         :param dict_pers_service: An instance of DictPersistenceService that is used to store metadata as dicts.
@@ -187,7 +192,7 @@ class ProvenanceSaveService(BaselineSaveService):
 
             return model_id
 
-    def recover_model(self, model_id: str) -> RestoredModelInfo:
+    def recover_model(self, model_id: str, execute_checks: bool = False) -> RestoredModelInfo:
 
         base_model_id = self._get_base_model(model_id)
         if base_model_id is None:
@@ -195,7 +200,7 @@ class ProvenanceSaveService(BaselineSaveService):
             store_type = self._get_store_type(model_id)
             assert store_type == ModelStoreType.PICKLED_WEIGHTS, \
                 'for all other model types then ModelStoreType.PICKLED_WEIGHTS we need a base model'
-            return super().recover_model(model_id)
+            return super().recover_model(model_id, execute_checks)
         else:
             # if there is a base model we first have to restore the base model to continue training base on it
             base_model_store_type = self._get_store_type(base_model_id)
@@ -215,6 +220,9 @@ class ProvenanceSaveService(BaselineSaveService):
                 train_service.train(base_model, **train_kwargs)
 
                 restored_model_info = RestoredModelInfo(model=base_model)
+
+                if execute_checks:
+                    self._execute_checks(model_info)
 
                 # because we trained it here the base_model is the updated version
                 return restored_model_info
@@ -267,3 +275,11 @@ class ProvenanceSaveService(BaselineSaveService):
             return self.recover_model(model_id=base_model_id)
         else:
             raise NotImplementedError
+
+    def _execute_checks(self, model_info: ModelInfo):
+        super()._execute_checks(model_info)
+
+        # check environment
+        recover_info: ProvenanceRecoverInfo = model_info.recover_info
+        envs_match = compare_env_to_current(recover_info.train_info.environment)
+        assert envs_match, 'The current environment and the environment that was used to '

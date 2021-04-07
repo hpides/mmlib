@@ -1,6 +1,7 @@
 import locale
 import platform
 import subprocess
+import warnings
 
 import torch
 from torch.utils.collect_env import get_pretty_env_info
@@ -87,6 +88,34 @@ def track_current_environment() -> Environment:
     return Environment(python_version=python_version, pytorch_version=pytorch_version, processor_info=processor_info,
                        gpu_types=gpu_types, pytorch_info=pytorch_info, python_platform_info=python_platform_info,
                        pip_freeze=pip_freeze)
+
+
+def compare_env_to_current(to_compare: Environment) -> bool:
+    current_env = track_current_environment()
+
+    if not current_env.python_version == to_compare.python_version:
+        warnings.warn('Environment: The python version differs')
+        return False
+    if not current_env.pytorch_version == to_compare.pytorch_version:
+        warnings.warn('Environment: The pytorch version differs')
+        return False
+    if not current_env.processor_info == to_compare.processor_info:
+        warnings.warn('Environment: The processor info differs')
+        return False
+    if not current_env.gpu_types == to_compare.gpu_types:
+        warnings.warn('Environment: The gpu types differ')
+        return False
+    if not current_env.pytorch_info == to_compare.pytorch_info:
+        warnings.warn('Environment: The pytorch info differs')
+        return False
+    if not current_env.python_platform_info == to_compare.python_platform_info:
+        warnings.warn('Environment: The python platform info differs')
+        return False
+    if not current_env.pip_freeze == to_compare.pip_freeze:
+        warnings.warn('Environment: The installed python packages differ')
+        return False
+
+    return True
 
 
 if __name__ == '__main__':
