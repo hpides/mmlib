@@ -26,23 +26,24 @@ MODEL_WEIGHTS = 'model_weights'
 class AbstractSaveService(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def save_model(self, model_save_info: ModelSaveInfo, save_validation_info=False) -> str:
+    def save_model(self, model_save_info: ModelSaveInfo) -> str:
         """
         Saves a model together with the given metadata.
         :param model_save_info: An instance of ModelSaveInfo providing all the info needed to save the model.
-        :param save_validation_info: Indicates if additional info should be stored to later validate the recover
          process. - If set, time consumption for save process might rise.
         :return: Returns the id that was used to store the model.
         """
         raise NotImplementedError
 
     @abc.abstractmethod
-    def recover_model(self, model_id: str, execute_checks: bool = False) -> RestoredModelInfo:
+    def recover_model(self, model_id: str, execute_checks: bool = False,
+                      recover_val_service: RecoverValidationService = None) -> RestoredModelInfo:
         """
         Recovers a the model and metadata identified by the given model id.
         :param model_id: The id to identify the model with.
         :param execute_checks: Indicates if additional checks should be performed to ensure a correct recovery of
-        the model - setting it to True might decrease the performance.
+        the model. If set to True setting it to True recover_val_service must be given - might decrease the performance.
+        :param recover_val_service: An instance of RecoverValidationService.
         :return: The recovered model and metadata bundled in an object of type ModelRestoreInfo.
         """
         raise NotImplementedError
@@ -56,9 +57,24 @@ class AbstractSaveService(metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
+    @abc.abstractmethod
     def all_model_ids(self) -> [str]:
         """
         Retuns a list of all stored model_ids
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def save_validation_info(self, model: torch.nn.Module, model_id: str, dummy_input_shape: [int],
+                             recover_val_service: RecoverValidationService):
+        """
+        Saves validation info for the given model. This info can be used to validate the model when it is restored.
+        To activate the check when restoring a model set the parameter execute_checks = True
+        :param model: The model to save the validation info for.
+        :param model_id: The id of the model to save the recover information for.
+        :param dummy_input_shape: The input shape to generate a dummy output for the model.
+        :param recover_val_service: An instance of RecoverValidationService.
+        fields are 'model' and 'dummy_input_shape'.
         """
         raise NotImplementedError
 
@@ -68,29 +84,25 @@ class BaselineSaveService(AbstractSaveService):
          The metadata is stored in JSON like dictionaries, files and weights are stored as files."""
 
     def __init__(self, file_pers_service: FilePersistenceService,
-                 dict_pers_service: DictPersistenceService, recover_val_service: RecoverValidationService = None):
+                 dict_pers_service: DictPersistenceService):
         """
         :param file_pers_service: An instance of FilePersistenceService that is used to store files.
         :param dict_pers_service: An instance of DictPersistenceService that is used to store metadata as dicts.
-        :type recover_val_service: An instance of RecoverValidationService that is used to validate recovered models.
         """
         self._file_pers_service = file_pers_service
         self._dict_pers_service = dict_pers_service
-        self._recover_val_service = recover_val_service
 
-    def save_model(self, model_save_info: ModelSaveInfo, save_validation_info=False) -> str:
+    def save_model(self, model_save_info: ModelSaveInfo) -> str:
         self._check_consistency(model_save_info)
 
         # usually we would consider at this bit how we best store the given model
         # but since this is the baseline service we just store the full model every time.
         model_id = self._save_full_model(model_save_info)
 
-        if save_validation_info:
-            self._save_validation_info(model_save_info, model_id)
-
         return model_id
 
-    def recover_model(self, model_id: str, execute_checks: bool = False) -> RestoredModelInfo:
+    def recover_model(self, model_id: str, execute_checks: bool = False,
+                      recover_val_service: RecoverValidationService = None) -> RestoredModelInfo:
         # in this baseline approach we always store the full model (pickled weights + code)
 
         with tempfile.TemporaryDirectory() as tmp_path:
@@ -106,6 +118,9 @@ class BaselineSaveService(AbstractSaveService):
 
             restored_model_info = RestoredModelInfo(model=model)
 
+            if execute_checks:
+                self._execute_checks(model, model_info, recover_val_service)
+
         return restored_model_info
 
     def model_save_size(self, model_id: str) -> int:
@@ -116,6 +131,9 @@ class BaselineSaveService(AbstractSaveService):
 
     def all_model_ids(self) -> [str]:
         return self._dict_pers_service.all_ids_for_type(MODEL_INFO)
+
+    def save_validation_info(self, model, model_id, dummy_input_shape, recover_val_service):
+        recover_val_service.save_recover_val_info(model, model_id, dummy_input_shape)
 
     def _check_consistency(self, model_save_info):
         assert True, 'nothing checked so far'
@@ -175,37 +193,29 @@ class BaselineSaveService(AbstractSaveService):
             model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path)
             return model_info.derived_from
 
-    def _execute_checks(self, model: torch.nn.Module, model_info: ModelInfo):
-        if self._recover_val_service:
-            model_id = model_info.store_id
-            try:
-                valid_recovery = self._recover_val_service.check_recover_val(model_id, model)
-                assert valid_recovery, 'The current given model differs from the model that was stored'
-            except IndexError:
-                warnings.warn('no recover validation info found'
-                              ' - check that save_validation_info=True when saving model')
-        else:
-            warnings.warn('no recover_val_service given -> check can not be performed')
-
-    def _save_validation_info(self, model_save_info, model_id):
-        if self._recover_val_service:
-            model = model_save_info.model
-            self._recover_val_service.save_recover_val_info(model, model_id, model_save_info.dummy_input_shape)
-        else:
-            warnings.warn('no recover_val_service given -> model restore validation info can not be stored')
+    def _execute_checks(self, model: torch.nn.Module, model_info: ModelInfo,
+                        recover_val_service: RecoverValidationService):
+        assert recover_val_service, 'if execute_checks is True recover_val_service must be given'
+        model_id = model_info.store_id
+        try:
+            valid_recovery = recover_val_service.check_recover_val(model_id, model)
+            assert valid_recovery, 'The current given model differs from the model that was stored'
+        except IndexError:
+            warnings.warn('no recover validation info found'
+                          ' - check that save_validation_info=True when saving model')
 
 
 class ProvenanceSaveService(BaselineSaveService):
 
     def __init__(self, file_pers_service: FilePersistenceService,
-                 dict_pers_service: DictPersistenceService, recover_val_service: RecoverValidationService = None):
+                 dict_pers_service: DictPersistenceService):
         """
         :param file_pers_service: An instance of FilePersistenceService that is used to store files.
         :param dict_pers_service: An instance of DictPersistenceService that is used to store metadata as dicts.
         """
-        super().__init__(file_pers_service, dict_pers_service, recover_val_service)
+        super().__init__(file_pers_service, dict_pers_service)
 
-    def save_model(self, model_save_info: ModelSaveInfo, save_validation_info=False) -> str:
+    def save_model(self, model_save_info: ModelSaveInfo) -> str:
         if model_save_info.base_model is None:
             # if the base model is none, then we have to store the model as a full model
             return super().save_model(model_save_info)
@@ -214,12 +224,10 @@ class ProvenanceSaveService(BaselineSaveService):
 
             model_id = self._save_provenance_model(model_save_info)
 
-            if save_validation_info:
-                self._save_validation_info(model_save_info, model_id)
-
             return model_id
 
-    def recover_model(self, model_id: str, execute_checks: bool = False) -> RestoredModelInfo:
+    def recover_model(self, model_id: str, execute_checks: bool = False,
+                      recover_val_service: RecoverValidationService = None) -> RestoredModelInfo:
 
         base_model_id = self._get_base_model(model_id)
         if base_model_id is None:
@@ -251,7 +259,7 @@ class ProvenanceSaveService(BaselineSaveService):
                 restored_model_info = RestoredModelInfo(model=restored_model)
 
                 if execute_checks:
-                    self._execute_checks(restored_model, model_info)
+                    self._execute_checks(restored_model, model_info, recover_val_service)
 
                 return restored_model_info
 
@@ -304,8 +312,9 @@ class ProvenanceSaveService(BaselineSaveService):
         else:
             raise NotImplementedError
 
-    def _execute_checks(self, model: torch.nn.Module, model_info: ModelInfo):
-        super()._execute_checks(model, model_info)
+    def _execute_checks(self, model: torch.nn.Module, model_info: ModelInfo,
+                        recover_val_service: RecoverValidationService):
+        super()._execute_checks(model, model_info, recover_val_service)
 
         # check environment
         recover_info: ProvenanceRecoverInfo = model_info.recover_info

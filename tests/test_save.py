@@ -50,9 +50,9 @@ class TestSave(unittest.TestCase):
         os.mkdir(self.abs_tmp_path)
         file_pers_service = FileSystemPersistenceService(self.tmp_path)
         dict_pers_service = MongoDictPersistenceService()
-        recover_val_service = RecoverValidationService(dict_pers_service)
-        self.save_recover_service = BaselineSaveService(file_pers_service, dict_pers_service, recover_val_service)
-        self.provenance_save_service = ProvenanceSaveService(file_pers_service, dict_pers_service, recover_val_service)
+        self.recover_val_service = RecoverValidationService(dict_pers_service)
+        self.save_recover_service = BaselineSaveService(file_pers_service, dict_pers_service)
+        self.provenance_save_service = ProvenanceSaveService(file_pers_service, dict_pers_service)
 
         os.environ[MMLIB_CONFIG] = CONFIG
 
@@ -141,7 +141,9 @@ class TestSave(unittest.TestCase):
         save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(model, code_file, class_name)
         save_info = save_info_builder.build()
-        base_model_id = self.provenance_save_service.save_model(save_info, save_validation_info=True)
+        base_model_id = self.provenance_save_service.save_model(save_info)
+        self.provenance_save_service.save_validation_info(model, base_model_id, [10, 3, 300, 400],
+                                                          self.recover_val_service)
         # -------------------------------------------------------------
 
         # store provenance-0
@@ -167,7 +169,7 @@ class TestSave(unittest.TestCase):
         # save: train_state-0
         # it is a bit unintuitive but we have to store the prov data before training because through the training we
         # change the sate of the optimizer etc.
-        model_id = self.provenance_save_service.save_model(save_info, save_validation_info=True)
+        model_id = self.provenance_save_service.save_model(save_info)
         print('modelId')
         print(model_id)
         # -------------------------------------------------------------
@@ -175,10 +177,12 @@ class TestSave(unittest.TestCase):
         # transitions model and train service:
         # model-0, train_state-0 -> # model-1, train_state-1
         imagenet_ts.train(model, **train_kwargs)
+        self.provenance_save_service.save_validation_info(model, model_id, [10, 3, 300, 400], self.recover_val_service)
 
         # "model" is in model_1
         # to recover model_1 we have saved train_state-0, and take it together with model_0
-        recovered_model_info = self.provenance_save_service.recover_model(model_id, execute_checks=True)
+        recovered_model_info = self.provenance_save_service.recover_model(model_id, execute_checks=True,
+                                                                          recover_val_service=self.recover_val_service)
 
         recovered_model_1 = recovered_model_info.model
         self.assertTrue(model_equal(model, recovered_model_1, imagenet_input))
@@ -192,7 +196,7 @@ class TestSave(unittest.TestCase):
             wrapper_class_name=prov_train_wrapper_class_name)
         save_info = save_info_builder.build()
 
-        model_id_2 = self.provenance_save_service.save_model(save_info, save_validation_info=True)
+        model_id_2 = self.provenance_save_service.save_model(save_info)
         print('modelId_2')
         print(model_id_2)
         # -------------------------------------------------------------
@@ -200,16 +204,19 @@ class TestSave(unittest.TestCase):
         # transitions model and train service:
         # model-1, train_state-1 -> # model-2, train_state-2
         imagenet_ts.train(model, **train_kwargs)
+        self.provenance_save_service.save_validation_info(model, model_id_2, [10, 3, 300, 400], self.recover_val_service)
 
         # "model" is in model_2
         # to recover model_2 we have saved train_state-1, and take it together with model_1
-        recovered_model_info = self.provenance_save_service.recover_model(model_id_2, execute_checks=True)
+        recovered_model_info = self.provenance_save_service.recover_model(model_id_2, execute_checks=True,
+                                                                          recover_val_service=self.recover_val_service)
 
         self.assertTrue(model_equal(model, recovered_model_info.model, imagenet_input))
         self.assertFalse(model_equal(recovered_model_1, recovered_model_info.model, imagenet_input))
 
         # check that restore of second model has not influenced restore of first model
-        recovered_model_info = self.provenance_save_service.recover_model(model_id, execute_checks=True)
+        recovered_model_info = self.provenance_save_service.recover_model(model_id, execute_checks=True,
+                                                                          recover_val_service=self.recover_val_service)
 
         recovered_model_1 = recovered_model_info.model
 
