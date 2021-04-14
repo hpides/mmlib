@@ -64,20 +64,9 @@ class TestSave(unittest.TestCase):
         if os.path.exists(self.abs_tmp_path):
             shutil.rmtree(self.abs_tmp_path)
 
-    def test_save_restore_model_googlenet(self):
-        model = googlenet(aux_logits=True)
 
-        self._test_save_restore_model('./networks/mynets/googlenet.py', 'googlenet', model)
 
-    def test_save_restore_model_pretrained(self):
-        file_names = ['mobilenet', 'resnet18']
-        models = [mobilenet_v2, resnet18]
-        for file_name, model in zip(file_names, models):
-            code_name = model.__name__
-            model = model(pretrained=True)
-            code_file = './networks/mynets/{}.py'.format(file_name)
 
-            self._test_save_restore_model(code_file, code_name, model)
 
     def test_save_restore_model_pretrained_inference_info(self):
         file_names = ['mobilenet', 'resnet18']
@@ -99,14 +88,7 @@ class TestSave(unittest.TestCase):
 
             self._test_save_restore_model(code_file, code_name, model)
 
-    def _test_save_restore_model(self, code_file, code_name, model):
-        save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(model, code_file, code_name)
-        save_info = save_info_builder.build()
 
-        model_id = self.save_recover_service.save_model(save_info)
-        restored_model_info = self.save_recover_service.recover_model(model_id)
-        self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
 
     def test_save_restore_provenance_model_resnet18(self):
         model_name = resnet18.__name__
