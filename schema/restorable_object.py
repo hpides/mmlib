@@ -193,7 +193,7 @@ class StateDictRestorableObjectWrapper(AbstractRestorableObjectWrapper):
 
     def size_in_bytes(self, file_pers_service: FilePersistenceService,
                       dict_pers_service: DictPersistenceService) -> int:
-        # TODO implement
+        # Note leave implementation empty for now, as soon as we start evaluating approach implementation needed
         return 0
 
     def _representation_type(self) -> str:
