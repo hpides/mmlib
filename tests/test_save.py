@@ -26,13 +26,13 @@ from tests.networks.mynets.resnet50 import resnet50
 from util.dummy_data import imagenet_input
 from util.mongo import MongoService
 
-
+MODEL_PATH = './networks/mynets/{}.py'
 
 MONGO_CONTAINER_NAME = 'mongo-test'
 COCO_ROOT = 'coco_root'
 COCO_ANNOT = 'coco_annotations'
 
-
+CONFIG = './local-config.ini'
 
 
 class TestSave(unittest.TestCase):
@@ -64,16 +64,71 @@ class TestSave(unittest.TestCase):
         if os.path.exists(self.abs_tmp_path):
             shutil.rmtree(self.abs_tmp_path)
 
+    def test_save_restore_model_googlenet(self):
+        model = googlenet(aux_logits=True)
 
+        self._test_save_restore_model('./networks/mynets/googlenet.py', 'googlenet', model)
 
+    def test_save_restore_model_pretrained(self):
+        file_names = ['mobilenet', 'resnet18']
+        models = [mobilenet_v2, resnet18]
+        for file_name, model in zip(file_names, models):
+            code_name = model.__name__
+            model = model(pretrained=True)
+            code_file = './networks/mynets/{}.py'.format(file_name)
 
+            self._test_save_restore_model(code_file, code_name, model)
 
+    def test_save_restore_model_pretrained_inference_info(self):
+        file_names = ['mobilenet', 'resnet18']
+        models = [mobilenet_v2, resnet18]
+        for file_name, model in zip(file_names, models):
+            code_name = model.__name__
+            model = model(pretrained=True)
+            code_file = './networks/mynets/{}.py'.format(file_name)
 
+            self._test_save_restore_model(code_file, code_name, model)
 
+    def test_save_restore_model(self):
+        file_names = ['mobilenet', 'resnet18']
+        models = [mobilenet_v2, resnet18]
+        for file_name, model in zip(file_names, models):
+            code_name = model.__name__
+            model = model()
+            code_file = './networks/mynets/{}.py'.format(file_name)
 
+            self._test_save_restore_model(code_file, code_name, model)
 
+    def _test_save_restore_model(self, code_file, code_name, model):
+        save_info_builder = ModelSaveInfoBuilder()
+        save_info_builder.add_model_info(model, code_file, code_name)
+        save_info = save_info_builder.build()
 
+        model_id = self.save_recover_service.save_model(save_info)
+        restored_model_info = self.save_recover_service.recover_model(model_id)
+        self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
 
+    def test_save_restore_provenance_model_resnet18(self):
+        model_name = resnet18.__name__
+        self._test_save_restore_provenance_specific_model(model_name)
+
+    def test_save_restore_provenance_model_resnet50(self):
+        model_name = resnet50.__name__
+        self._test_save_restore_provenance_specific_model(model_name)
+
+    def test_save_restore_provenance_model_resnet152(self):
+        model_name = resnet152.__name__
+        self._test_save_restore_provenance_specific_model(model_name)
+
+    def test_save_restore_provenance_model_mobilenet(self):
+        model_name = mobilenet_v2.__name__
+        self._test_save_restore_provenance_specific_model(model_name, filename='mobilenet')
+
+    # googlenet has some problems when restored form state_dict with aux loss
+    # NOTE think about not using googlenet for experiments
+    # def test_save_restore_provenance_model_googlenet(self):
+    #     model_name = googlenet.__name__
+    #     self._test_save_restore_provenance_specific_model(model_name)
 
     def _test_save_restore_provenance_specific_model(self, model_name, filename=None):
         # store model-0
@@ -96,7 +151,45 @@ class TestSave(unittest.TestCase):
         save_info_builder.add_model_info(code=code_file, model_class_name=class_name, base_model_id=base_model_id)
 
         imagenet_ts = ImagenetTrainService()
-        self._add_imagenet_prov_state_dict(imagenet_ts, model)
+
+        set_deterministic()
+
+        state_dict = {}
+
+        optimizer = torch.optim.SGD(model.parameters(), 1e-4, momentum=0.9, weight_decay=1e-4)
+        state_dict['optimizer'] = OptimizerWrapper(
+            import_cmd='import torch',
+            class_name='torch.optim.SGD',
+            init_args={'lr': 1e-4, 'momentum': 0.9, 'weight_decay': 1e-4},
+            config_args={},
+            init_ref_type_args=['params'],
+            instance=optimizer
+        )
+
+        data_wrapper = TrainCustomCoco('./data/reduced-custom-coco-data')
+        state_dict['data'] = RestorableObjectWrapper(
+            code='./networks/custom_coco.py',
+            class_name='TrainCustomCoco',
+            init_args={},
+            config_args={'root': CURRENT_DATA_ROOT},
+            init_ref_type_args=[],
+            instance=data_wrapper
+        )
+
+        # Note use batch size 5 to reduce speed up tests
+        dataloader = torch.utils.data.DataLoader(data_wrapper, batch_size=5, shuffle=False, num_workers=0,
+                                                 pin_memory=True)
+        state_dict['dataloader'] = RestorableObjectWrapper(
+            import_cmd='from torch.utils.data import DataLoader',
+            class_name='DataLoader',
+            init_args={'batch_size': 5, 'shuffle': False, 'num_workers': 0, 'pin_memory': True},
+            config_args={},
+            init_ref_type_args=['dataset'],
+            instance=dataloader
+        )
+
+        imagenet_ts.state_objs = state_dict
+
         prov_train_serv_code = './inference_and_training/imagenet_train.py'
         prov_train_serv_class_name = 'ImagenetTrainService'
         prov_train_wrapper_code = './inference_and_training/imagenet_train.py'
@@ -165,44 +258,6 @@ class TestSave(unittest.TestCase):
 
         recovered_model_1 = recovered_model_info.model
 
-    def _add_imagenet_prov_state_dict(self, resnet_ts, model):
-        set_deterministic()
-
-        state_dict = {}
-
-        optimizer = torch.optim.SGD(model.parameters(), 1e-4, momentum=0.9, weight_decay=1e-4)
-        state_dict['optimizer'] = OptimizerWrapper(
-            import_cmd='import torch',
-            class_name='torch.optim.SGD',
-            init_args={'lr': 1e-4, 'momentum': 0.9, 'weight_decay': 1e-4},
-            config_args={},
-            init_ref_type_args=['params'],
-            instance=optimizer
-        )
-
-        data_wrapper = TrainCustomCoco('./data/reduced-custom-coco-data')
-        state_dict['data'] = RestorableObjectWrapper(
-            code='./networks/custom_coco.py',
-            class_name='TrainCustomCoco',
-            init_args={},
-            config_args={'root': CURRENT_DATA_ROOT},
-            init_ref_type_args=[],
-            instance=data_wrapper
-        )
-
-        # Note use batch size 5 to reduce speed up tests
-        dataloader = torch.utils.data.DataLoader(data_wrapper, batch_size=5, shuffle=False, num_workers=0,
-                                                 pin_memory=True)
-        state_dict['dataloader'] = RestorableObjectWrapper(
-            import_cmd='from torch.utils.data import DataLoader',
-            class_name='DataLoader',
-            init_args={'batch_size': 5, 'shuffle': False, 'num_workers': 0, 'pin_memory': True},
-            config_args={},
-            init_ref_type_args=['dataset'],
-            instance=dataloader
-        )
-
-        resnet_ts.state_objs = state_dict
 
     def test_save_restore_model_version(self):
         set_deterministic()
@@ -237,7 +292,21 @@ class TestSave(unittest.TestCase):
         self.assertFalse(
             model_equal(restored_model_info_version1.model, restored_model_info_version2.model, imagenet_input))
 
+    def test_save_restore_model_and_recover_val(self):
+        set_deterministic()
+        model = resnet18()
 
+        save_info_builder = ModelSaveInfoBuilder()
+        save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
+        save_info = save_info_builder.build()
+
+        model_id = self.save_recover_service.save_model(save_info)
+        self.recover_val_service.save_recover_val_info(model, model_id, [10, 3, 300, 400])
+
+        restored_model_info = self.save_recover_service.recover_model(model_id)
+
+        self.assertTrue(self.recover_val_service.check_recover_val(model_id, restored_model_info.model))
+        self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
 
     def test_save_restore_model_version_and_recover_val(self):
         set_deterministic()

@@ -113,9 +113,7 @@ class TestProvSaveService(unittest.TestCase):
 
         state_dict = {}
 
-        # before we can define the data loader, we have to define the data wrapper
-        # for this test case we will use the data from our custom coco dataset
-        data_wrapper = TrainCustomCoco(raw_data)
+        data_wrapper = TrainCustomCoco('./data/reduced-custom-coco-data')
         state_dict['data'] = RestorableObjectWrapper(
             code='./networks/custom_coco.py',
             class_name='TrainCustomCoco',
@@ -125,20 +123,13 @@ class TestProvSaveService(unittest.TestCase):
             instance=data_wrapper
         )
 
-        # as a dataloader we use the standard implementation provided by pyTorch
-        # this is why we instead of specifying the code path, we specify an import cmd
-        # also we to track all arguments that have been used for initialization of this objects
-        batch_size = 5
-        shuffle = False
-        num_workers = 0
-        pin_memory = True
-        dataloader = torch.utils.data.DataLoader(data_wrapper, batch_size=batch_size, shuffle=shuffle,
-                                                 num_workers=num_workers, pin_memory=pin_memory)
+        # Note use batch size 5 to reduce speed up tests
+        dataloader = torch.utils.data.DataLoader(data_wrapper, batch_size=5, shuffle=False, num_workers=0,
+                                                 pin_memory=True)
         state_dict['dataloader'] = RestorableObjectWrapper(
             import_cmd='from torch.utils.data import DataLoader',
             class_name='DataLoader',
-            init_args={'batch_size': batch_size, 'shuffle': pin_memory, 'num_workers': num_workers,
-                       'pin_memory': pin_memory},
+            init_args={'batch_size': 5, 'shuffle': False, 'num_workers': 0, 'pin_memory': True},
             config_args={},
             init_ref_type_args=['dataset'],
             instance=dataloader
