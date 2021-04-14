@@ -71,27 +71,9 @@ class TestSave(unittest.TestCase):
 
 
 
-    def test_save_restore_provenance_model_resnet18(self):
-        model_name = resnet18.__name__
-        self._test_save_restore_provenance_specific_model(model_name)
 
-    def test_save_restore_provenance_model_resnet50(self):
-        model_name = resnet50.__name__
-        self._test_save_restore_provenance_specific_model(model_name)
 
-    def test_save_restore_provenance_model_resnet152(self):
-        model_name = resnet152.__name__
-        self._test_save_restore_provenance_specific_model(model_name)
 
-    def test_save_restore_provenance_model_mobilenet(self):
-        model_name = mobilenet_v2.__name__
-        self._test_save_restore_provenance_specific_model(model_name, filename='mobilenet')
-
-    # googlenet has some problems when restored form state_dict with aux loss
-    # NOTE think about not using googlenet for experiments
-    # def test_save_restore_provenance_model_googlenet(self):
-    #     model_name = googlenet.__name__
-    #     self._test_save_restore_provenance_specific_model(model_name)
 
     def _test_save_restore_provenance_specific_model(self, model_name, filename=None):
         # store model-0
