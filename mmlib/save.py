@@ -136,7 +136,13 @@ class BaselineSaveService(AbstractSaveService):
         recover_val_service.save_recover_val_info(model, model_id, dummy_input_shape)
 
     def _check_consistency(self, model_save_info):
-        assert True, 'nothing checked so far'
+        # when storing a full model we need the following information
+        # the model itself
+        assert model_save_info.model, 'model is not set'
+        # the model code
+        assert model_save_info.code, 'model code is not set'
+        # the class name of the model
+        assert model_save_info.class_name, 'model class name is not set'
 
     def _save_full_model(self, model_save_info: ModelSaveInfo) -> str:
         with tempfile.TemporaryDirectory() as tmp_path:
