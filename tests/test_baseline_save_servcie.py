@@ -19,6 +19,10 @@ MONGO_CONTAINER_NAME = 'mongo-test'
 
 DUMMY_INPUT_SHAPE = [10, 3, 300, 400]
 
+GOOGLENET = 'googlenet'
+MOBILENET = 'mobilenet'
+RESNET_18 = 'resnet18'
+
 
 class TestBaselineSaveService(unittest.TestCase):
 
@@ -50,21 +54,21 @@ class TestBaselineSaveService(unittest.TestCase):
     def test_save_restore_mobilenet(self):
         class_name = mobilenet_v2.__name__
         model = mobilenet_v2(pretrained=True)
-        code_file = NETWORK_CODE_TEMPLATE.format('mobilenet')
+        code_file = NETWORK_CODE_TEMPLATE.format(MOBILENET)
 
         self._test_save_restore_model(code_file, class_name, model)
 
     def test_save_restore_resnet18(self):
         class_name = resnet18.__name__
         model = resnet18(pretrained=True)
-        code_file = NETWORK_CODE_TEMPLATE.format('resnet18')
+        code_file = NETWORK_CODE_TEMPLATE.format(RESNET_18)
 
         self._test_save_restore_model(code_file, class_name, model)
 
     def test_save_restore_model_googlenet(self):
-        class_name = 'googlenet'
+        class_name = GOOGLENET
         model = googlenet(aux_logits=True)
-        code_file = NETWORK_CODE_TEMPLATE.format('googlenet')
+        code_file = NETWORK_CODE_TEMPLATE.format(GOOGLENET)
 
         self._test_save_restore_model(code_file, class_name, model)
 
@@ -80,21 +84,21 @@ class TestBaselineSaveService(unittest.TestCase):
     def test_save_restore_mobilenet_val_info(self):
         class_name = mobilenet_v2.__name__
         model = mobilenet_v2(pretrained=True)
-        code_file = NETWORK_CODE_TEMPLATE.format('mobilenet')
+        code_file = NETWORK_CODE_TEMPLATE.format(MOBILENET)
 
         self._test_save_restore_model_and_validation_info(code_file, class_name, model, DUMMY_INPUT_SHAPE)
 
     def test_save_restore_resnet18_val_info(self):
         class_name = resnet18.__name__
         model = resnet18(pretrained=True)
-        code_file = NETWORK_CODE_TEMPLATE.format('resnet18')
+        code_file = NETWORK_CODE_TEMPLATE.format(RESNET_18)
 
         self._test_save_restore_model_and_validation_info(code_file, class_name, model, DUMMY_INPUT_SHAPE)
 
     def test_save_restore_model_googlenet_val_info(self):
-        class_name = 'googlenet'
+        class_name = GOOGLENET
         model = googlenet(aux_logits=True)
-        code_file = NETWORK_CODE_TEMPLATE.format('googlenet')
+        code_file = NETWORK_CODE_TEMPLATE.format(GOOGLENET)
 
         self._test_save_restore_model_and_validation_info(code_file, class_name, model, DUMMY_INPUT_SHAPE)
 
@@ -113,7 +117,7 @@ class TestBaselineSaveService(unittest.TestCase):
 
     def test_save_restore_derived_models(self):
         class_name = resnet18.__name__
-        code_file = NETWORK_CODE_TEMPLATE.format('resnet18')
+        code_file = NETWORK_CODE_TEMPLATE.format(RESNET_18)
         initial_model = resnet18()
 
         # save initial model
