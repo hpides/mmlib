@@ -26,13 +26,13 @@ from tests.networks.mynets.resnet50 import resnet50
 from util.dummy_data import imagenet_input
 from util.mongo import MongoService
 
-MODEL_PATH = './networks/mynets/{}.py'
+
 
 MONGO_CONTAINER_NAME = 'mongo-test'
 COCO_ROOT = 'coco_root'
 COCO_ANNOT = 'coco_annotations'
 
-CONFIG = './local-config.ini'
+
 
 
 class TestSave(unittest.TestCase):
