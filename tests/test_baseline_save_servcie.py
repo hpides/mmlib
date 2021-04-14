@@ -4,6 +4,7 @@ import unittest
 
 from mmlib.equal import model_equal
 from mmlib.persistence import FileSystemPersistenceService, MongoDictPersistenceService
+from mmlib.recover_validation import RecoverValidationService
 from mmlib.save import BaselineSaveService
 from schema.save_info_builder import ModelSaveInfoBuilder
 from tests.networks.mynets.googlenet import googlenet
@@ -15,6 +16,8 @@ from util.mongo import MongoService
 NETWORK_CODE_TEMPLATE = './networks/mynets/{}.py'
 
 MONGO_CONTAINER_NAME = 'mongo-test'
+
+DUMMY_INPUT_SHAPE = [10, 3, 300, 400]
 
 
 class TestBaselineSaveService(unittest.TestCase):
@@ -33,6 +36,7 @@ class TestBaselineSaveService(unittest.TestCase):
         os.mkdir(self.abs_tmp_path)
         file_pers_service = FileSystemPersistenceService(self.tmp_path)
         dict_pers_service = MongoDictPersistenceService()
+        self.recover_val_service = RecoverValidationService(dict_pers_service)
         self.baseline_save_service = BaselineSaveService(file_pers_service, dict_pers_service)
 
     def tearDown(self) -> None:
@@ -73,6 +77,36 @@ class TestBaselineSaveService(unittest.TestCase):
         restored_model_info = self.baseline_save_service.recover_model(model_id)
         self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
 
-    def _test_save_restore_model_with_extra(self, code_file, code_name, model):
-        # TODO
-        pass
+    def test_save_restore_mobilenet_val_info(self):
+        class_name = mobilenet_v2.__name__
+        model = mobilenet_v2(pretrained=True)
+        code_file = NETWORK_CODE_TEMPLATE.format('mobilenet')
+
+        self._test_save_restore_model_and_validation_info(code_file, class_name, model, DUMMY_INPUT_SHAPE)
+
+    def test_save_restore_resnet18_val_info(self):
+        class_name = resnet18.__name__
+        model = resnet18(pretrained=True)
+        code_file = NETWORK_CODE_TEMPLATE.format('resnet18')
+
+        self._test_save_restore_model_and_validation_info(code_file, class_name, model, DUMMY_INPUT_SHAPE)
+
+    def test_save_restore_model_googlenet_val_info(self):
+        class_name = 'googlenet'
+        model = googlenet(aux_logits=True)
+        code_file = NETWORK_CODE_TEMPLATE.format('googlenet')
+
+        self._test_save_restore_model_and_validation_info(code_file, class_name, model, DUMMY_INPUT_SHAPE)
+
+    def _test_save_restore_model_and_validation_info(self, code_file, code_name, model, dummy_input_shape):
+        save_info_builder = ModelSaveInfoBuilder()
+        save_info_builder.add_model_info(model, code_file, code_name)
+        save_info = save_info_builder.build()
+
+        model_id = self.baseline_save_service.save_model(save_info)
+
+        # save additionally validation info
+        self.baseline_save_service.save_validation_info(model, model_id, dummy_input_shape, self.recover_val_service)
+        restored_model_info = self.baseline_save_service.recover_model(model_id, execute_checks=True,
+                                                                       recover_val_service=self.recover_val_service)
+        self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))

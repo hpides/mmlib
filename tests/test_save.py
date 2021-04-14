@@ -68,25 +68,6 @@ class TestSave(unittest.TestCase):
 
 
 
-    def test_save_restore_model_pretrained_inference_info(self):
-        file_names = ['mobilenet', 'resnet18']
-        models = [mobilenet_v2, resnet18]
-        for file_name, model in zip(file_names, models):
-            code_name = model.__name__
-            model = model(pretrained=True)
-            code_file = './networks/mynets/{}.py'.format(file_name)
-
-            self._test_save_restore_model(code_file, code_name, model)
-
-    def test_save_restore_model(self):
-        file_names = ['mobilenet', 'resnet18']
-        models = [mobilenet_v2, resnet18]
-        for file_name, model in zip(file_names, models):
-            code_name = model.__name__
-            model = model()
-            code_file = './networks/mynets/{}.py'.format(file_name)
-
-            self._test_save_restore_model(code_file, code_name, model)
 
 
 
@@ -274,21 +255,7 @@ class TestSave(unittest.TestCase):
         self.assertFalse(
             model_equal(restored_model_info_version1.model, restored_model_info_version2.model, imagenet_input))
 
-    def test_save_restore_model_and_recover_val(self):
-        set_deterministic()
-        model = resnet18()
 
-        save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(model, './networks/mynets/resnet18.py', 'resnet18')
-        save_info = save_info_builder.build()
-
-        model_id = self.save_recover_service.save_model(save_info)
-        self.recover_val_service.save_recover_val_info(model, model_id, [10, 3, 300, 400])
-
-        restored_model_info = self.save_recover_service.recover_model(model_id)
-
-        self.assertTrue(self.recover_val_service.check_recover_val(model_id, restored_model_info.model))
-        self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
 
     def test_save_restore_model_version_and_recover_val(self):
         set_deterministic()
