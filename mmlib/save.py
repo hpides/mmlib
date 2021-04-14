@@ -150,22 +150,6 @@ class BaselineSaveService(AbstractSaveService):
 
             derived_from = model_save_info.base_model if model_save_info.base_model else None
 
-            if derived_from and not (model_save_info.code or model_save_info.class_name):
-                # create separate dir to avoid naming conflicts
-                restore_dir = os.path.join(tmp_path, 'restore')
-                os.mkdir(restore_dir)
-
-                base_model_info = ModelInfo.load(derived_from, self._file_pers_service, self._dict_pers_service,
-                                                 restore_dir)
-                base_model_info.load_all_fields(self._file_pers_service, self._dict_pers_service, restore_dir)
-                base_recover_info: FullModelRecoverInfo = base_model_info.recover_info
-                base_recover_info.load_all_fields(self._file_pers_service, self._dict_pers_service, restore_dir,
-                                                  load_files=True)
-
-                model_save_info.code = base_recover_info.model_code
-                model_save_info.class_name = base_recover_info.model_class_name
-
-            # if the model to store is not derived from another model code and class name have to me defined
             recover_info = FullModelRecoverInfo(weights_file_path=weights_path,
                                                 model_code=model_save_info.code,
                                                 model_class_name=model_save_info.class_name)
