@@ -98,9 +98,9 @@ class TestBaselineSaveService(unittest.TestCase):
 
         self._test_save_restore_model_and_validation_info(code_file, class_name, model, DUMMY_INPUT_SHAPE)
 
-    def _test_save_restore_model_and_validation_info(self, code_file, code_name, model, dummy_input_shape):
+    def _test_save_restore_model_and_validation_info(self, code_file, class_name, model, dummy_input_shape):
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(model, code_file, code_name)
+        save_info_builder.add_model_info(model, code_file, class_name)
         save_info = save_info_builder.build()
 
         model_id = self.baseline_save_service.save_model(save_info)
@@ -110,3 +110,30 @@ class TestBaselineSaveService(unittest.TestCase):
         restored_model_info = self.baseline_save_service.recover_model(model_id, execute_checks=True,
                                                                        recover_val_service=self.recover_val_service)
         self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
+
+    def test_save_restore_derived_models(self):
+        class_name = resnet18.__name__
+        code_file = NETWORK_CODE_TEMPLATE.format('resnet18')
+        initial_model = resnet18()
+
+        # save initial model
+        save_info_builder = ModelSaveInfoBuilder()
+        save_info_builder.add_model_info(initial_model, code_file, class_name)
+        save_info = save_info_builder.build()
+        initial_model_id = self.baseline_save_service.save_model(save_info)
+
+        # save derived model
+        derived_model = resnet18(pretrained=True)
+        save_info_builder = ModelSaveInfoBuilder()
+        save_info_builder.add_model_info(derived_model, code_file, class_name, base_model_id=initial_model_id)
+        save_info = save_info_builder.build()
+        derived_model_id = self.baseline_save_service.save_model(save_info)
+
+        restored_model_info = self.baseline_save_service.recover_model(derived_model_id)
+
+        self.assertTrue(model_equal(derived_model, restored_model_info.model, imagenet_input))
+
+
+
+
+
