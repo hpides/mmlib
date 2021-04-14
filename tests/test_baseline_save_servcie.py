@@ -132,8 +132,3 @@ class TestBaselineSaveService(unittest.TestCase):
         restored_model_info = self.baseline_save_service.recover_model(derived_model_id)
 
         self.assertTrue(model_equal(derived_model, restored_model_info.model, imagenet_input))
-
-
-
-
-
