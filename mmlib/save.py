@@ -217,21 +217,30 @@ class WeightUpdateSaveService(BaselineSaveService):
 
     def _save_updated_model(self, model_save_info):
         assert model_save_info.base_model, 'no base model given'
-        weights_update, update_type = self._generate_weights_update(model_save_info)
 
-        derived_from = model_save_info.base_model
+        with tempfile.TemporaryDirectory() as tmp_path:
+            weights_update, update_type = self._generate_weights_update(model_save_info, tmp_path)
 
-        recover_info = WeightsUpdateRecoverInfo(update=weights_update, update_type=update_type)
+            derived_from = model_save_info.base_model
 
-        model_info = ModelInfo(store_type=ModelStoreType.PICKLED_WEIGHTS, recover_info=recover_info,
-                               derived_from_id=derived_from)
+            recover_info = WeightsUpdateRecoverInfo(update=weights_update, update_type=update_type)
 
-        model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
+            model_info = ModelInfo(store_type=ModelStoreType.PICKLED_WEIGHTS, recover_info=recover_info,
+                                   derived_from_id=derived_from)
 
-        return model_info_id
+            model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
+
+            return model_info_id
 
     def _base_model_given(self, model_save_info):
         return model_save_info.base_model is not None
+
+    def _generate_weights_update(self, model_save_info, tmp_path):
+        # for now the weight update is just storing the weights with the standard pytorch method
+        model = model_save_info.model
+        model_weights = super()._pickle_weights(model, tmp_path)
+
+        return model_weights, "default_weight_store"
 
 
 class ProvenanceSaveService(BaselineSaveService):
