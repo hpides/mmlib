@@ -128,7 +128,10 @@ class WeightsUpdateRecoverInfo(AbstractRecoverInfo):
 
     def load_all_fields(self, file_pers_service: FilePersistenceService, dict_pers_service: DictPersistenceService,
                         restore_root: str, load_recursive: bool = True, load_files: bool = True):
-        pass
+        restored_dict = dict_pers_service.recover_dict(self.store_id, RECOVER_INFO)
+
+        self.weights_update = _restore_weights_update(dict_pers_service, file_pers_service, load_files, load_recursive,
+                                                      restore_root, restored_dict)
 
     def size_in_bytes(self, file_pers_service: FilePersistenceService,
                       dict_pers_service: DictPersistenceService) -> int:
@@ -137,6 +140,17 @@ class WeightsUpdateRecoverInfo(AbstractRecoverInfo):
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
         dict_representation[WEIGHTS_UPDATE] = self.weights_update.persist(file_pers_service, dict_pers_service)
+
+
+def _restore_weights_update(dict_pers_service, file_pers_service, load_files, load_recursive, restore_root,
+                            restored_dict):
+    weights_update_id = restored_dict[WEIGHTS_UPDATE]
+    if not load_recursive:
+        weights_update = WeightsUpdate.load_placeholder(weights_update_id)
+    else:
+        weights_update = WeightsUpdate.load(weights_update_id, file_pers_service, dict_pers_service, restore_root,
+                                            load_recursive, load_files)
+    return weights_update
 
 
 DATASET = 'dataset'
