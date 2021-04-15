@@ -140,9 +140,9 @@ class BaselineSaveService(AbstractSaveService):
         # the model itself
         assert model_save_info.model, 'model is not set'
         # the model code
-        assert model_save_info.code, 'model code is not set'
+        assert model_save_info.model_code, 'model code is not set'
         # the class name of the model
-        assert model_save_info.class_name, 'model class name is not set'
+        assert model_save_info.model_class_name, 'model class name is not set'
 
     def _save_full_model(self, model_save_info: ModelSaveInfo) -> str:
         with tempfile.TemporaryDirectory() as tmp_path:
@@ -151,8 +151,8 @@ class BaselineSaveService(AbstractSaveService):
             derived_from = model_save_info.base_model if model_save_info.base_model else None
 
             recover_info = FullModelRecoverInfo(weights_file_path=weights_path,
-                                                model_code=model_save_info.code,
-                                                model_class_name=model_save_info.class_name)
+                                                model_code=model_save_info.model_code,
+                                                model_class_name=model_save_info.model_class_name)
 
             model_info = ModelInfo(store_type=ModelStoreType.PICKLED_WEIGHTS, recover_info=recover_info,
                                    derived_from_id=derived_from)
@@ -261,6 +261,13 @@ class ProvenanceSaveService(BaselineSaveService):
         pass
 
     def _save_provenance_model(self, model_save_info):
+        model_info = self._build_prov_model_info(model_save_info)
+
+        model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
+
+        return model_info_id
+
+    def _build_prov_model_info(self, model_save_info):
         tw_class_name = model_save_info.prov_rec_info.train_info.train_wrapper_class_name
         tw_code = model_save_info.prov_rec_info.train_info.train_wrapper_code
         type_ = create_type(code=tw_code, type_name=tw_class_name)
@@ -277,22 +284,16 @@ class ProvenanceSaveService(BaselineSaveService):
             train_kwargs=model_save_info.prov_rec_info.train_info.train_kwargs,
             environment=model_save_info.prov_rec_info.train_info.environment
         )
-
         prov_recover_info = ProvenanceRecoverInfo(
             dataset=dataset,
             model_code=model_save_info.prov_rec_info.model_code,
             model_class_name=model_save_info.prov_rec_info.model_class_name,
             train_info=train_info
         )
-
         derived_from = model_save_info.base_model if model_save_info.base_model else None
-
         model_info = ModelInfo(store_type=ModelStoreType.PROVENANCE, recover_info=prov_recover_info,
                                derived_from_id=derived_from)
-
-        model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
-
-        return model_info_id
+        return model_info
 
     def _recover_base_model(self, base_model_id, base_model_store_type):
         if base_model_store_type == ModelStoreType.PICKLED_WEIGHTS:
