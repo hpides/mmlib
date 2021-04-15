@@ -119,6 +119,7 @@ def _recover_weights(file_pers_service, load_files, restore_root, restored_dict)
 
 WEIGHTS_UPDATE = 'weights_update'
 
+
 class WeightsUpdateRecoverInfo(AbstractRecoverInfo):
 
     def __init__(self, weights_update: WeightsUpdate = None, store_id: str = None):
@@ -131,6 +132,7 @@ class WeightsUpdateRecoverInfo(AbstractRecoverInfo):
 
     def size_in_bytes(self, file_pers_service: FilePersistenceService,
                       dict_pers_service: DictPersistenceService) -> int:
+        # Note not implemented for now
         pass
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
@@ -139,6 +141,8 @@ class WeightsUpdateRecoverInfo(AbstractRecoverInfo):
 
 DATASET = 'dataset'
 TRAIN_INFO = 'train_info'
+
+
 class ProvenanceRecoverInfo(AbstractModelCodeRecoverInfo):
 
     def __init__(self, dataset: Dataset = None, model_code=None, model_class_name: str = None,
