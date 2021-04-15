@@ -1,7 +1,6 @@
 import time
 
 import torch
-
 from schema.inference_info import InferenceService
 
 

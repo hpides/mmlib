@@ -7,7 +7,7 @@ import torch
 
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from mmlib.recover_validation import RecoverValidationService
-from mmlib.save_info import ModelSaveInfo
+from mmlib.save_info import ModelSaveInfo, ProvModelSaveInfo
 from mmlib.track_env import compare_env_to_current
 from schema.dataset import Dataset
 from schema.model_info import ModelInfo, MODEL_INFO
@@ -136,7 +136,13 @@ class BaselineSaveService(AbstractSaveService):
         recover_val_service.save_recover_val_info(model, model_id, dummy_input_shape)
 
     def _check_consistency(self, model_save_info):
-        assert True, 'nothing checked so far'
+        # when storing a full model we need the following information
+        # the model itself
+        assert model_save_info.model, 'model is not set'
+        # the model code
+        assert model_save_info.model_code, 'model code is not set'
+        # the class name of the model
+        assert model_save_info.model_class_name, 'model class name is not set'
 
     def _save_full_model(self, model_save_info: ModelSaveInfo) -> str:
         with tempfile.TemporaryDirectory() as tmp_path:
@@ -144,25 +150,9 @@ class BaselineSaveService(AbstractSaveService):
 
             derived_from = model_save_info.base_model if model_save_info.base_model else None
 
-            if derived_from and not (model_save_info.code or model_save_info.class_name):
-                # create separate dir to avoid naming conflicts
-                restore_dir = os.path.join(tmp_path, 'restore')
-                os.mkdir(restore_dir)
-
-                base_model_info = ModelInfo.load(derived_from, self._file_pers_service, self._dict_pers_service,
-                                                 restore_dir)
-                base_model_info.load_all_fields(self._file_pers_service, self._dict_pers_service, restore_dir)
-                base_recover_info: FullModelRecoverInfo = base_model_info.recover_info
-                base_recover_info.load_all_fields(self._file_pers_service, self._dict_pers_service, restore_dir,
-                                                  load_files=True)
-
-                model_save_info.code = base_recover_info.model_code
-                model_save_info.class_name = base_recover_info.model_class_name
-
-            # if the model to store is not derived from another model code and class name have to me defined
             recover_info = FullModelRecoverInfo(weights_file_path=weights_path,
-                                                model_code=model_save_info.code,
-                                                model_class_name=model_save_info.class_name)
+                                                model_code=model_save_info.model_code,
+                                                model_class_name=model_save_info.model_class_name)
 
             model_info = ModelInfo(store_type=ModelStoreType.PICKLED_WEIGHTS, recover_info=recover_info,
                                    derived_from_id=derived_from)
@@ -220,11 +210,12 @@ class ProvenanceSaveService(BaselineSaveService):
             # if the base model is none, then we have to store the model as a full model
             return super().save_model(model_save_info)
         else:
-            self._check_consistency(model_save_info)
-
-            model_id = self._save_provenance_model(model_save_info)
-
-            return model_id
+            if isinstance(model_save_info, ProvModelSaveInfo):
+                return self._save_provenance_model(model_save_info)
+            else:
+                # if the model save info does not provide provenance save info we try to save it using the baseline
+                # approach
+                return super().save_model(model_save_info)
 
     def recover_model(self, model_id: str, execute_checks: bool = False,
                       recover_val_service: RecoverValidationService = None) -> RestoredModelInfo:
@@ -266,43 +257,40 @@ class ProvenanceSaveService(BaselineSaveService):
     def model_save_size(self, model_id: str) -> int:
         pass
 
-    def _check_consistency(self, model_save_info):
-        # TODO
-        pass
-
     def _save_provenance_model(self, model_save_info):
-        tw_class_name = model_save_info.prov_rec_info.train_info.train_wrapper_class_name
-        tw_code = model_save_info.prov_rec_info.train_info.train_wrapper_code
-        type_ = create_type(code=tw_code, type_name=tw_class_name)
-        train_service_wrapper = type_(
-            class_name=model_save_info.prov_rec_info.train_info.train_service_class_name,
-            code=model_save_info.prov_rec_info.train_info.train_service_code,
-            instance=model_save_info.prov_rec_info.train_info.train_service
-        )
-        dataset = Dataset(model_save_info.prov_rec_info.raw_dataset)
-        train_info = TrainInfo(
-            ts_wrapper=train_service_wrapper,
-            ts_wrapper_code=tw_code,
-            ts_wrapper_class_name=tw_class_name,
-            train_kwargs=model_save_info.prov_rec_info.train_info.train_kwargs,
-            environment=model_save_info.prov_rec_info.train_info.environment
-        )
-
-        prov_recover_info = ProvenanceRecoverInfo(
-            dataset=dataset,
-            model_code=model_save_info.prov_rec_info.model_code,
-            model_class_name=model_save_info.prov_rec_info.model_class_name,
-            train_info=train_info
-        )
-
-        derived_from = model_save_info.base_model if model_save_info.base_model else None
-
-        model_info = ModelInfo(store_type=ModelStoreType.PROVENANCE, recover_info=prov_recover_info,
-                               derived_from_id=derived_from)
+        model_info = self._build_prov_model_info(model_save_info)
 
         model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
 
         return model_info_id
+
+    def _build_prov_model_info(self, model_save_info):
+        tw_class_name = model_save_info.train_info.train_wrapper_class_name
+        tw_code = model_save_info.train_info.train_wrapper_code
+        type_ = create_type(code=tw_code, type_name=tw_class_name)
+        train_service_wrapper = type_(
+            class_name=model_save_info.train_info.train_service_class_name,
+            code=model_save_info.train_info.train_service_code,
+            instance=model_save_info.train_info.train_service
+        )
+        dataset = Dataset(model_save_info.raw_dataset)
+        train_info = TrainInfo(
+            ts_wrapper=train_service_wrapper,
+            ts_wrapper_code=tw_code,
+            ts_wrapper_class_name=tw_class_name,
+            train_kwargs=model_save_info.train_info.train_kwargs,
+            environment=model_save_info.train_info.environment
+        )
+        prov_recover_info = ProvenanceRecoverInfo(
+            dataset=dataset,
+            model_code=model_save_info.model_code,
+            model_class_name=model_save_info.model_class_name,
+            train_info=train_info
+        )
+        derived_from = model_save_info.base_model if model_save_info.base_model else None
+        model_info = ModelInfo(store_type=ModelStoreType.PROVENANCE, recover_info=prov_recover_info,
+                               derived_from_id=derived_from)
+        return model_info
 
     def _recover_base_model(self, base_model_id, base_model_store_type):
         if base_model_store_type == ModelStoreType.PICKLED_WEIGHTS:

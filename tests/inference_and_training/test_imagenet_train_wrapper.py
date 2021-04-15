@@ -12,7 +12,7 @@ from tests.inference_and_training.imagenet_train import OptimizerWrapper, Imagen
 from tests.networks.custom_coco import TrainCustomCoco
 from tests.networks.mynets.resnet18 import resnet18
 from tests.test_dict_persistence import MONGO_CONTAINER_NAME
-from tests.test_save import CONFIG
+from tests.test_prov_save_servcie import CONFIG
 from util.dummy_data import imagenet_input
 
 
@@ -112,5 +112,4 @@ class TestSave(unittest.TestCase):
 
             # starting from the same intermediate model the both restored versions of the resnet train service
             # should train the models in the same way
-            # TODO check for other models and on GPU where we have to set "set.deterministic()"
             self.assertTrue(model_equal(model, second_model, imagenet_input))
