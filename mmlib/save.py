@@ -11,7 +11,7 @@ from mmlib.save_info import ModelSaveInfo, ProvModelSaveInfo
 from mmlib.track_env import compare_env_to_current
 from schema.dataset import Dataset
 from schema.model_info import ModelInfo, MODEL_INFO
-from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo
+from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo, WeightsUpdateRecoverInfo
 from schema.restorable_object import RestoredModelInfo
 from schema.store_type import ModelStoreType
 from schema.train_info import TrainInfo
@@ -217,13 +217,11 @@ class WeightUpdateSaveService(BaselineSaveService):
 
     def _save_updated_model(self, model_save_info):
         assert model_save_info.base_model, 'no base model given'
-        weights_update = self._generate_weights_update(model_save_info)
+        weights_update, update_type = self._generate_weights_update(model_save_info)
 
         derived_from = model_save_info.base_model
 
-        recover_info = FullModelRecoverInfo(weights_file_path=weights_path,
-                                            model_code=model_save_info.model_code,
-                                            model_class_name=model_save_info.model_class_name)
+        recover_info = WeightsUpdateRecoverInfo(update=weights_update, update_type=update_type)
 
         model_info = ModelInfo(store_type=ModelStoreType.PICKLED_WEIGHTS, recover_info=recover_info,
                                derived_from_id=derived_from)

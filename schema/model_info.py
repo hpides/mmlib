@@ -1,5 +1,6 @@
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
-from schema.recover_info import AbstractModelCodeRecoverInfo, FullModelRecoverInfo, ProvenanceRecoverInfo
+from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo, \
+    AbstractRecoverInfo
 from schema.schema_obj import SchemaObj
 from schema.store_type import ModelStoreType
 
@@ -14,7 +15,7 @@ MODEL_INFO = 'model_info'
 
 class ModelInfo(SchemaObj):
 
-    def __init__(self, store_type: ModelStoreType = None, recover_info: AbstractModelCodeRecoverInfo = None,
+    def __init__(self, store_type: ModelStoreType = None, recover_info: AbstractRecoverInfo = None,
                  store_id: str = None, derived_from_id: str = None):
         super().__init__(store_id)
         self.store_type = store_type
