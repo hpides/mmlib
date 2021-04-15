@@ -7,7 +7,7 @@ import torch
 
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from mmlib.recover_validation import RecoverValidationService
-from mmlib.save_info import ModelSaveInfo
+from mmlib.save_info import ModelSaveInfo, ProvModelSaveInfo
 from mmlib.track_env import compare_env_to_current
 from schema.dataset import Dataset
 from schema.model_info import ModelInfo, MODEL_INFO
@@ -210,11 +210,12 @@ class ProvenanceSaveService(BaselineSaveService):
             # if the base model is none, then we have to store the model as a full model
             return super().save_model(model_save_info)
         else:
-            self._check_consistency(model_save_info)
-
-            model_id = self._save_provenance_model(model_save_info)
-
-            return model_id
+            if isinstance(model_save_info, ProvModelSaveInfo):
+                return self._save_provenance_model(model_save_info)
+            else:
+                # if the model save info does not provide provenance save info we try to save it using the baseline
+                # approach
+                return super().save_model(model_save_info)
 
     def recover_model(self, model_id: str, execute_checks: bool = False,
                       recover_val_service: RecoverValidationService = None) -> RestoredModelInfo:
@@ -256,10 +257,6 @@ class ProvenanceSaveService(BaselineSaveService):
     def model_save_size(self, model_id: str) -> int:
         pass
 
-    def _check_consistency(self, model_save_info):
-        # TODO
-        pass
-
     def _save_provenance_model(self, model_save_info):
         model_info = self._build_prov_model_info(model_save_info)
 
@@ -268,26 +265,26 @@ class ProvenanceSaveService(BaselineSaveService):
         return model_info_id
 
     def _build_prov_model_info(self, model_save_info):
-        tw_class_name = model_save_info.prov_rec_info.train_info.train_wrapper_class_name
-        tw_code = model_save_info.prov_rec_info.train_info.train_wrapper_code
+        tw_class_name = model_save_info.train_info.train_wrapper_class_name
+        tw_code = model_save_info.train_info.train_wrapper_code
         type_ = create_type(code=tw_code, type_name=tw_class_name)
         train_service_wrapper = type_(
-            class_name=model_save_info.prov_rec_info.train_info.train_service_class_name,
-            code=model_save_info.prov_rec_info.train_info.train_service_code,
-            instance=model_save_info.prov_rec_info.train_info.train_service
+            class_name=model_save_info.train_info.train_service_class_name,
+            code=model_save_info.train_info.train_service_code,
+            instance=model_save_info.train_info.train_service
         )
-        dataset = Dataset(model_save_info.prov_rec_info.raw_dataset)
+        dataset = Dataset(model_save_info.raw_dataset)
         train_info = TrainInfo(
             ts_wrapper=train_service_wrapper,
             ts_wrapper_code=tw_code,
             ts_wrapper_class_name=tw_class_name,
-            train_kwargs=model_save_info.prov_rec_info.train_info.train_kwargs,
-            environment=model_save_info.prov_rec_info.train_info.environment
+            train_kwargs=model_save_info.train_info.train_kwargs,
+            environment=model_save_info.train_info.environment
         )
         prov_recover_info = ProvenanceRecoverInfo(
             dataset=dataset,
-            model_code=model_save_info.prov_rec_info.model_code,
-            model_class_name=model_save_info.prov_rec_info.model_class_name,
+            model_code=model_save_info.model_code,
+            model_class_name=model_save_info.model_class_name,
             train_info=train_info
         )
         derived_from = model_save_info.base_model if model_save_info.base_model else None

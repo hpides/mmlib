@@ -17,7 +17,8 @@ class TrainSaveInfo:
 
 
 class ModelSaveInfo:
-    def __init__(self, model: torch.nn.Module, base_model: str, model_code: str, model_class_name: str, dummy_input_shape: [int]):
+    def __init__(self, model: torch.nn.Module, base_model: str, model_code: str, model_class_name: str,
+                 dummy_input_shape: [int]):
         self.model = model
         self.base_model = base_model
         self.model_code = model_code
@@ -26,7 +27,8 @@ class ModelSaveInfo:
 
 
 class ProvModelSaveInfo(ModelSaveInfo):
-    def __init__(self, model: torch.nn.Module, base_model: str, model_code: str, model_class_name: str, dummy_input_shape: [int],
+    def __init__(self, model: torch.nn.Module, base_model: str, model_code: str, model_class_name: str,
+                 dummy_input_shape: [int],
                  raw_dataset: str, train_info: TrainSaveInfo):
         super().__init__(model, base_model, model_code, model_class_name, dummy_input_shape)
         self.raw_dataset = raw_dataset
