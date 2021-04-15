@@ -174,11 +174,34 @@ class TestProvSaveService(unittest.TestCase):
             wrapper_class_name=prov_train_wrapper_class_name)
         save_info = save_info_builder.build()
 
+        ################################################################################################################
         # restoring this model will result in a model that was trained according to the given provenance data
         # in this case it should be equivalent to the initial model trained using the specified train_service using the
         # specified data and train kwargs
+        ################################################################################################################
         model_id = self.provenance_save_service.save_model(save_info)
 
         imagenet_ts.train(model, **train_kwargs)
         recovered_model_info = self.provenance_save_service.recover_model(model_id)
+        recovered_model_1 = recovered_model_info.model
+        self.assertTrue(model_equal(model, recovered_model_1, imagenet_input))
+
+        ################################################################################################################
+        # Having defined the provenance information above storing a second version is a lot shorter
+        ################################################################################################################
+        save_info_builder = ModelSaveInfoBuilder()
+        save_info_builder.add_model_info(code=code_file, model_class_name=class_name, base_model_id=model_id)
+        save_info_builder.add_prov_data(
+            raw_data_path=raw_data, env=prov_env, train_service=imagenet_ts, train_kwargs=train_kwargs,
+            code=prov_train_serv_code, class_name=prov_train_serv_class_name, wrapper_code=prov_train_wrapper_code,
+            wrapper_class_name=prov_train_wrapper_class_name)
+        save_info = save_info_builder.build()
+
+        model_id_2 = self.provenance_save_service.save_model(save_info)
+
+        imagenet_ts.train(model, **train_kwargs)
+
+        recovered_model_info = self.provenance_save_service.recover_model(model_id_2)
+
         self.assertTrue(model_equal(model, recovered_model_info.model, imagenet_input))
+        self.assertFalse(model_equal(recovered_model_1, recovered_model_info.model, imagenet_input))
