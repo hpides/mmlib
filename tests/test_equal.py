@@ -70,15 +70,15 @@ class TestModelEqual(unittest.TestCase):
 
         self.assertTrue(model_equal(mod1, mod2, imagenet_input))
 
-    def test_vgg19_pretrained(self):
-        mod1 = models.vgg19(pretrained=True)
-        mod2 = models.vgg19(pretrained=True)
+    def test_googlenet_pretrained(self):
+        mod1 = models.googlenet(pretrained=True)
+        mod2 = models.googlenet(pretrained=True)
 
         self.assertTrue(model_equal(mod1, mod2, imagenet_input))
 
-    def test_alexnet_pretrained(self):
-        mod1 = models.alexnet(pretrained=True)
-        mod2 = models.alexnet(pretrained=True)
+    def test_mobilenet_v2_pretrained(self):
+        mod1 = models.mobilenet_v2(pretrained=True)
+        mod2 = models.mobilenet_v2(pretrained=True)
 
         self.assertTrue(model_equal(mod1, mod2, imagenet_input))
 
@@ -117,23 +117,23 @@ class TestModelEqual(unittest.TestCase):
         # but we set the seeds before weight initialization
         self.assertTrue(model_equal(mod1, mod2, imagenet_input))
 
-    def test_vgg19_not_pretrained_deterministic(self):
+    def test_googlenet_not_pretrained_deterministic(self):
         set_deterministic()
-        mod1 = models.vgg19()
+        mod1 = models.googlenet()
 
         set_deterministic()
-        mod2 = models.vgg19()
+        mod2 = models.googlenet()
 
         # we expect this to be true, the weights are randomly initialized,
         # but we set the seeds before weight initialization
         self.assertTrue(model_equal(mod1, mod2, imagenet_input))
 
-    def test_alexnet_not_pretrained_deterministic(self):
+    def test_mobilenet_v2_not_pretrained_deterministic(self):
         set_deterministic()
-        mod1 = models.alexnet()
+        mod1 = models.mobilenet_v2()
 
         set_deterministic()
-        mod2 = models.alexnet()
+        mod2 = models.mobilenet_v2()
 
         # we expect this to be true, the weights are randomly initialized,
         # but we set the seeds before weight initialization
