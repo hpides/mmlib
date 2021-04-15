@@ -215,11 +215,16 @@ class WeightUpdateSaveService(BaselineSaveService):
             # if there is a base model, we can store the update and for a restore refer to the base model
             return self._save_updated_model(model_save_info)
 
+    def recover_model(self, model_id: str, execute_checks: bool = False,
+                      recover_val_service: RecoverValidationService = None) -> RestoredModelInfo:
+        # TODO
+        pass
+
     def _save_updated_model(self, model_save_info):
         assert model_save_info.base_model, 'no base model given'
 
         with tempfile.TemporaryDirectory() as tmp_path:
-            weights_update, update_type = self._generate_weights_update(model_save_info, tmp_path)
+            weights_update, update_type, independent = self._generate_weights_update(model_save_info, tmp_path)
 
             derived_from = model_save_info.base_model
 
@@ -240,7 +245,8 @@ class WeightUpdateSaveService(BaselineSaveService):
         model = model_save_info.model
         model_weights = super()._pickle_weights(model, tmp_path)
 
-        return model_weights, "default_weight_store"
+        # this method is always independent from other models since we always store the full weights
+        return model_weights, "default_weight_store", True
 
 
 class ProvenanceSaveService(BaselineSaveService):
