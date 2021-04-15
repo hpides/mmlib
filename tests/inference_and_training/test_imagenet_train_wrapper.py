@@ -112,5 +112,4 @@ class TestSave(unittest.TestCase):
 
             # starting from the same intermediate model the both restored versions of the resnet train service
             # should train the models in the same way
-            # TODO check for other models and on GPU where we have to set "set.deterministic()"
             self.assertTrue(model_equal(model, second_model, imagenet_input))
