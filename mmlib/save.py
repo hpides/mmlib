@@ -205,6 +205,36 @@ class WeightUpdateSaveService(BaselineSaveService):
         """
         super().__init__(file_pers_service, dict_pers_service)
 
+    def save_model(self, model_save_info: ModelSaveInfo) -> str:
+
+        # as a first step we have to find out if we have to store a full model first or if we can store only the update
+        # if there is no base model given, we can not compute any updates -> we have to sore the full model
+        if not self._base_model_given(model_save_info):
+            return super().save_model(model_save_info)
+        else:
+            # if there is a base model, we can store the update and for a restore refer to the base model
+            return self._save_updated_model(model_save_info)
+
+    def _save_updated_model(self, model_save_info):
+        assert model_save_info.base_model, 'no base model given'
+        weights_update = self._generate_weights_update(model_save_info)
+
+        derived_from = model_save_info.base_model
+
+        recover_info = FullModelRecoverInfo(weights_file_path=weights_path,
+                                            model_code=model_save_info.model_code,
+                                            model_class_name=model_save_info.model_class_name)
+
+        model_info = ModelInfo(store_type=ModelStoreType.PICKLED_WEIGHTS, recover_info=recover_info,
+                               derived_from_id=derived_from)
+
+        model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
+
+        return model_info_id
+
+    def _base_model_given(self, model_save_info):
+        return model_save_info.base_model is not None
+
 
 class ProvenanceSaveService(BaselineSaveService):
 

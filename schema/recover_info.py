@@ -10,11 +10,19 @@ from schema.train_info import TrainInfo
 from util.helper import copy_all_data, clean
 
 RECOVER_INFO = 'recover_info'
+
+
+class AbstractRecoverInfo(SchemaObj, metaclass=abc.ABCMeta):
+
+    def _representation_type(self) -> str:
+        return RECOVER_INFO
+
+
 MODEL_CODE = 'model_code'
 MODEL_CLASS_NAME = 'model_class_name'
 
 
-class AbstractRecoverInfo(SchemaObj, metaclass=abc.ABCMeta):
+class AbstractModelCodeRecoverInfo(AbstractRecoverInfo, metaclass=abc.ABCMeta):
 
     def __init__(self, model_code: str, model_class_name: str, store_id: str = None):
         super().__init__(store_id)
@@ -43,9 +51,6 @@ class AbstractRecoverInfo(SchemaObj, metaclass=abc.ABCMeta):
 
         return result
 
-    def _representation_type(self) -> str:
-        return RECOVER_INFO
-
     @abc.abstractmethod
     def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
         raise NotImplementedError
@@ -54,7 +59,7 @@ class AbstractRecoverInfo(SchemaObj, metaclass=abc.ABCMeta):
 WEIGHTS = 'weights'
 
 
-class FullModelRecoverInfo(AbstractRecoverInfo):
+class FullModelRecoverInfo(AbstractModelCodeRecoverInfo):
 
     def __init__(self, weights_file_path: str = None, model_code=None, model_class_name: str = None,
                  store_id: str = None):
@@ -115,7 +120,7 @@ DATASET = 'dataset'
 TRAIN_INFO = 'train_info'
 
 
-class ProvenanceRecoverInfo(AbstractRecoverInfo):
+class ProvenanceRecoverInfo(AbstractModelCodeRecoverInfo):
 
     def __init__(self, dataset: Dataset = None, model_code=None, model_class_name: str = None,
                  train_info: TrainInfo = None, store_id: str = None):
