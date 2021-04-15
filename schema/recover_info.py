@@ -118,14 +118,16 @@ def _recover_weights(file_pers_service, load_files, restore_root, restored_dict)
 
 UPDATE = 'update'
 UPDATE_TYPE = 'update_type'
+INDEPENDENT = 'independent'
 
 
 class WeightsUpdateRecoverInfo(AbstractRecoverInfo):
 
-    def __init__(self, update: str = None, update_type: str = None, store_id: str = None):
+    def __init__(self, update: str = None, update_type: str = None, independent: bool = None, store_id: str = None):
         super().__init__(store_id)
         self.update = update
         self.update_type = update_type
+        self.independent = independent
 
     def load_all_fields(self, file_pers_service: FilePersistenceService, dict_pers_service: DictPersistenceService,
                         restore_root: str, load_recursive: bool = True, load_files: bool = True):
@@ -133,6 +135,7 @@ class WeightsUpdateRecoverInfo(AbstractRecoverInfo):
 
         self.update = _restore_update(file_pers_service, load_files, restore_root, restored_dict)
         self.update_type = restored_dict[UPDATE_TYPE]
+        self.independent = restored_dict[INDEPENDENT]
 
     def size_in_bytes(self, file_pers_service: FilePersistenceService,
                       dict_pers_service: DictPersistenceService) -> int:
@@ -143,6 +146,7 @@ class WeightsUpdateRecoverInfo(AbstractRecoverInfo):
         update_id = file_pers_service.save_file(self.update)
         dict_representation[UPDATE] = update_id
         dict_representation[UPDATE_TYPE] = self.update_type
+        dict_pers_service[INDEPENDENT] = self.independent
 
 
 def _restore_update(file_pers_service, load_files, restore_root, restored_dict):
