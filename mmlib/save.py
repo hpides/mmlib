@@ -195,6 +195,17 @@ class BaselineSaveService(AbstractSaveService):
                           ' - check that save_validation_info=True when saving model')
 
 
+class WeightUpdateSaveService(BaselineSaveService):
+
+    def __init__(self, file_pers_service: FilePersistenceService,
+                 dict_pers_service: DictPersistenceService):
+        """
+        :param file_pers_service: An instance of FilePersistenceService that is used to store files.
+        :param dict_pers_service: An instance of DictPersistenceService that is used to store metadata as dicts.
+        """
+        super().__init__(file_pers_service, dict_pers_service)
+
+
 class ProvenanceSaveService(BaselineSaveService):
 
     def __init__(self, file_pers_service: FilePersistenceService,
