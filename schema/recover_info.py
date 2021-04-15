@@ -117,9 +117,7 @@ def _recover_weights(file_pers_service, load_files, restore_root, restored_dict)
     return weights_file_path
 
 
-DATASET = 'dataset'
-TRAIN_INFO = 'train_info'
-
+WEIGHTS_UPDATE = 'weights_update'
 
 class WeightsUpdateRecoverInfo(AbstractRecoverInfo):
 
@@ -136,9 +134,11 @@ class WeightsUpdateRecoverInfo(AbstractRecoverInfo):
         pass
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
-        pass
+        dict_representation[WEIGHTS_UPDATE] = self.weights_update.persist(file_pers_service, dict_pers_service)
 
 
+DATASET = 'dataset'
+TRAIN_INFO = 'train_info'
 class ProvenanceRecoverInfo(AbstractModelCodeRecoverInfo):
 
     def __init__(self, dataset: Dataset = None, model_code=None, model_class_name: str = None,
