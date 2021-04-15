@@ -7,6 +7,7 @@ from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from schema.dataset import Dataset
 from schema.schema_obj import SchemaObj
 from schema.train_info import TrainInfo
+from schema.weights_update import WeightsUpdate
 from util.helper import copy_all_data, clean
 
 RECOVER_INFO = 'recover_info'
@@ -120,7 +121,11 @@ DATASET = 'dataset'
 TRAIN_INFO = 'train_info'
 
 
-class WeightsUpdateRecoverInfo(SchemaObj):
+class WeightsUpdateRecoverInfo(AbstractRecoverInfo):
+
+    def __init__(self, weights_update: WeightsUpdate = None, store_id: str = None):
+        super().__init__(store_id)
+        self.weights_update = weights_update
 
     def load_all_fields(self, file_pers_service: FilePersistenceService, dict_pers_service: DictPersistenceService,
                         restore_root: str, load_recursive: bool = True, load_files: bool = True):
@@ -128,9 +133,6 @@ class WeightsUpdateRecoverInfo(SchemaObj):
 
     def size_in_bytes(self, file_pers_service: FilePersistenceService,
                       dict_pers_service: DictPersistenceService) -> int:
-        pass
-
-    def _representation_type(self) -> str:
         pass
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
