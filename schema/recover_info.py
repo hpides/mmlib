@@ -7,7 +7,6 @@ from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from schema.dataset import Dataset
 from schema.schema_obj import SchemaObj
 from schema.train_info import TrainInfo
-from schema.weights_update import WeightsUpdate
 from util.helper import copy_all_data, clean
 
 RECOVER_INFO = 'recover_info'
@@ -117,21 +116,23 @@ def _recover_weights(file_pers_service, load_files, restore_root, restored_dict)
     return weights_file_path
 
 
-WEIGHTS_UPDATE = 'weights_update'
+UPDATE = 'update'
+UPDATE_TYPE = 'update_type'
 
 
 class WeightsUpdateRecoverInfo(AbstractRecoverInfo):
 
-    def __init__(self, weights_update: WeightsUpdate = None, store_id: str = None):
+    def __init__(self, update: str = None, update_type: str = None, store_id: str = None):
         super().__init__(store_id)
-        self.weights_update = weights_update
+        self.update = update
+        self.update_type = update_type
 
     def load_all_fields(self, file_pers_service: FilePersistenceService, dict_pers_service: DictPersistenceService,
                         restore_root: str, load_recursive: bool = True, load_files: bool = True):
         restored_dict = dict_pers_service.recover_dict(self.store_id, RECOVER_INFO)
 
-        self.weights_update = _restore_weights_update(dict_pers_service, file_pers_service, load_files, load_recursive,
-                                                      restore_root, restored_dict)
+        self.update = _restore_update(file_pers_service, load_files, restore_root, restored_dict)
+        self.update_type = restored_dict[UPDATE_TYPE]
 
     def size_in_bytes(self, file_pers_service: FilePersistenceService,
                       dict_pers_service: DictPersistenceService) -> int:
@@ -139,18 +140,18 @@ class WeightsUpdateRecoverInfo(AbstractRecoverInfo):
         pass
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
-        dict_representation[WEIGHTS_UPDATE] = self.weights_update.persist(file_pers_service, dict_pers_service)
+        update_id = file_pers_service.save_file(self.update)
+        dict_representation[UPDATE] = update_id
+        dict_representation[UPDATE_TYPE] = self.update_type
 
 
-def _restore_weights_update(dict_pers_service, file_pers_service, load_files, load_recursive, restore_root,
-                            restored_dict):
-    weights_update_id = restored_dict[WEIGHTS_UPDATE]
-    if not load_recursive:
-        weights_update = WeightsUpdate.load_placeholder(weights_update_id)
-    else:
-        weights_update = WeightsUpdate.load(weights_update_id, file_pers_service, dict_pers_service, restore_root,
-                                            load_recursive, load_files)
-    return weights_update
+def _restore_update(file_pers_service, load_files, restore_root, restored_dict):
+    update = None
+    if load_files:
+        update_id = restored_dict[UPDATE]
+        update = file_pers_service.recover_file(update_id, restore_root)
+
+    return update
 
 
 DATASET = 'dataset'
