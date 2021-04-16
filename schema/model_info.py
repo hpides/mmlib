@@ -83,7 +83,7 @@ def _recover_recover_info(restored_dict, dict_pers_service, file_pers_service, r
                           load_recursive, load_files):
     recover_info_id = restored_dict[RECOVER_INFO_ID]
 
-    if store_type == ModelStoreType.PICKLED_WEIGHTS:
+    if store_type == ModelStoreType.FULL_MODEL:
         if load_recursive:
             recover_info = FullModelRecoverInfo.load(recover_info_id, file_pers_service, dict_pers_service,
                                                      restore_root, load_recursive, load_files)

@@ -154,7 +154,7 @@ class BaselineSaveService(AbstractSaveService):
                                                 model_code=model_save_info.model_code,
                                                 model_class_name=model_save_info.model_class_name)
 
-            model_info = ModelInfo(store_type=ModelStoreType.PICKLED_WEIGHTS, recover_info=recover_info,
+            model_info = ModelInfo(store_type=ModelStoreType.FULL_MODEL, recover_info=recover_info,
                                    derived_from_id=derived_from)
 
             model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
@@ -182,8 +182,6 @@ class BaselineSaveService(AbstractSaveService):
         with tempfile.TemporaryDirectory() as tmp_path:
             model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path)
             return model_info.derived_from
-
-
 
     def _execute_checks(self, model: torch.nn.Module, model_info: ModelInfo,
                         recover_val_service: RecoverValidationService):
@@ -219,7 +217,54 @@ class WeightUpdateSaveService(BaselineSaveService):
 
     def recover_model(self, model_id: str, execute_checks: bool = False,
                       recover_val_service: RecoverValidationService = None) -> RestoredModelInfo:
-        # TODO
+
+        store_type = self._get_store_type(model_id)
+
+        if store_type == ModelStoreType.FULL_MODEL:
+            return super().recover_model(model_id)
+        else:
+            self._recover_from_weight_update(model_id, execute_checks, recover_val_service)
+
+    def _recover_from_weight_update(self, model_id, execute_checks, recover_val_service):
+        with tempfile.TemporaryDirectory() as tmp_path:
+            model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path,
+                                        load_recursive=True, load_files=True)
+
+            recover_info: WeightsUpdateRecoverInfo = model_info.recover_info
+
+            recovered_model = None
+            if recover_info.independent:
+                recovered_model = self._restore_independent_update(model_info)
+            else:
+                # NOTE so far all weight updates are independent
+                recovered_model = self._restore_dependent_update(model_info)
+
+            restored_model_info = RestoredModelInfo(model=recovered_model)
+
+            if execute_checks:
+                self._execute_checks(recovered_model, model_info, recover_val_service)
+
+        return restored_model_info
+
+    def _restore_independent_update(self, model_info):
+        model_code, model_class_name = self._get_model_code_and_class_name(model_info)
+        recover_info: WeightsUpdateRecoverInfo = model_info.recover_info
+
+        model = create_object(model_code, model_class_name)
+        if recover_info.update_type:  # here we should actually check the type
+            s_dict = self._recover_pickled_weights(recover_info.update)
+            model.load_state_dict(s_dict)
+
+        return model
+
+    def _restore_dependent_update(self, model_info):
+        base_model = self.recover_model(model_info.derived_from)
+
+        recover_info: WeightsUpdateRecoverInfo = model_info.recover_info
+
+        return self._update_model(base_model, recover_info)
+
+    def _update_model(self, base_model, recover_info):
         pass
 
     def _save_updated_model(self, model_save_info):
@@ -232,7 +277,7 @@ class WeightUpdateSaveService(BaselineSaveService):
 
             recover_info = WeightsUpdateRecoverInfo(update=weights_update, update_type=update_type)
 
-            model_info = ModelInfo(store_type=ModelStoreType.PICKLED_WEIGHTS, recover_info=recover_info,
+            model_info = ModelInfo(store_type=ModelStoreType.FULL_MODEL, recover_info=recover_info,
                                    derived_from_id=derived_from)
 
             model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
@@ -249,6 +294,9 @@ class WeightUpdateSaveService(BaselineSaveService):
 
         # this method is always independent from other models since we always store the full weights
         return model_weights, "default_weight_store", True
+
+    def _get_model_code_and_class_name(self, model_info):
+        return "", ""
 
 
 class ProvenanceSaveService(BaselineSaveService):
@@ -280,7 +328,7 @@ class ProvenanceSaveService(BaselineSaveService):
         if base_model_id is None:
             # if there is no base model the current model's store type must be PickledWeights
             store_type = self._get_store_type(model_id)
-            assert store_type == ModelStoreType.PICKLED_WEIGHTS, \
+            assert store_type == ModelStoreType.FULL_MODEL, \
                 'for all other model types then ModelStoreType.PICKLED_WEIGHTS we need a base model'
             return super().recover_model(model_id, execute_checks)
         else:
@@ -349,7 +397,7 @@ class ProvenanceSaveService(BaselineSaveService):
         return model_info
 
     def _recover_base_model(self, base_model_id, base_model_store_type):
-        if base_model_store_type == ModelStoreType.PICKLED_WEIGHTS:
+        if base_model_store_type == ModelStoreType.FULL_MODEL:
             return super().recover_model(model_id=base_model_id)
         elif base_model_store_type == ModelStoreType.PROVENANCE:
             return self.recover_model(model_id=base_model_id)
