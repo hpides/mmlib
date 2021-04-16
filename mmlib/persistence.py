@@ -69,28 +69,27 @@ class DictPersistenceService(PersistenceService, metaclass=abc.ABCMeta):
 class FilePersistenceService(PersistenceService, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def save_file(self, file: FileReference) -> FileReference:
+    def save_file(self, file: FileReference):
         """
-        Persists a file.
+        Persists the file given by the file reference, the id that was used to store the file is set for the given
+        file reference.
         :param file: The file to persist given as a FileReference.
-        :return: A FileReference containing the id that was used to store the file.
         """
 
     @abc.abstractmethod
-    def recover_file(self, file: FileReference, dst_path) -> FileReference:
+    def recover_file(self, file: FileReference, dst_path):
         """
-        Recovers a file.
+        Recovers the file given by the file reference, the path for the restored file is set for the given
+        file reference.
         :param file: The file to recover identified by FileReference.
         :param dst_path: The path where the restored file should be stored to.
-        :return: A FileReference containing the path to the restored file.
         """
 
     @abc.abstractmethod
-    def file_size(self, file: str) -> FileReference:
+    def file_size(self, file: str):
         """
-        Calculates and returns the size of a file in bytes.
+        Calculates and sets the size property for the given file in bytes.
         :param file: The file identified by FileReference.
-        :return:A FileReference containing the the file size in bytes.
         """
 
 
@@ -103,16 +102,15 @@ class FileSystemPersistenceService(FilePersistenceService):
     def __init__(self, base_path):
         self._base_path = os.path.abspath(base_path)
 
-    def save_file(self, file: FileReference) -> FileReference:
+    def save_file(self, file: FileReference):
         path, file_name = os.path.split(file.path)
         file_id = str(ObjectId())
         dst_path = self._get_store_path(file_id)
         os.mkdir(dst_path)
         copyfile(file.path, os.path.join(dst_path, file_name))
+        file.reference_id = FILE + file_id
 
-        return FileReference(reference_id=FILE + file_id)
-
-    def recover_file(self, file: FileReference, dst_path) -> FileReference:
+    def recover_file(self, file: FileReference, dst_path):
         internal_file_id = self._to_internal_file_id(file.reference_id)
         store_path = self._get_store_path(internal_file_id)
         file_path = find_file(store_path)
@@ -122,15 +120,11 @@ class FileSystemPersistenceService(FilePersistenceService):
         copyfile(file_path, dst)
         file.path = dst
 
-        return file
-
-    def file_size(self, file: FileReference) -> FileReference:
+    def file_size(self, file: FileReference):
         internal_file_id = self._to_internal_file_id(file.reference_id)
         store_path = self._get_store_path(internal_file_id)
         file_path = find_file(store_path)
         file.size = os.path.getsize(file_path)
-
-        return file
 
     def generate_id(self) -> str:
         return str(ObjectId())

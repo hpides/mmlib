@@ -114,7 +114,7 @@ class BaselineSaveService(AbstractSaveService):
             recover_info: FullModelRecoverInfo = model_info.recover_info
 
             model = create_object(recover_info.model_code, recover_info.model_class_name)
-            s_dict = self._recover_pickled_weights(recover_info.weights)
+            s_dict = self._recover_pickled_weights(recover_info.weights_file)
             model.load_state_dict(s_dict)
 
             restored_model_info = RestoredModelInfo(model=model)
@@ -151,8 +151,8 @@ class BaselineSaveService(AbstractSaveService):
 
             derived_from = model_save_info.base_model if model_save_info.base_model else None
 
-            recover_info = FullModelRecoverInfo(weights_file_path=weights_path,
-                                                model_code=model_save_info.model_code,
+            recover_info = FullModelRecoverInfo(weights_file=FileReference(path=weights_path),
+                                                model_code=FileReference(path=model_save_info.model_code),
                                                 model_class_name=model_save_info.model_class_name)
 
             model_info = ModelInfo(store_type=ModelStoreType.FULL_MODEL, recover_info=recover_info,
