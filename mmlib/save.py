@@ -404,7 +404,7 @@ class ProvenanceSaveService(BaselineSaveService):
             code=model_save_info.train_info.train_service_code,
             instance=model_save_info.train_info.train_service
         )
-        dataset = Dataset(FileReference(file_path=model_save_info.raw_dataset))
+        dataset = Dataset(FileReference(path=model_save_info.raw_dataset))
         train_info = TrainInfo(
             ts_wrapper=train_service_wrapper,
             ts_wrapper_code=tw_code,

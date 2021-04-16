@@ -4,6 +4,7 @@ import shutil
 import unittest
 
 from mmlib.persistence import FileSystemPersistenceService
+from schema.file_reference import FileReference
 
 
 class TestPersistence(unittest.TestCase):
@@ -30,9 +31,8 @@ class TestPersistence(unittest.TestCase):
             shutil.rmtree(self.abs_save_service_tmp)
 
     def test_save_recover_file(self):
-        file_name = 'test-file.txt'
         file_path = './test-files/test-file.txt'
-        file_id = self.pers_service.save_file(file_path)
-        self.pers_service.recover_file(file_id, self.tmp_dir)
+        file_ref = self.pers_service.save_file(FileReference(path=file_path))
+        self.pers_service.recover_file(file_ref, self.tmp_dir)
 
-        self.assertTrue(filecmp.cmp(file_path, os.path.join(self.tmp_dir, file_name)))
+        self.assertTrue(filecmp.cmp(file_path, file_ref.path))

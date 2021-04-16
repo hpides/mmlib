@@ -103,32 +103,34 @@ class FileSystemPersistenceService(FilePersistenceService):
     def __init__(self, base_path):
         self._base_path = os.path.abspath(base_path)
 
-    def save_file(self, file: FileReference) -> str:
-        path, file_name = os.path.split(file)
+    def save_file(self, file: FileReference) -> FileReference:
+        path, file_name = os.path.split(file.path)
         file_id = str(ObjectId())
         dst_path = self._get_store_path(file_id)
         os.mkdir(dst_path)
-        copyfile(file, os.path.join(dst_path, file_name))
+        copyfile(file.path, os.path.join(dst_path, file_name))
 
-        return FILE + file_id
+        return FileReference(reference_id=FILE + file_id)
 
-    def recover_file(self, file: FileReference, dst_path):
-        file = self._to_internal_file_id(file)
-        store_path = self._get_store_path(file)
-        file = find_file(store_path)
-        dst = os.path.join(os.path.abspath(dst_path), os.path.split(file)[1])
+    def recover_file(self, file: FileReference, dst_path) -> FileReference:
+        internal_file_id = self._to_internal_file_id(file.reference_id)
+        store_path = self._get_store_path(internal_file_id)
+        file_path = find_file(store_path)
+        dst = os.path.join(os.path.abspath(dst_path), os.path.split(file_path)[1])
 
         assert not os.path.isfile(dst), 'file at {} exists already'.format(dst)
-        copyfile(file, dst)
+        copyfile(file_path, dst)
+        file.path = dst
 
-        return dst
+        return file
 
-    def file_size(self, file: FileReference) -> int:
-        file = self._to_internal_file_id(file)
-        store_path = self._get_store_path(file)
-        file = find_file(store_path)
+    def file_size(self, file: FileReference) -> FileReference:
+        internal_file_id = self._to_internal_file_id(file.reference_id)
+        store_path = self._get_store_path(internal_file_id)
+        file_path = find_file(store_path)
+        file.size = os.path.getsize(file_path)
 
-        return os.path.getsize(file)
+        return file
 
     def generate_id(self) -> str:
         return str(ObjectId())

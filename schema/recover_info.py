@@ -94,7 +94,7 @@ class FullModelRecoverInfo(AbstractModelCodeRecoverInfo):
     def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
         result = 0
 
-        result += file_pers_service.file_size(restored_dict[WEIGHTS])
+        result += file_pers_service.size(restored_dict[WEIGHTS])
 
         return result
 

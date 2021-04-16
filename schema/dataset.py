@@ -17,11 +17,11 @@ class Dataset(SchemaObj):
         self.raw_data = raw_data
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
-        raw_data_path = self.raw_data.file_path
+        raw_data_path = self.raw_data.path
         zip_file_path = zip_path(raw_data_path)
-        raw_data_id = file_pers_service.save_file(FileReference(file_path=zip_file_path))
+        raw_data_file: FileReference = file_pers_service.save_file(FileReference(path=zip_file_path))
 
-        dict_representation[RAW_DATA] = raw_data_id
+        dict_representation[RAW_DATA] = raw_data_file.reference_id
 
     def load_all_fields(self, file_pers_service: FilePersistenceService,
                         dict_pers_service: DictPersistenceService, restore_root: str,
