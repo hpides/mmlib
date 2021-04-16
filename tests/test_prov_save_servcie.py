@@ -10,6 +10,7 @@ from mmlib.equal import model_equal
 from mmlib.persistence import FileSystemPersistenceService, MongoDictPersistenceService
 from mmlib.save import ProvenanceSaveService
 from mmlib.track_env import track_current_environment
+from schema.file_reference import FileReference
 from schema.restorable_object import OptimizerWrapper, RestorableObjectWrapper
 from schema.save_info_builder import ModelSaveInfoBuilder
 from tests.inference_and_training.imagenet_train import ImagenetTrainService
@@ -117,7 +118,7 @@ class TestProvSaveService(unittest.TestCase):
         # for this test case we will use the data from our custom coco dataset
         data_wrapper = TrainCustomCoco(raw_data)
         state_dict['data'] = RestorableObjectWrapper(
-            code='./networks/custom_coco.py',
+            code=FileReference(path='./networks/custom_coco.py'),
             class_name='TrainCustomCoco',
             init_args={},
             config_args={'root': CURRENT_DATA_ROOT},

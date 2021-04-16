@@ -113,8 +113,8 @@ class BaselineSaveService(AbstractSaveService):
             # recover model form info
             recover_info: FullModelRecoverInfo = model_info.recover_info
 
-            model = create_object(recover_info.model_code, recover_info.model_class_name)
-            s_dict = self._recover_pickled_weights(recover_info.weights_file)
+            model = create_object(recover_info.model_code.path, recover_info.model_class_name)
+            s_dict = self._recover_pickled_weights(recover_info.weights_file.path)
             model.load_state_dict(s_dict)
 
             restored_model_info = RestoredModelInfo(model=model)
@@ -275,7 +275,7 @@ class WeightUpdateSaveService(BaselineSaveService):
 
             derived_from = model_save_info.base_model
 
-            recover_info = WeightsUpdateRecoverInfo(update=weights_update, update_type=update_type,
+            recover_info = WeightsUpdateRecoverInfo(update=FileReference(path=weights_update), update_type=update_type,
                                                     independent=independent)
 
             model_info = ModelInfo(store_type=ModelStoreType.WEIGHT_UPDATES, recover_info=recover_info,
@@ -397,11 +397,11 @@ class ProvenanceSaveService(BaselineSaveService):
 
     def _build_prov_model_info(self, model_save_info):
         tw_class_name = model_save_info.train_info.train_wrapper_class_name
-        tw_code = model_save_info.train_info.train_wrapper_code
-        type_ = create_type(code=tw_code, type_name=tw_class_name)
+        tw_code = FileReference(path=model_save_info.train_info.train_wrapper_code)
+        type_ = create_type(code=tw_code.path, type_name=tw_class_name)
         train_service_wrapper = type_(
             class_name=model_save_info.train_info.train_service_class_name,
-            code=model_save_info.train_info.train_service_code,
+            code=FileReference(path=model_save_info.train_info.train_service_code),
             instance=model_save_info.train_info.train_service
         )
         dataset = Dataset(FileReference(path=model_save_info.raw_dataset))
@@ -414,7 +414,7 @@ class ProvenanceSaveService(BaselineSaveService):
         )
         prov_recover_info = ProvenanceRecoverInfo(
             dataset=dataset,
-            model_code=model_save_info.model_code,
+            model_code=FileReference(path=model_save_info.model_code),
             model_class_name=model_save_info.model_class_name,
             train_info=train_info
         )

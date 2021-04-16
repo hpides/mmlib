@@ -9,6 +9,7 @@ import torch
 
 from mmlib.constants import MMLIB_CONFIG, VALUES, ID
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
+from schema.file_reference import FileReference
 from schema.schema_obj import SchemaObj
 from util.init_from_file import create_object_with_parameters
 
@@ -32,10 +33,11 @@ class RestoredModelInfo:
 
 class AbstractRestorableObjectWrapper(SchemaObj, metaclass=ABCMeta):
 
-    def __init__(self, class_name: str, code: str, import_cmd: str = None, instance: object = None,
+    def __init__(self, class_name: str, code: FileReference, import_cmd: str = None, instance: object = None,
                  store_id: str = None):
         super().__init__(store_id)
         self.instance = instance
+        assert isinstance(code, FileReference) or code is None
         self.code = code
         self.class_name = class_name
         self.import_cmd = import_cmd
@@ -47,8 +49,8 @@ class AbstractRestorableObjectWrapper(SchemaObj, metaclass=ABCMeta):
 
         # optional fields
         if self.code:
-            code_file_id = file_pers_service.save_file(self.code)
-            dict_representation[CODE_FILE] = code_file_id
+            file_pers_service.save_file(self.code)
+            dict_representation[CODE_FILE] = self.code.reference_id
         if self.import_cmd:
             dict_representation[IMPORT_CMD] = self.import_cmd
 
@@ -56,7 +58,7 @@ class AbstractRestorableObjectWrapper(SchemaObj, metaclass=ABCMeta):
 class RestorableObjectWrapper(AbstractRestorableObjectWrapper):
 
     def __init__(self, class_name: str = None, init_args: dict = None, init_ref_type_args: [str] = None,
-                 config_args: dict = None, code: str = None, import_cmd: str = None, instance: object = None,
+                 config_args: dict = None, code: FileReference = None, import_cmd: str = None, instance: object = None,
                  store_id: str = None):
         super().__init__(class_name, code, import_cmd=import_cmd, instance=instance, store_id=store_id)
 
@@ -113,7 +115,7 @@ class RestorableObjectWrapper(AbstractRestorableObjectWrapper):
             add_params_from_config(init_args, self.config_args)
 
         self.instance = create_object_with_parameters(
-            code=self.code, import_cmd=self.import_cmd, class_name=self.class_name, init_args=init_args,
+            code_file=self.code, import_cmd=self.import_cmd, class_name=self.class_name, init_args=init_args,
             init_ref_type_args=ref_type_args)
 
     def _generate_non_matching_parameter_message(self, ref_type_args):
@@ -134,12 +136,13 @@ def _restore_non_ref_fields(restored_dict):
 
 
 def _restore_code(file_pers_service, restore_root, restored_dict, load_files):
-    code_file_path = None
+    code_file_id = restored_dict[CODE_FILE]
+    code_file = FileReference(reference_id=code_file_id)
 
     if load_files and CODE_FILE in restored_dict:
-        code_file_id = restored_dict[CODE_FILE]
-        code_file_path = file_pers_service.recover_file(code_file_id, restore_root)
-    return code_file_path
+        file_pers_service.recover_file(code_file, restore_root)
+
+    return code_file
 
 
 class StateDictObj(metaclass=abc.ABCMeta):
@@ -149,7 +152,8 @@ class StateDictObj(metaclass=abc.ABCMeta):
 
 class StateDictRestorableObjectWrapper(AbstractRestorableObjectWrapper):
 
-    def __init__(self, class_name: str = None, code: str = None, instance: StateDictObj = None, store_id: str = None):
+    def __init__(self, class_name: str = None, code: FileReference = None, instance: StateDictObj = None,
+                 store_id: str = None):
         super().__init__(class_name=class_name, code=code, instance=instance, store_id=store_id)
         self.instance: StateDictObj = instance
 
@@ -202,9 +206,10 @@ class StateDictRestorableObjectWrapper(AbstractRestorableObjectWrapper):
 
 class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
     def __init__(self, class_name: str = None, init_args: dict = None, init_ref_type_args: [str] = None,
-                 config_args: dict = None, code: str = None, import_cmd: str = None, instance: object = None,
-                 store_id: str = None, state_file: str = None):
-        super().__init__(class_name, init_args, init_ref_type_args, config_args, code, import_cmd, instance, store_id)
+                 config_args: dict = None, code_file: FileReference = None, import_cmd: str = None,
+                 instance: object = None, store_id: str = None, state_file: FileReference = None):
+        super().__init__(class_name, init_args, init_ref_type_args, config_args, code_file, import_cmd, instance,
+                         store_id)
         self.state_file = state_file
 
     def persist(self, file_pers_service: FilePersistenceService,
@@ -229,8 +234,8 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
 
         if self.instance:
             with tempfile.TemporaryDirectory() as tmp_path:
-                state_file = os.path.join(tmp_path, 'state')
-                self._save_instance_state(state_file)
+                state_file = FileReference(path=os.path.join(tmp_path, 'state'))
+                self._save_instance_state(state_file.path)
                 state_file_id = file_pers_service.save_file(state_file)
 
             dict_representation[STATE_FILE] = state_file_id
@@ -242,11 +247,11 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
         restored_dict = dict_pers_service.recover_dict(obj_id, RESTORABLE_OBJECT)
 
         class_name, config_args, import_cmd, init_args, ref_type_args = _restore_non_ref_fields(restored_dict)
-        code_file_path = _restore_code(file_pers_service, restore_root, restored_dict, load_files)
+        code_file = _restore_code(file_pers_service, restore_root, restored_dict, load_files)
 
         state_file = _recover_state_file(file_pers_service, load_files, restore_root, restored_dict)
 
-        obj = cls(store_id=obj_id, class_name=class_name, code=code_file_path, config_args=config_args,
+        obj = cls(store_id=obj_id, class_name=class_name, code_file=code_file, config_args=config_args,
                   import_cmd=import_cmd, init_args=init_args, init_ref_type_args=ref_type_args, state_file=state_file)
 
         return obj
@@ -283,10 +288,12 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
 
 
 def _recover_state_file(file_pers_service, load_files, restore_root, restored_dict):
-    state_file = None
+    state_file_id = restored_dict[STATE_FILE]
+    state_file = FileReference(reference_id=state_file_id)
+
     if load_files and STATE_FILE in restored_dict:
-        state_file_id = restored_dict[STATE_FILE]
-        state_file = file_pers_service.recover_file(state_file_id, restore_root)
+        file_pers_service.recover_file(state_file, restore_root)
+
     return state_file
 
 

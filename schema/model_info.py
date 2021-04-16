@@ -1,6 +1,6 @@
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
-from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo, \
-    AbstractRecoverInfo, WeightsUpdateRecoverInfo
+from schema.recover_info import FullModelRecoverInfo, AbstractRecoverInfo, WeightsUpdateRecoverInfo, \
+    ProvenanceRecoverInfo
 from schema.schema_obj import SchemaObj
 from schema.store_type import ModelStoreType
 

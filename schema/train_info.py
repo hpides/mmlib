@@ -1,5 +1,6 @@
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from schema.environment import Environment
+from schema.file_reference import FileReference
 from schema.restorable_object import StateDictRestorableObjectWrapper
 from schema.schema_obj import SchemaObj
 from util.init_from_file import create_type
@@ -15,7 +16,7 @@ TRAIN_INFO = 'train_info'
 
 class TrainInfo(SchemaObj):
 
-    def __init__(self, ts_wrapper: StateDictRestorableObjectWrapper = None, ts_wrapper_code: str = None,
+    def __init__(self, ts_wrapper: StateDictRestorableObjectWrapper = None, ts_wrapper_code: FileReference = None,
                  ts_wrapper_class_name: str = None, train_kwargs: dict = None, environment: Environment = None,
                  store_id: str = None):
         super().__init__(store_id)
@@ -33,7 +34,7 @@ class TrainInfo(SchemaObj):
         print(train_service_id)
 
         dict_representation[TRAIN_SERVICE] = train_service_id
-        dict_representation[WRAPPER_CODE] = self.train_service_wrapper_code
+        dict_representation[WRAPPER_CODE] = self.train_service_wrapper_code.reference_id
         dict_representation[WRAPPER_CLASS_NAME] = self.train_service_wrapper_class_name
         dict_representation[TRAIN_KWARGS] = self.train_kwargs
         dict_representation[ENVIRONMENT] = env_id
@@ -47,7 +48,7 @@ class TrainInfo(SchemaObj):
         self.train_kwargs = restored_dict[TRAIN_KWARGS]
 
         train_service_id = restored_dict[TRAIN_SERVICE]
-        self.train_service_wrapper_code = restored_dict[WRAPPER_CODE]
+        self.train_service_wrapper_code = FileReference(reference_id=restored_dict[WRAPPER_CODE])
         self.train_service_wrapper = \
             _recover_train_service_wrapper(dict_pers_service, file_pers_service, restore_root,
                                            train_service_id, self.train_service_wrapper_class_name,
@@ -74,7 +75,8 @@ class TrainInfo(SchemaObj):
 def _recover_train_service_wrapper(dict_pers_service, file_pers_service, restore_root, train_service_id,
                                    ts_wrapper_class_name, ts_wrapper_code, load_recursive,
                                    load_files):
-    wrapper_class = create_type(code=ts_wrapper_code, type_name=ts_wrapper_class_name)
+    # TODO check implementation
+    wrapper_class = create_type(code=ts_wrapper_code.path, type_name=ts_wrapper_class_name)
     if load_recursive:
         train_service_wrapper = wrapper_class.load(train_service_id, file_pers_service,
                                                    dict_pers_service, restore_root, load_recursive, load_files)
