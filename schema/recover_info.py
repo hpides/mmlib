@@ -146,7 +146,7 @@ class WeightsUpdateRecoverInfo(AbstractRecoverInfo):
         update_id = file_pers_service.save_file(self.update)
         dict_representation[UPDATE] = update_id
         dict_representation[UPDATE_TYPE] = self.update_type
-        dict_pers_service[INDEPENDENT] = self.independent
+        dict_representation[INDEPENDENT] = self.independent
 
 
 def _restore_update(file_pers_service, load_files, restore_root, restored_dict):

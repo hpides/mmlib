@@ -232,7 +232,6 @@ class WeightUpdateSaveService(BaselineSaveService):
 
             recover_info: WeightsUpdateRecoverInfo = model_info.recover_info
 
-            recovered_model = None
             if recover_info.independent:
                 recovered_model = self._restore_independent_update(model_info)
             else:
@@ -275,9 +274,10 @@ class WeightUpdateSaveService(BaselineSaveService):
 
             derived_from = model_save_info.base_model
 
-            recover_info = WeightsUpdateRecoverInfo(update=weights_update, update_type=update_type)
+            recover_info = WeightsUpdateRecoverInfo(update=weights_update, update_type=update_type,
+                                                    independent=independent)
 
-            model_info = ModelInfo(store_type=ModelStoreType.FULL_MODEL, recover_info=recover_info,
+            model_info = ModelInfo(store_type=ModelStoreType.WEIGHT_UPDATES, recover_info=recover_info,
                                    derived_from_id=derived_from)
 
             model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
