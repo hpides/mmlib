@@ -1,4 +1,4 @@
-from mmlib.save import BaselineSaveService, WeightUpdateSaveService
+from mmlib.save import WeightUpdateSaveService
 from tests.test_baseline_save_servcie import TestBaselineSaveService
 
 
