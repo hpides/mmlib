@@ -136,11 +136,14 @@ def _restore_non_ref_fields(restored_dict):
 
 
 def _restore_code(file_pers_service, restore_root, restored_dict, load_files):
-    code_file_id = restored_dict[CODE_FILE]
-    code_file = FileReference(reference_id=code_file_id)
+    code_file = None
 
-    if load_files and CODE_FILE in restored_dict:
-        file_pers_service.recover_file(code_file, restore_root)
+    if CODE_FILE in restored_dict:
+        code_file_id = restored_dict[CODE_FILE]
+        code_file = FileReference(reference_id=code_file_id)
+
+        if load_files:
+            file_pers_service.recover_file(code_file, restore_root)
 
     return code_file
 
@@ -236,9 +239,9 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
             with tempfile.TemporaryDirectory() as tmp_path:
                 state_file = FileReference(path=os.path.join(tmp_path, 'state'))
                 self._save_instance_state(state_file.path)
-                state_file_id = file_pers_service.save_file(state_file)
+                file_pers_service.save_file(state_file)
 
-            dict_representation[STATE_FILE] = state_file_id
+            dict_representation[STATE_FILE] = state_file.reference_id
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: FilePersistenceService,
@@ -269,7 +272,7 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
         super(StateFileRestorableObjectWrapper, self).restore_instance(ref_type_args)
 
         if self.state_file:
-            self._restore_instance_state(self.state_file)
+            self._restore_instance_state(self.state_file.path)
 
     @abc.abstractmethod
     def _save_instance_state(self, path):
@@ -288,11 +291,14 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
 
 
 def _recover_state_file(file_pers_service, load_files, restore_root, restored_dict):
-    state_file_id = restored_dict[STATE_FILE]
-    state_file = FileReference(reference_id=state_file_id)
+    state_file = None
 
-    if load_files and STATE_FILE in restored_dict:
-        file_pers_service.recover_file(state_file, restore_root)
+    if STATE_FILE in restored_dict:
+        state_file_id = restored_dict[STATE_FILE]
+        state_file = FileReference(reference_id=state_file_id)
+
+        if load_files:
+            file_pers_service.recover_file(state_file, restore_root)
 
     return state_file
 

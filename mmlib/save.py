@@ -250,9 +250,9 @@ class WeightUpdateSaveService(BaselineSaveService):
         model_code, model_class_name = self._get_model_code_and_class_name(model_info, tmp_path)
         recover_info: WeightsUpdateRecoverInfo = model_info.recover_info
 
-        model = create_object(model_code, model_class_name)
+        model = create_object(model_code.path, model_class_name)
         if recover_info.update_type:  # here we should actually check the type
-            s_dict = self._recover_pickled_weights(recover_info.update)
+            s_dict = self._recover_pickled_weights(recover_info.update.path)
             model.load_state_dict(s_dict)
 
         return model

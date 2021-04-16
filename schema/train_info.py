@@ -1,3 +1,5 @@
+import os
+
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from schema.environment import Environment
 from schema.file_reference import FileReference
@@ -29,6 +31,8 @@ class TrainInfo(SchemaObj):
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
         env_id = self.environment.persist(file_pers_service, dict_pers_service)
         train_service_id = self.train_service_wrapper.persist(file_pers_service, dict_pers_service)
+        file_pers_service.save_file(self.train_service_wrapper_code)
+
 
         print('train_service_ID')
         print(train_service_id)
@@ -75,7 +79,12 @@ class TrainInfo(SchemaObj):
 def _recover_train_service_wrapper(dict_pers_service, file_pers_service, restore_root, train_service_id,
                                    ts_wrapper_class_name, ts_wrapper_code, load_recursive,
                                    load_files):
-    # TODO check implementation
+
+    # TODO: Future work think about better solution without loading code
+    # TODO maybe can be replaced when using FileRef Object
+    restore_dir = os.path.join(restore_root, 'RESTORE_PATH')
+    os.mkdir(restore_dir)
+    file_pers_service.recover_file(ts_wrapper_code, restore_dir)
     wrapper_class = create_type(code=ts_wrapper_code.path, type_name=ts_wrapper_class_name)
     if load_recursive:
         train_service_wrapper = wrapper_class.load(train_service_id, file_pers_service,

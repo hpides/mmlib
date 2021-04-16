@@ -79,5 +79,5 @@ class ImagenetTrainWrapper(StateDictRestorableObjectWrapper):
 
         print('---------------------------------------')
 
-        self.instance = create_object(code=self.code, class_name=self.class_name)
+        self.instance = create_object(code=self.code.path, class_name=self.class_name)
         self.instance.state_objs = state_dict
