@@ -24,7 +24,6 @@ MOBILENET = 'mobilenet'
 RESNET_18 = 'resnet18'
 
 
-
 class TestBaselineSaveService(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -140,5 +139,3 @@ class TestBaselineSaveService(unittest.TestCase):
         restored_model_info = self.save_service.recover_model(derived_model_id)
 
         self.assertTrue(model_equal(derived_model, restored_model_info.model, imagenet_input))
-
-

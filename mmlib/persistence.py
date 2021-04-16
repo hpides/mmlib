@@ -116,6 +116,8 @@ class FileSystemPersistenceService(FilePersistenceService):
         store_path = self._get_store_path(file_id)
         file = find_file(store_path)
         dst = os.path.join(os.path.abspath(dst_path), os.path.split(file)[1])
+
+        assert not os.path.isfile(dst), 'file at {} exists already'.format(dst)
         copyfile(file, dst)
 
         return dst

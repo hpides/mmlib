@@ -46,7 +46,7 @@ class ModelInfo(SchemaObj):
         if not self.store_type:
             self.store_type = _recover_store_type(restored_dict)
 
-        if not self.recover_info:
+        if not self.recover_info or load_recursive:
             self.recover_info = _recover_recover_info(restored_dict, dict_pers_service, file_pers_service, restore_root,
                                                       self.store_type, load_recursive, load_files)
 

@@ -5,6 +5,7 @@ import warnings
 
 import torch
 
+from mmlib.equal import state_dict_equal
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from mmlib.recover_validation import RecoverValidationService
 from mmlib.save_info import ModelSaveInfo, ProvModelSaveInfo
@@ -15,6 +16,7 @@ from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo, Wei
 from schema.restorable_object import RestoredModelInfo
 from schema.store_type import ModelStoreType
 from schema.train_info import TrainInfo
+from tests.networks.mynets.resnet18 import resnet18
 from util.init_from_file import create_object, create_type
 
 RESTORE_PATH = 'restore_path'
@@ -223,7 +225,7 @@ class WeightUpdateSaveService(BaselineSaveService):
         if store_type == ModelStoreType.FULL_MODEL:
             return super().recover_model(model_id)
         else:
-            self._recover_from_weight_update(model_id, execute_checks, recover_val_service)
+            return self._recover_from_weight_update(model_id, execute_checks, recover_val_service)
 
     def _recover_from_weight_update(self, model_id, execute_checks, recover_val_service):
         with tempfile.TemporaryDirectory() as tmp_path:
@@ -233,7 +235,7 @@ class WeightUpdateSaveService(BaselineSaveService):
             recover_info: WeightsUpdateRecoverInfo = model_info.recover_info
 
             if recover_info.independent:
-                recovered_model = self._restore_independent_update(model_info)
+                recovered_model = self._restore_independent_update(model_info, tmp_path)
             else:
                 # NOTE so far all weight updates are independent
                 recovered_model = self._restore_dependent_update(model_info)
@@ -245,13 +247,20 @@ class WeightUpdateSaveService(BaselineSaveService):
 
         return restored_model_info
 
-    def _restore_independent_update(self, model_info):
-        model_code, model_class_name = self._get_model_code_and_class_name(model_info)
+    def _restore_independent_update(self, model_info, tmp_path):
+        model_code, model_class_name = self._get_model_code_and_class_name(model_info, tmp_path)
         recover_info: WeightsUpdateRecoverInfo = model_info.recover_info
 
         model = create_object(model_code, model_class_name)
         if recover_info.update_type:  # here we should actually check the type
             s_dict = self._recover_pickled_weights(recover_info.update)
+
+            # just for debug
+            net = resnet18(pretrained=True)
+            debugsdict = net.state_dict()
+
+            eq = state_dict_equal(s_dict, debugsdict)
+
             model.load_state_dict(s_dict)
 
         return model
@@ -295,8 +304,33 @@ class WeightUpdateSaveService(BaselineSaveService):
         # this method is always independent from other models since we always store the full weights
         return model_weights, "default_weight_store", True
 
-    def _get_model_code_and_class_name(self, model_info):
-        return "", ""
+    def _get_model_code_and_class_name(self, model_info, tmp_path):
+        # TODO maybe can be replaced when using FileRef Object
+        restore_dir = os.path.join(tmp_path, RESTORE_PATH)
+        os.mkdir(restore_dir)
+        # to find the model code and class name we have to find the "nearest" FULL MODEL
+        current_model_info = model_info
+        while not current_model_info.store_type == ModelStoreType.FULL_MODEL:
+            base_model_id = current_model_info.derived_from
+            base_model_info = ModelInfo.load(
+                obj_id=base_model_id,
+                file_pers_service=self._file_pers_service,
+                dict_pers_service=self._dict_pers_service,
+                restore_root=restore_dir,
+            )
+            current_model_info = base_model_info
+
+        full_model_info: ModelInfo = current_model_info
+        full_model_info.load_all_fields(
+            file_pers_service=self._file_pers_service,
+            dict_pers_service=self._dict_pers_service,
+            restore_root=restore_dir,
+            load_recursive=True,
+            load_files=True
+        )
+        recover_info: FullModelRecoverInfo = full_model_info.recover_info
+
+        return recover_info.model_code, recover_info.model_class_name
 
 
 class ProvenanceSaveService(BaselineSaveService):
@@ -338,6 +372,7 @@ class ProvenanceSaveService(BaselineSaveService):
             base_model = base_model_info.model
 
             with tempfile.TemporaryDirectory() as tmp_path:
+                # TODO maybe can be replaced when using FileRef Object
                 restore_dir = os.path.join(tmp_path, RESTORE_PATH)
                 os.mkdir(restore_dir)
 
