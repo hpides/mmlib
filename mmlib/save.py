@@ -11,7 +11,7 @@ from mmlib.save_info import ModelSaveInfo, ProvModelSaveInfo
 from mmlib.track_env import compare_env_to_current
 from schema.dataset import Dataset
 from schema.model_info import ModelInfo, MODEL_INFO
-from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo
+from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo, WeightsUpdateRecoverInfo
 from schema.restorable_object import RestoredModelInfo
 from schema.store_type import ModelStoreType
 from schema.train_info import TrainInfo
@@ -154,7 +154,7 @@ class BaselineSaveService(AbstractSaveService):
                                                 model_code=model_save_info.model_code,
                                                 model_class_name=model_save_info.model_class_name)
 
-            model_info = ModelInfo(store_type=ModelStoreType.PICKLED_WEIGHTS, recover_info=recover_info,
+            model_info = ModelInfo(store_type=ModelStoreType.FULL_MODEL, recover_info=recover_info,
                                    derived_from_id=derived_from)
 
             model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
@@ -195,6 +195,135 @@ class BaselineSaveService(AbstractSaveService):
                           ' - check that save_validation_info=True when saving model')
 
 
+class WeightUpdateSaveService(BaselineSaveService):
+
+    def __init__(self, file_pers_service: FilePersistenceService,
+                 dict_pers_service: DictPersistenceService):
+        """
+        :param file_pers_service: An instance of FilePersistenceService that is used to store files.
+        :param dict_pers_service: An instance of DictPersistenceService that is used to store metadata as dicts.
+        """
+        super().__init__(file_pers_service, dict_pers_service)
+
+    def save_model(self, model_save_info: ModelSaveInfo) -> str:
+
+        # as a first step we have to find out if we have to store a full model first or if we can store only the update
+        # if there is no base model given, we can not compute any updates -> we have to sore the full model
+        if not self._base_model_given(model_save_info):
+            return super().save_model(model_save_info)
+        else:
+            # if there is a base model, we can store the update and for a restore refer to the base model
+            return self._save_updated_model(model_save_info)
+
+    def recover_model(self, model_id: str, execute_checks: bool = False,
+                      recover_val_service: RecoverValidationService = None) -> RestoredModelInfo:
+
+        store_type = self._get_store_type(model_id)
+
+        if store_type == ModelStoreType.FULL_MODEL:
+            return super().recover_model(model_id)
+        else:
+            return self._recover_from_weight_update(model_id, execute_checks, recover_val_service)
+
+    def _recover_from_weight_update(self, model_id, execute_checks, recover_val_service):
+        with tempfile.TemporaryDirectory() as tmp_path:
+            model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path,
+                                        load_recursive=True, load_files=True)
+
+            recover_info: WeightsUpdateRecoverInfo = model_info.recover_info
+
+            if recover_info.independent:
+                recovered_model = self._restore_independent_update(model_info, tmp_path)
+            else:
+                # NOTE so far all weight updates are independent
+                recovered_model = self._restore_dependent_update(model_info)
+
+            restored_model_info = RestoredModelInfo(model=recovered_model)
+
+            if execute_checks:
+                self._execute_checks(recovered_model, model_info, recover_val_service)
+
+        return restored_model_info
+
+    def _restore_independent_update(self, model_info, tmp_path):
+        model_code, model_class_name = self._get_model_code_and_class_name(model_info, tmp_path)
+        recover_info: WeightsUpdateRecoverInfo = model_info.recover_info
+
+        model = create_object(model_code, model_class_name)
+        if recover_info.update_type:  # here we should actually check the type
+            s_dict = self._recover_pickled_weights(recover_info.update)
+            model.load_state_dict(s_dict)
+
+        return model
+
+    def _restore_dependent_update(self, model_info):
+        base_model = self.recover_model(model_info.derived_from)
+
+        recover_info: WeightsUpdateRecoverInfo = model_info.recover_info
+
+        return self._update_model(base_model, recover_info)
+
+    def _update_model(self, base_model, recover_info):
+        pass
+
+    def _save_updated_model(self, model_save_info):
+        assert model_save_info.base_model, 'no base model given'
+
+        with tempfile.TemporaryDirectory() as tmp_path:
+            weights_update, update_type, independent = self._generate_weights_update(model_save_info, tmp_path)
+
+            derived_from = model_save_info.base_model
+
+            recover_info = WeightsUpdateRecoverInfo(update=weights_update, update_type=update_type,
+                                                    independent=independent)
+
+            model_info = ModelInfo(store_type=ModelStoreType.WEIGHT_UPDATES, recover_info=recover_info,
+                                   derived_from_id=derived_from)
+
+            model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
+
+            return model_info_id
+
+    def _base_model_given(self, model_save_info):
+        return model_save_info.base_model is not None
+
+    def _generate_weights_update(self, model_save_info, tmp_path):
+        # for now the weight update is just storing the weights with the standard pytorch method
+        model = model_save_info.model
+        model_weights = super()._pickle_weights(model, tmp_path)
+
+        # this method is always independent from other models since we always store the full weights
+        return model_weights, "default_weight_store", True
+
+    def _get_model_code_and_class_name(self, model_info, tmp_path):
+        # TODO maybe can be replaced when using FileRef Object
+        restore_dir = os.path.join(tmp_path, RESTORE_PATH)
+        os.mkdir(restore_dir)
+        # to find the model code and class name we have to find the "nearest" FULL MODEL
+        current_model_info = model_info
+        while not current_model_info.store_type == ModelStoreType.FULL_MODEL:
+            base_model_id = current_model_info.derived_from
+            base_model_info = ModelInfo.load(
+                obj_id=base_model_id,
+                file_pers_service=self._file_pers_service,
+                dict_pers_service=self._dict_pers_service,
+                restore_root=restore_dir,
+            )
+            current_model_info = base_model_info
+
+        full_model_info: ModelInfo = current_model_info
+        full_model_info.load_all_fields(
+            file_pers_service=self._file_pers_service,
+            dict_pers_service=self._dict_pers_service,
+            restore_root=restore_dir,
+            load_recursive=True,
+            load_files=True
+        )
+        recover_info: FullModelRecoverInfo = full_model_info.recover_info
+
+        return recover_info.model_code, recover_info.model_class_name
+
+
 class ProvenanceSaveService(BaselineSaveService):
 
     def __init__(self, file_pers_service: FilePersistenceService,
@@ -224,7 +353,7 @@ class ProvenanceSaveService(BaselineSaveService):
         if base_model_id is None:
             # if there is no base model the current model's store type must be PickledWeights
             store_type = self._get_store_type(model_id)
-            assert store_type == ModelStoreType.PICKLED_WEIGHTS, \
+            assert store_type == ModelStoreType.FULL_MODEL, \
                 'for all other model types then ModelStoreType.PICKLED_WEIGHTS we need a base model'
             return super().recover_model(model_id, execute_checks)
         else:
@@ -234,6 +363,7 @@ class ProvenanceSaveService(BaselineSaveService):
             base_model = base_model_info.model
 
             with tempfile.TemporaryDirectory() as tmp_path:
+                # TODO maybe can be replaced when using FileRef Object
                 restore_dir = os.path.join(tmp_path, RESTORE_PATH)
                 os.mkdir(restore_dir)
 
@@ -293,7 +423,7 @@ class ProvenanceSaveService(BaselineSaveService):
         return model_info
 
     def _recover_base_model(self, base_model_id, base_model_store_type):
-        if base_model_store_type == ModelStoreType.PICKLED_WEIGHTS:
+        if base_model_store_type == ModelStoreType.FULL_MODEL:
             return super().recover_model(model_id=base_model_id)
         elif base_model_store_type == ModelStoreType.PROVENANCE:
             return self.recover_model(model_id=base_model_id)

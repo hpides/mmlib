@@ -10,11 +10,19 @@ from schema.train_info import TrainInfo
 from util.helper import copy_all_data, clean
 
 RECOVER_INFO = 'recover_info'
+
+
+class AbstractRecoverInfo(SchemaObj, metaclass=abc.ABCMeta):
+
+    def _representation_type(self) -> str:
+        return RECOVER_INFO
+
+
 MODEL_CODE = 'model_code'
 MODEL_CLASS_NAME = 'model_class_name'
 
 
-class AbstractRecoverInfo(SchemaObj, metaclass=abc.ABCMeta):
+class AbstractModelCodeRecoverInfo(AbstractRecoverInfo, metaclass=abc.ABCMeta):
 
     def __init__(self, model_code: str, model_class_name: str, store_id: str = None):
         super().__init__(store_id)
@@ -43,9 +51,6 @@ class AbstractRecoverInfo(SchemaObj, metaclass=abc.ABCMeta):
 
         return result
 
-    def _representation_type(self) -> str:
-        return RECOVER_INFO
-
     @abc.abstractmethod
     def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
         raise NotImplementedError
@@ -54,7 +59,7 @@ class AbstractRecoverInfo(SchemaObj, metaclass=abc.ABCMeta):
 WEIGHTS = 'weights'
 
 
-class FullModelRecoverInfo(AbstractRecoverInfo):
+class FullModelRecoverInfo(AbstractModelCodeRecoverInfo):
 
     def __init__(self, weights_file_path: str = None, model_code=None, model_class_name: str = None,
                  store_id: str = None):
@@ -111,11 +116,53 @@ def _recover_weights(file_pers_service, load_files, restore_root, restored_dict)
     return weights_file_path
 
 
+UPDATE = 'update'
+UPDATE_TYPE = 'update_type'
+INDEPENDENT = 'independent'
+
+
+class WeightsUpdateRecoverInfo(AbstractRecoverInfo):
+
+    def __init__(self, update: str = None, update_type: str = None, independent: bool = None, store_id: str = None):
+        super().__init__(store_id)
+        self.update = update
+        self.update_type = update_type
+        self.independent = independent
+
+    def load_all_fields(self, file_pers_service: FilePersistenceService, dict_pers_service: DictPersistenceService,
+                        restore_root: str, load_recursive: bool = True, load_files: bool = True):
+        restored_dict = dict_pers_service.recover_dict(self.store_id, RECOVER_INFO)
+
+        self.update = _restore_update(file_pers_service, load_files, restore_root, restored_dict)
+        self.update_type = restored_dict[UPDATE_TYPE]
+        self.independent = restored_dict[INDEPENDENT]
+
+    def size_in_bytes(self, file_pers_service: FilePersistenceService,
+                      dict_pers_service: DictPersistenceService) -> int:
+        # Note not implemented for now
+        pass
+
+    def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
+        update_id = file_pers_service.save_file(self.update)
+        dict_representation[UPDATE] = update_id
+        dict_representation[UPDATE_TYPE] = self.update_type
+        dict_representation[INDEPENDENT] = self.independent
+
+
+def _restore_update(file_pers_service, load_files, restore_root, restored_dict):
+    update = None
+    if load_files:
+        update_id = restored_dict[UPDATE]
+        update = file_pers_service.recover_file(update_id, restore_root)
+
+    return update
+
+
 DATASET = 'dataset'
 TRAIN_INFO = 'train_info'
 
 
-class ProvenanceRecoverInfo(AbstractRecoverInfo):
+class ProvenanceRecoverInfo(AbstractModelCodeRecoverInfo):
 
     def __init__(self, dataset: Dataset = None, model_code=None, model_class_name: str = None,
                  train_info: TrainInfo = None, store_id: str = None):

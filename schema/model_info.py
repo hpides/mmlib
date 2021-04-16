@@ -1,5 +1,6 @@
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
-from schema.recover_info import AbstractRecoverInfo, FullModelRecoverInfo, ProvenanceRecoverInfo
+from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo, \
+    AbstractRecoverInfo, WeightsUpdateRecoverInfo
 from schema.schema_obj import SchemaObj
 from schema.store_type import ModelStoreType
 
@@ -45,7 +46,7 @@ class ModelInfo(SchemaObj):
         if not self.store_type:
             self.store_type = _recover_store_type(restored_dict)
 
-        if not self.recover_info:
+        if not self.recover_info or load_recursive:
             self.recover_info = _recover_recover_info(restored_dict, dict_pers_service, file_pers_service, restore_root,
                                                       self.store_type, load_recursive, load_files)
 
@@ -82,7 +83,7 @@ def _recover_recover_info(restored_dict, dict_pers_service, file_pers_service, r
                           load_recursive, load_files):
     recover_info_id = restored_dict[RECOVER_INFO_ID]
 
-    if store_type == ModelStoreType.PICKLED_WEIGHTS:
+    if store_type == ModelStoreType.FULL_MODEL:
         if load_recursive:
             recover_info = FullModelRecoverInfo.load(recover_info_id, file_pers_service, dict_pers_service,
                                                      restore_root, load_recursive, load_files)
@@ -94,8 +95,14 @@ def _recover_recover_info(restored_dict, dict_pers_service, file_pers_service, r
                                                       restore_root, load_recursive, load_files)
         else:
             recover_info = ProvenanceRecoverInfo.load_placeholder(recover_info_id)
+    elif store_type == ModelStoreType.WEIGHT_UPDATES:
+        if load_recursive:
+            recover_info = WeightsUpdateRecoverInfo.load(recover_info_id, file_pers_service, dict_pers_service,
+                                                         restore_root, load_recursive, load_files)
+        else:
+            recover_info = WeightsUpdateRecoverInfo.load_placeholder(recover_info_id)
     else:
-        assert False, 'Not implemented yet'
+        assert False, 'Invalid store type'
     return recover_info
 
 

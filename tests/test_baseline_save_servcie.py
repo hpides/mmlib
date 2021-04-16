@@ -41,7 +41,10 @@ class TestBaselineSaveService(unittest.TestCase):
         file_pers_service = FileSystemPersistenceService(self.tmp_path)
         dict_pers_service = MongoDictPersistenceService()
         self.recover_val_service = RecoverValidationService(dict_pers_service)
-        self.baseline_save_service = BaselineSaveService(file_pers_service, dict_pers_service)
+        self.init_save_service(dict_pers_service, file_pers_service)
+
+    def init_save_service(self, dict_pers_service, file_pers_service):
+        self.save_service = BaselineSaveService(file_pers_service, dict_pers_service)
 
     def tearDown(self) -> None:
         self.__clean_up()
@@ -77,8 +80,8 @@ class TestBaselineSaveService(unittest.TestCase):
         save_info_builder.add_model_info(model, code_file, code_name)
         save_info = save_info_builder.build()
 
-        model_id = self.baseline_save_service.save_model(save_info)
-        restored_model_info = self.baseline_save_service.recover_model(model_id)
+        model_id = self.save_service.save_model(save_info)
+        restored_model_info = self.save_service.recover_model(model_id)
         self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
 
     def test_save_restore_mobilenet_val_info(self):
@@ -107,12 +110,12 @@ class TestBaselineSaveService(unittest.TestCase):
         save_info_builder.add_model_info(model, code_file, class_name)
         save_info = save_info_builder.build()
 
-        model_id = self.baseline_save_service.save_model(save_info)
+        model_id = self.save_service.save_model(save_info)
 
         # save additionally validation info
-        self.baseline_save_service.save_validation_info(model, model_id, dummy_input_shape, self.recover_val_service)
-        restored_model_info = self.baseline_save_service.recover_model(model_id, execute_checks=True,
-                                                                       recover_val_service=self.recover_val_service)
+        self.save_service.save_validation_info(model, model_id, dummy_input_shape, self.recover_val_service)
+        restored_model_info = self.save_service.recover_model(model_id, execute_checks=True,
+                                                              recover_val_service=self.recover_val_service)
         self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
 
     def test_save_restore_derived_models(self):
@@ -124,15 +127,15 @@ class TestBaselineSaveService(unittest.TestCase):
         save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(initial_model, code_file, class_name)
         save_info = save_info_builder.build()
-        initial_model_id = self.baseline_save_service.save_model(save_info)
+        initial_model_id = self.save_service.save_model(save_info)
 
         # save derived model
         derived_model = resnet18(pretrained=True)
         save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(derived_model, code_file, class_name, base_model_id=initial_model_id)
         save_info = save_info_builder.build()
-        derived_model_id = self.baseline_save_service.save_model(save_info)
+        derived_model_id = self.save_service.save_model(save_info)
 
-        restored_model_info = self.baseline_save_service.recover_model(derived_model_id)
+        restored_model_info = self.save_service.recover_model(derived_model_id)
 
         self.assertTrue(model_equal(derived_model, restored_model_info.model, imagenet_input))
