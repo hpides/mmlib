@@ -54,7 +54,3 @@ class TestWeightUpdateSaveService(TestBaselineSaveService):
         restored_model_info_3 = self.save_service.recover_model(derived_model_id_3)
 
         self.assertTrue(model_equal(derived_model_3, restored_model_info_3.model, imagenet_input))
-
-    def test_save_restore_many_derived_models_bouj(self):
-        # TODO store models with different architectures -> expect error message
-        pass

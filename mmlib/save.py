@@ -5,7 +5,6 @@ import warnings
 
 import torch
 
-from mmlib.equal import state_dict_equal
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from mmlib.recover_validation import RecoverValidationService
 from mmlib.save_info import ModelSaveInfo, ProvModelSaveInfo
@@ -16,7 +15,6 @@ from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo, Wei
 from schema.restorable_object import RestoredModelInfo
 from schema.store_type import ModelStoreType
 from schema.train_info import TrainInfo
-from tests.networks.mynets.resnet18 import resnet18
 from util.init_from_file import create_object, create_type
 
 RESTORE_PATH = 'restore_path'
@@ -254,13 +252,6 @@ class WeightUpdateSaveService(BaselineSaveService):
         model = create_object(model_code, model_class_name)
         if recover_info.update_type:  # here we should actually check the type
             s_dict = self._recover_pickled_weights(recover_info.update)
-
-            # just for debug
-            net = resnet18(pretrained=True)
-            debugsdict = net.state_dict()
-
-            eq = state_dict_equal(s_dict, debugsdict)
-
             model.load_state_dict(s_dict)
 
         return model
