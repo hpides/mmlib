@@ -10,6 +10,7 @@ from mmlib.recover_validation import RecoverValidationService
 from mmlib.save_info import ModelSaveInfo, ProvModelSaveInfo
 from mmlib.track_env import compare_env_to_current
 from schema.dataset import Dataset
+from schema.file_reference import FileReference
 from schema.model_info import ModelInfo, MODEL_INFO
 from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo, WeightsUpdateRecoverInfo
 from schema.restorable_object import RestoredModelInfo
@@ -403,7 +404,7 @@ class ProvenanceSaveService(BaselineSaveService):
             code=model_save_info.train_info.train_service_code,
             instance=model_save_info.train_info.train_service
         )
-        dataset = Dataset(model_save_info.raw_dataset)
+        dataset = Dataset(FileReference(file_path=model_save_info.raw_dataset))
         train_info = TrainInfo(
             ts_wrapper=train_service_wrapper,
             ts_wrapper_code=tw_code,

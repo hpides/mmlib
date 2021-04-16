@@ -1,6 +1,7 @@
 import os
 
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
+from schema.file_reference import FileReference
 from schema.schema_obj import SchemaObj
 from util.zip import zip_path, unzip
 
@@ -11,13 +12,14 @@ DATASET = 'dataset'
 
 class Dataset(SchemaObj):
 
-    def __init__(self, raw_data: str = None, store_id: str = None):
+    def __init__(self, raw_data: FileReference = None, store_id: str = None):
         super().__init__(store_id)
         self.raw_data = raw_data
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
-        zip_file_path = zip_path(self.raw_data)
-        raw_data_id = file_pers_service.save_file(zip_file_path)
+        raw_data_path = self.raw_data.file_path
+        zip_file_path = zip_path(raw_data_path)
+        raw_data_id = file_pers_service.save_file(FileReference(file_path=zip_file_path))
 
         dict_representation[RAW_DATA] = raw_data_id
 
