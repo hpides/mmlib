@@ -34,7 +34,7 @@ if __name__ == '__main__':
     # having this model id, we can restore the model using the save service
     # it accesses the mongoDB for meta info, and the file system for files (model weights and code)
     restored_model_info = save_service.recover_model(model_id)
-    # finally we can check if the model we have stored is equal to the recovered mdoel
+    # finally we can check if the model we have stored is equal to the recovered model
     # model_equal compares all model weights, and makes a dummy prediction that is also compared
     if model_equal(model, restored_model_info.model, imagenet_input):
         print('Success: the stored and the restored models are equal!')
