@@ -1,8 +1,6 @@
 import os
 import sys
 
-from schema.file_reference import FileReference
-
 
 def create_object(code, class_name):
     module, path = _module(code)
@@ -22,10 +20,10 @@ def create_type(code, type_name):
     return obj
 
 
-def create_object_with_parameters(class_name: [str], init_args: dict, code_file: FileReference = None,
+def create_object_with_parameters(class_name: [str], init_args: dict, code_file: str = None,
                                   import_cmd: str = None, init_ref_type_args: dict = None):
     if code_file:
-        module, path = _module(code_file.path)
+        module, path = _module(code_file)
         sys.path.append(path)
         exec('from {} import {}'.format(module, class_name))
     else:

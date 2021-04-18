@@ -1,12 +1,12 @@
 import unittest
 
 from mmlib.equal import model_equal
-from tests.dummy_classes.dummy import DummyA
+from tests.init_from_file.dummy_classes import DummyA
 from tests.networks.mynets.resnet18 import resnet18
 from util.dummy_data import imagenet_input
 from util.init_from_file import create_object, create_object_with_parameters
 
-CODE = './dummy_classes/dummy.py'
+CODE = './dummy_classes.py'
 
 
 class TestInitFromFIle(unittest.TestCase):
@@ -51,7 +51,7 @@ class TestInitFromFIle(unittest.TestCase):
         init_args = {'arg1': 42, 'arg2': 43}
         ref_args = {'arg3': DummyA(42)}
         obj = create_object_with_parameters('DummyB', init_args=init_args, init_ref_type_args=ref_args,
-                                            import_cmd='from tests.dummy_classes.dummy import DummyB')
+                                            import_cmd='from tests.init_from_file.dummy_classes import DummyB')
 
         self.assertEqual(42, obj.state1)
         self.assertEqual(43, obj.state2)
