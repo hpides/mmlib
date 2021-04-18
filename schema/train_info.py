@@ -33,7 +33,6 @@ class TrainInfo(SchemaObj):
         train_service_id = self.train_service_wrapper.persist(file_pers_service, dict_pers_service)
         file_pers_service.save_file(self.train_service_wrapper_code)
 
-
         print('train_service_ID')
         print(train_service_id)
 
@@ -79,7 +78,6 @@ class TrainInfo(SchemaObj):
 def _recover_train_service_wrapper(dict_pers_service, file_pers_service, restore_root, train_service_id,
                                    ts_wrapper_class_name, ts_wrapper_code, load_recursive,
                                    load_files):
-
     # TODO: Future work think about better solution without loading code
     # TODO maybe can be replaced when using FileRef Object
     restore_dir = os.path.join(restore_root, 'RESTORE_PATH')
