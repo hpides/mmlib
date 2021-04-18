@@ -89,18 +89,20 @@ def _recover_recover_info(restored_dict, dict_pers_service, file_pers_service, r
                                                      restore_root, load_recursive, load_files)
         else:
             recover_info = FullModelRecoverInfo.load_placeholder(recover_info_id)
-    elif store_type == ModelStoreType.PROVENANCE:
-        if load_recursive:
-            recover_info = ProvenanceRecoverInfo.load(recover_info_id, file_pers_service, dict_pers_service,
-                                                      restore_root, load_recursive, load_files)
-        else:
-            recover_info = ProvenanceRecoverInfo.load_placeholder(recover_info_id)
+
     elif store_type == ModelStoreType.WEIGHT_UPDATES:
         if load_recursive:
             recover_info = WeightsUpdateRecoverInfo.load(recover_info_id, file_pers_service, dict_pers_service,
                                                          restore_root, load_recursive, load_files)
         else:
             recover_info = WeightsUpdateRecoverInfo.load_placeholder(recover_info_id)
+
+    elif store_type == ModelStoreType.PROVENANCE:
+        if load_recursive:
+            recover_info = ProvenanceRecoverInfo.load(recover_info_id, file_pers_service, dict_pers_service,
+                                                      restore_root, load_recursive, load_files)
+        else:
+            recover_info = ProvenanceRecoverInfo.load_placeholder(recover_info_id)
     else:
         assert False, 'Invalid store type'
     return recover_info
