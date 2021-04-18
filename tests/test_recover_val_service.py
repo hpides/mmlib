@@ -4,7 +4,7 @@ import unittest
 from mmlib.persistence import MongoDictPersistenceService
 from mmlib.recover_validation import RecoverValidationService
 from tests.networks.mynets.resnet18 import resnet18
-from tests.test_dict_persistence import MONGO_CONTAINER_NAME
+from tests.persistence.test_dict_persistence import MONGO_CONTAINER_NAME
 
 
 class TestRecoverValidationService(unittest.TestCase):

@@ -12,7 +12,7 @@ from schema.restorable_object import RestorableObjectWrapper
 from tests.inference_and_training.imagenet_train import OptimizerWrapper, ImagenetTrainService, ImagenetTrainWrapper
 from tests.networks.custom_coco import TrainCustomCoco
 from tests.networks.mynets.resnet18 import resnet18
-from tests.test_dict_persistence import MONGO_CONTAINER_NAME
+from tests.persistence.test_dict_persistence import MONGO_CONTAINER_NAME
 from tests.test_prov_save_servcie import CONFIG
 from util.dummy_data import imagenet_input
 
