@@ -348,7 +348,7 @@ class ProvenanceSaveService(BaselineSaveService):
 
         base_model_id = self._get_base_model(model_id)
         if base_model_id is None:
-            # if there is no base model the current model's store type must be PickledWeights
+            # if there is no base model the current model's store type must be FULL_MODEL
             store_type = self._get_store_type(model_id)
             assert store_type == ModelStoreType.FULL_MODEL, \
                 'for all other model types then ModelStoreType.PICKLED_WEIGHTS we need a base model'
