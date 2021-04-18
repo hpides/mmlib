@@ -13,8 +13,8 @@ from mmlib.track_env import track_current_environment
 from schema.file_reference import FileReference
 from schema.restorable_object import OptimizerWrapper, RestorableObjectWrapper
 from schema.save_info_builder import ModelSaveInfoBuilder
-from tests.example_files.imagenet_train import ImagenetTrainService
 from tests.example_files.data.custom_coco import TrainCustomCoco
+from tests.example_files.imagenet_train import ImagenetTrainService
 from tests.example_files.mynets.mobilenet import mobilenet_v2
 from tests.example_files.mynets.resnet18 import resnet18
 from tests.save.test_baseline_save_servcie import MONGO_CONTAINER_NAME
@@ -28,6 +28,9 @@ CONFIG = '../example_files/local-config.ini'
 class TestProvSaveService(unittest.TestCase):
 
     def setUp(self) -> None:
+        assert os.path.isfile(CONFIG),\
+            'to run these tests define your onw config file named \'local-config\' with respect to the template file'
+
         self.tmp_path = './filesystem-tmp'
         self.abs_tmp_path = os.path.abspath(self.tmp_path)
 

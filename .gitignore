@@ -149,3 +149,4 @@ dist/
 /tests/tmp-data/
 /tests/example_files/data/reduced-custom-coco-data.zip
 /examples/filesystem-tmp/
+/tests/example_files/local-config.ini
