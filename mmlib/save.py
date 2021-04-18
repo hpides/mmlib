@@ -16,6 +16,7 @@ from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo, Wei
 from schema.restorable_object import RestoredModelInfo
 from schema.store_type import ModelStoreType
 from schema.train_info import TrainInfo
+from util.helper import class_name
 from util.init_from_file import create_object, create_type
 
 RESTORE_PATH = 'restore_path'
@@ -153,7 +154,9 @@ class BaselineSaveService(AbstractSaveService):
 
             recover_info = FullModelRecoverInfo(weights_file=FileReference(path=weights_path),
                                                 model_code=FileReference(path=model_save_info.model_code),
-                                                model_class_name=model_save_info.model_class_name)
+                                                model_class_name=class_name(model_save_info.model))
+            print("given: {}".format(model_save_info.model_class_name))
+            print("derived: {}".format(class_name(model_save_info.model)))
 
             model_info = ModelInfo(store_type=ModelStoreType.FULL_MODEL, recover_info=recover_info,
                                    derived_from_id=derived_from)
