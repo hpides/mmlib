@@ -406,13 +406,13 @@ class ProvenanceSaveService(BaselineSaveService):
             ts_wrapper_code=tw_code,
             ts_wrapper_class_name=tw_class_name,
             train_kwargs=model_save_info.train_info.train_kwargs,
-            environment=model_save_info.train_info.environment
         )
         prov_recover_info = ProvenanceRecoverInfo(
             dataset=dataset,
             model_code=FileReference(path=model_save_info.model_code),
             model_class_name=model_save_info.model_class_name,
-            train_info=train_info
+            train_info=train_info,
+            environment=model_save_info.train_info.environment
         )
         derived_from = model_save_info.base_model if model_save_info.base_model else None
         model_info = ModelInfo(store_type=ModelStoreType.PROVENANCE, recover_info=prov_recover_info,
@@ -433,5 +433,5 @@ class ProvenanceSaveService(BaselineSaveService):
 
         # check environment
         recover_info: ProvenanceRecoverInfo = model_info.recover_info
-        envs_match = compare_env_to_current(recover_info.train_info.environment)
+        envs_match = compare_env_to_current(recover_info.environment)
         assert envs_match, 'The current environment and the environment that was used to '

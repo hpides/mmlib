@@ -14,21 +14,22 @@ from schema.file_reference import FileReference
 from schema.restorable_object import OptimizerWrapper, RestorableObjectWrapper
 from schema.save_info_builder import ModelSaveInfoBuilder
 from tests.example_files.data.custom_coco import TrainCustomCoco
-from tests.example_files.imagenet_train import ImagenetTrainService
+from tests.example_files.imagenet_train import ImagenetTrainService, OPTIMIZER, DATALOADER, DATA
 from tests.example_files.mynets.mobilenet import mobilenet_v2
 from tests.example_files.mynets.resnet18 import resnet18
 from tests.save.test_baseline_save_servcie import MONGO_CONTAINER_NAME
 from util.dummy_data import imagenet_input
 from util.mongo import MongoService
 
-MODEL_PATH = '../example_files/mynets/{}.py'
-CONFIG = '../example_files/local-config.ini'
+FILE_PATH = os.path.dirname(os.path.realpath(__file__))
+MODEL_PATH = os.path.join(FILE_PATH, '../example_files/mynets/{}.py')
+CONFIG = os.path.join(FILE_PATH, '../example_files/local-config.ini')
 
 
 class TestProvSaveService(unittest.TestCase):
 
     def setUp(self) -> None:
-        assert os.path.isfile(CONFIG),\
+        assert os.path.isfile(CONFIG), \
             'to run these tests define your onw config file named \'local-config\' with respect to the template file'
 
         self.tmp_path = './filesystem-tmp'
@@ -94,16 +95,16 @@ class TestProvSaveService(unittest.TestCase):
         ################################################################################################################
         # define what train service will be used to train the model, in our case the ImagenetTrainService (inherits
         # from the abstract class TrainService)
-        prov_train_serv_code = '../example_files/imagenet_train.py'
+        prov_train_serv_code = os.path.join(FILE_PATH, '../example_files/imagenet_train.py')
         prov_train_serv_class_name = 'ImagenetTrainService'
         # define the train wrapper, in our case we use the ImagenetTrainWrapper (inherits from the abstract class
         # TrainService)
-        prov_train_wrapper_code = '../example_files/imagenet_train.py'
+        prov_train_wrapper_code = os.path.join(FILE_PATH, '../example_files/imagenet_train.py')
         prov_train_wrapper_class_name = 'ImagenetTrainWrapper'
         # we also have to track the current environment, to store it later
         prov_env = track_current_environment()
         # as a last step we have to define the data that should be used and how the train method should be parametrized
-        raw_data = '../example_files/data/reduced-custom-coco-data'
+        raw_data = os.path.join(FILE_PATH, '../example_files/data/reduced-custom-coco-data')
         train_kwargs = {'number_batches': 2}
 
         # to train the model we use the imagenet train service specified above
@@ -120,8 +121,8 @@ class TestProvSaveService(unittest.TestCase):
         # before we can define the data loader, we have to define the data wrapper
         # for this test case we will use the data from our custom coco dataset
         data_wrapper = TrainCustomCoco(raw_data)
-        state_dict['data'] = RestorableObjectWrapper(
-            code=FileReference(path='../example_files/data/custom_coco.py'),
+        state_dict[DATA] = RestorableObjectWrapper(
+            code=FileReference(path=os.path.join(FILE_PATH, '../example_files/data/custom_coco.py')),
             class_name='TrainCustomCoco',
             init_args={},
             config_args={'root': CURRENT_DATA_ROOT},
@@ -138,7 +139,7 @@ class TestProvSaveService(unittest.TestCase):
         pin_memory = True
         dataloader = torch.utils.data.DataLoader(data_wrapper, batch_size=batch_size, shuffle=shuffle,
                                                  num_workers=num_workers, pin_memory=pin_memory)
-        state_dict['dataloader'] = RestorableObjectWrapper(
+        state_dict[DATALOADER] = RestorableObjectWrapper(
             import_cmd='from torch.utils.data import DataLoader',
             class_name='DataLoader',
             init_args={'batch_size': batch_size, 'shuffle': shuffle, 'num_workers': num_workers,
@@ -155,7 +156,7 @@ class TestProvSaveService(unittest.TestCase):
         momentum = 0.9
         weight_decay = 1e-4
         optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
-        state_dict['optimizer'] = OptimizerWrapper(
+        state_dict[OPTIMIZER] = OptimizerWrapper(
             import_cmd='import torch',
             class_name='torch.optim.SGD',
             init_args={'lr': lr, 'momentum': momentum, 'weight_decay': weight_decay},

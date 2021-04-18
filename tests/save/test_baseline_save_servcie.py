@@ -13,7 +13,8 @@ from tests.example_files.mynets.resnet18 import resnet18
 from util.dummy_data import imagenet_input
 from util.mongo import MongoService
 
-NETWORK_CODE_TEMPLATE = '../example_files/mynets/{}.py'
+FILE_PATH = os.path.dirname(os.path.realpath(__file__))
+NETWORK_CODE_TEMPLATE = os.path.join(FILE_PATH, '../example_files/mynets/{}.py')
 MONGO_CONTAINER_NAME = 'mongo-test'
 
 DUMMY_INPUT_SHAPE = [10, 3, 300, 400]
