@@ -6,6 +6,10 @@ from schema.restorable_object import TrainService, OptimizerWrapper, StateDictRe
     RESTORABLE_OBJECT, STATE_DICT, RestorableObjectWrapper
 from util.init_from_file import create_object
 
+DATA = 'data'
+DATALOADER = 'dataloader'
+OPTIMIZER = 'optimizer'
+
 
 class ImagenetTrainService(TrainService):
     def train(self, model: torch.nn.Module, number_batches=None):
@@ -38,11 +42,11 @@ class ImagenetTrainService(TrainService):
                 break
 
     def _get_dataloader(self):
-        dataloader = self.state_objs['dataloader'].instance
+        dataloader = self.state_objs[DATALOADER].instance
         return dataloader
 
     def _get_optimizer(self, parameters):
-        optimizer_wrapper: OptimizerWrapper = self.state_objs['optimizer']
+        optimizer_wrapper: OptimizerWrapper = self.state_objs[OPTIMIZER]
 
         if not optimizer_wrapper.instance:
             optimizer_wrapper.restore_instance({'params': parameters})
@@ -59,25 +63,19 @@ class ImagenetTrainWrapper(StateDictRestorableObjectWrapper):
         restored_dict = dict_pers_service.recover_dict(self.store_id, RESTORABLE_OBJECT)
         state_objs = restored_dict[STATE_DICT]
 
-        print('---------------###########--------------')
-        # NOTE: Dataloader instance is loaded in the train routine
-        state_dict['optimizer'] = OptimizerWrapper.load(
-            state_objs['optimizer'], file_pers_service, dict_pers_service, restore_root, True, True)
-        print('optimizer: {}'.format(state_dict['optimizer'].store_id))
+        state_dict[OPTIMIZER] = OptimizerWrapper.load(
+            state_objs[OPTIMIZER], file_pers_service, dict_pers_service, restore_root, True, True)
 
         data_wrapper = RestorableObjectWrapper.load(
-            state_objs['data'], file_pers_service, dict_pers_service, restore_root, True, True)
-        state_dict['data'] = data_wrapper
+            state_objs[DATA], file_pers_service, dict_pers_service, restore_root, True, True)
+        state_dict[DATA] = data_wrapper
         data_wrapper.restore_instance()
-        print('data: {}'.format(state_dict['data'].store_id))
 
+        # NOTE: Dataloader instance is loaded in the train routine
         dataloader = RestorableObjectWrapper.load(
-            state_objs['dataloader'], file_pers_service, dict_pers_service, restore_root, True, True)
-        state_dict['dataloader'] = dataloader
+            state_objs[DATALOADER], file_pers_service, dict_pers_service, restore_root, True, True)
+        state_dict[DATALOADER] = dataloader
         dataloader.restore_instance(ref_type_args={'dataset': data_wrapper.instance})
-        print('dataloader: {}'.format(state_dict['dataloader'].store_id))
-
-        print('---------------------------------------')
 
         self.instance = create_object(code=self.code.path, class_name=self.class_name)
         self.instance.state_objs = state_dict

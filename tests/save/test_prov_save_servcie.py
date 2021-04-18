@@ -14,7 +14,7 @@ from schema.file_reference import FileReference
 from schema.restorable_object import OptimizerWrapper, RestorableObjectWrapper
 from schema.save_info_builder import ModelSaveInfoBuilder
 from tests.example_files.data.custom_coco import TrainCustomCoco
-from tests.example_files.imagenet_train import ImagenetTrainService
+from tests.example_files.imagenet_train import ImagenetTrainService, OPTIMIZER, DATALOADER, DATA
 from tests.example_files.mynets.mobilenet import mobilenet_v2
 from tests.example_files.mynets.resnet18 import resnet18
 from tests.save.test_baseline_save_servcie import MONGO_CONTAINER_NAME
@@ -120,7 +120,7 @@ class TestProvSaveService(unittest.TestCase):
         # before we can define the data loader, we have to define the data wrapper
         # for this test case we will use the data from our custom coco dataset
         data_wrapper = TrainCustomCoco(raw_data)
-        state_dict['data'] = RestorableObjectWrapper(
+        state_dict[DATA] = RestorableObjectWrapper(
             code=FileReference(path='../example_files/data/custom_coco.py'),
             class_name='TrainCustomCoco',
             init_args={},
@@ -138,7 +138,7 @@ class TestProvSaveService(unittest.TestCase):
         pin_memory = True
         dataloader = torch.utils.data.DataLoader(data_wrapper, batch_size=batch_size, shuffle=shuffle,
                                                  num_workers=num_workers, pin_memory=pin_memory)
-        state_dict['dataloader'] = RestorableObjectWrapper(
+        state_dict[DATALOADER] = RestorableObjectWrapper(
             import_cmd='from torch.utils.data import DataLoader',
             class_name='DataLoader',
             init_args={'batch_size': batch_size, 'shuffle': shuffle, 'num_workers': num_workers,
@@ -155,7 +155,7 @@ class TestProvSaveService(unittest.TestCase):
         momentum = 0.9
         weight_decay = 1e-4
         optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
-        state_dict['optimizer'] = OptimizerWrapper(
+        state_dict[OPTIMIZER] = OptimizerWrapper(
             import_cmd='import torch',
             class_name='torch.optim.SGD',
             init_args={'lr': lr, 'momentum': momentum, 'weight_decay': weight_decay},
