@@ -1,7 +1,7 @@
 from mmlib.equal import model_equal
 from mmlib.save import WeightUpdateSaveService
 from schema.save_info_builder import ModelSaveInfoBuilder
-from tests.networks.mynets.resnet18 import resnet18
+from tests.example_files.mynets.resnet18 import resnet18
 from tests.test_baseline_save_servcie import TestBaselineSaveService, NETWORK_CODE_TEMPLATE, RESNET_18
 from util.dummy_data import imagenet_input
 

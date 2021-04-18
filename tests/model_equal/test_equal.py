@@ -64,12 +64,6 @@ class TestModelEqual(unittest.TestCase):
 
         self.assertTrue(model_equal(mod1, mod2, imagenet_input))
 
-    def test_resnet152_pretrained(self):
-        mod1 = models.resnet152(pretrained=True)
-        mod2 = models.resnet152(pretrained=True)
-
-        self.assertTrue(model_equal(mod1, mod2, imagenet_input))
-
     def test_googlenet_pretrained(self):
         mod1 = models.googlenet(pretrained=True)
         mod2 = models.googlenet(pretrained=True)
@@ -101,17 +95,6 @@ class TestModelEqual(unittest.TestCase):
 
         set_deterministic()
         mod2 = models.resnet18()
-
-        # we expect this to be true, the weights are randomly initialized,
-        # but we set the seeds before weight initialization
-        self.assertTrue(model_equal(mod1, mod2, imagenet_input))
-
-    def test_resnet152_not_pretrained_deterministic(self):
-        set_deterministic()
-        mod1 = models.resnet152()
-
-        set_deterministic()
-        mod2 = models.resnet152()
 
         # we expect this to be true, the weights are randomly initialized,
         # but we set the seeds before weight initialization
@@ -160,20 +143,6 @@ class TestModelEqual(unittest.TestCase):
         mod1_dict = mod1.state_dict()
         hash1 = state_dict_hash(mod1_dict)
 
-        mod2_dict = mod2.state_dict()
-        hash2 = state_dict_hash(mod2_dict)
-
-        # because of deterministic weight initialization we should get the same weight dicts and thus the same hashes
-        self.assertEqual(hash1, hash2)
-
-    def test_resnet152_state_dict_hash(self):
-        set_deterministic()
-        mod1 = models.resnet152()
-        mod1_dict = mod1.state_dict()
-        hash1 = state_dict_hash(mod1_dict)
-
-        set_deterministic()
-        mod2 = models.resnet152()
         mod2_dict = mod2.state_dict()
         hash2 = state_dict_hash(mod2_dict)
 

@@ -2,7 +2,7 @@ import unittest
 
 from mmlib.equal import model_equal
 from tests.init_from_file.dummy_classes import DummyA
-from tests.networks.mynets.resnet18 import resnet18
+from tests.example_files.mynets.resnet18 import resnet18
 from util.dummy_data import imagenet_input
 from util.init_from_file import create_object, create_object_with_parameters
 

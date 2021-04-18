@@ -13,15 +13,15 @@ from mmlib.track_env import track_current_environment
 from schema.file_reference import FileReference
 from schema.restorable_object import OptimizerWrapper, RestorableObjectWrapper
 from schema.save_info_builder import ModelSaveInfoBuilder
-from tests.inference_and_training.imagenet_train import ImagenetTrainService
-from tests.networks.custom_coco import TrainCustomCoco
-from tests.networks.mynets.mobilenet import mobilenet_v2
-from tests.networks.mynets.resnet18 import resnet18
+from tests.example_files.imagenet_train import ImagenetTrainService
+from tests.example_files.data.custom_coco import TrainCustomCoco
+from tests.example_files.mynets.mobilenet import mobilenet_v2
+from tests.example_files.mynets.resnet18 import resnet18
 from tests.test_baseline_save_servcie import MONGO_CONTAINER_NAME
 from util.dummy_data import imagenet_input
 from util.mongo import MongoService
 
-MODEL_PATH = './networks/mynets/{}.py'
+MODEL_PATH = 'example_files/mynets/{}.py'
 CONFIG = './local-config.ini'
 
 
@@ -118,7 +118,7 @@ class TestProvSaveService(unittest.TestCase):
         # for this test case we will use the data from our custom coco dataset
         data_wrapper = TrainCustomCoco(raw_data)
         state_dict['data'] = RestorableObjectWrapper(
-            code=FileReference(path='./networks/custom_coco.py'),
+            code=FileReference(path='example_files/data/custom_coco.py'),
             class_name='TrainCustomCoco',
             init_args={},
             config_args={'root': CURRENT_DATA_ROOT},
