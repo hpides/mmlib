@@ -114,8 +114,9 @@ class RestorableObjectWrapper(AbstractRestorableObjectWrapper):
         if len(self.config_args) > 0:
             add_params_from_config(init_args, self.config_args)
 
+        code_path = self.code.path if self.code else None
         self.instance = create_object_with_parameters(
-            code_file=self.code, import_cmd=self.import_cmd, class_name=self.class_name, init_args=init_args,
+            code_file=code_path, import_cmd=self.import_cmd, class_name=self.class_name, init_args=init_args,
             init_ref_type_args=ref_type_args)
 
     def _generate_non_matching_parameter_message(self, ref_type_args):

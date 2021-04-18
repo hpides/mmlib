@@ -147,5 +147,6 @@ dist/
 /tests/filesystem-tmp/
 /tests/saveservice-tmp/
 /tests/tmp-data/
-/tests/data/reduced-custom-coco-data.zip
+/tests/example_files/data/reduced-custom-coco-data.zip
 /examples/filesystem-tmp/
+/tests/example_files/local-config.ini

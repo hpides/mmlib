@@ -7,14 +7,13 @@ from mmlib.persistence import FileSystemPersistenceService, MongoDictPersistence
 from mmlib.recover_validation import RecoverValidationService
 from mmlib.save import BaselineSaveService
 from schema.save_info_builder import ModelSaveInfoBuilder
-from tests.networks.mynets.googlenet import googlenet
-from tests.networks.mynets.mobilenet import mobilenet_v2
-from tests.networks.mynets.resnet18 import resnet18
+from tests.example_files.mynets.googlenet import googlenet
+from tests.example_files.mynets.mobilenet import mobilenet_v2
+from tests.example_files.mynets.resnet18 import resnet18
 from util.dummy_data import imagenet_input
 from util.mongo import MongoService
 
-NETWORK_CODE_TEMPLATE = './networks/mynets/{}.py'
-
+NETWORK_CODE_TEMPLATE = '../example_files/mynets/{}.py'
 MONGO_CONTAINER_NAME = 'mongo-test'
 
 DUMMY_INPUT_SHAPE = [10, 3, 300, 400]

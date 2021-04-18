@@ -13,21 +13,24 @@ from mmlib.track_env import track_current_environment
 from schema.file_reference import FileReference
 from schema.restorable_object import OptimizerWrapper, RestorableObjectWrapper
 from schema.save_info_builder import ModelSaveInfoBuilder
-from tests.inference_and_training.imagenet_train import ImagenetTrainService
-from tests.networks.custom_coco import TrainCustomCoco
-from tests.networks.mynets.mobilenet import mobilenet_v2
-from tests.networks.mynets.resnet18 import resnet18
-from tests.test_baseline_save_servcie import MONGO_CONTAINER_NAME
+from tests.example_files.data.custom_coco import TrainCustomCoco
+from tests.example_files.imagenet_train import ImagenetTrainService
+from tests.example_files.mynets.mobilenet import mobilenet_v2
+from tests.example_files.mynets.resnet18 import resnet18
+from tests.save.test_baseline_save_servcie import MONGO_CONTAINER_NAME
 from util.dummy_data import imagenet_input
 from util.mongo import MongoService
 
-MODEL_PATH = './networks/mynets/{}.py'
-CONFIG = './local-config.ini'
+MODEL_PATH = '../example_files/mynets/{}.py'
+CONFIG = '../example_files/local-config.ini'
 
 
 class TestProvSaveService(unittest.TestCase):
 
     def setUp(self) -> None:
+        assert os.path.isfile(CONFIG),\
+            'to run these tests define your onw config file named \'local-config\' with respect to the template file'
+
         self.tmp_path = './filesystem-tmp'
         self.abs_tmp_path = os.path.abspath(self.tmp_path)
 
@@ -91,16 +94,16 @@ class TestProvSaveService(unittest.TestCase):
         ################################################################################################################
         # define what train service will be used to train the model, in our case the ImagenetTrainService (inherits
         # from the abstract class TrainService)
-        prov_train_serv_code = './inference_and_training/imagenet_train.py'
+        prov_train_serv_code = '../example_files/imagenet_train.py'
         prov_train_serv_class_name = 'ImagenetTrainService'
         # define the train wrapper, in our case we use the ImagenetTrainWrapper (inherits from the abstract class
         # TrainService)
-        prov_train_wrapper_code = './inference_and_training/imagenet_train.py'
+        prov_train_wrapper_code = '../example_files/imagenet_train.py'
         prov_train_wrapper_class_name = 'ImagenetTrainWrapper'
         # we also have to track the current environment, to store it later
         prov_env = track_current_environment()
         # as a last step we have to define the data that should be used and how the train method should be parametrized
-        raw_data = './data/reduced-custom-coco-data'
+        raw_data = '../example_files/data/reduced-custom-coco-data'
         train_kwargs = {'number_batches': 2}
 
         # to train the model we use the imagenet train service specified above
@@ -118,7 +121,7 @@ class TestProvSaveService(unittest.TestCase):
         # for this test case we will use the data from our custom coco dataset
         data_wrapper = TrainCustomCoco(raw_data)
         state_dict['data'] = RestorableObjectWrapper(
-            code=FileReference(path='./networks/custom_coco.py'),
+            code=FileReference(path='../example_files/data/custom_coco.py'),
             class_name='TrainCustomCoco',
             init_args={},
             config_args={'root': CURRENT_DATA_ROOT},

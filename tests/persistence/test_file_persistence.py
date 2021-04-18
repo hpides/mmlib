@@ -31,7 +31,7 @@ class TestPersistence(unittest.TestCase):
             shutil.rmtree(self.abs_save_service_tmp)
 
     def test_save_recover_file(self):
-        file_path = './test-files/test-file.txt'
+        file_path = 'test-files/test-file.txt'
         file_ref = FileReference(path=file_path)
         self.pers_service.save_file(file_ref)
         self.pers_service.recover_file(file_ref, self.tmp_dir)
