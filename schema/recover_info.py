@@ -5,6 +5,7 @@ import os
 from mmlib.constants import MMLIB_CONFIG, CURRENT_DATA_ROOT, VALUES, ID
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from schema.dataset import Dataset
+from schema.environment import Environment
 from schema.file_reference import FileReference
 from schema.schema_obj import SchemaObj
 from schema.train_info import TrainInfo
@@ -165,15 +166,17 @@ def _restore_update(file_pers_service, load_files, restore_root, restored_dict):
 
 DATASET = 'dataset'
 TRAIN_INFO = 'train_info'
+ENVIRONMENT = 'environment'
 
 
 class ProvenanceRecoverInfo(AbstractModelCodeRecoverInfo):
 
     def __init__(self, dataset: Dataset = None, model_code=None, model_class_name: str = None,
-                 train_info: TrainInfo = None, store_id: str = None):
+                 train_info: TrainInfo = None, environment: Environment = None, store_id: str = None):
         super().__init__(model_code, model_class_name, store_id)
         self.dataset = dataset
         self.train_info = train_info
+        self.environment = environment
 
     def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
         result = 0
@@ -187,12 +190,14 @@ class ProvenanceRecoverInfo(AbstractModelCodeRecoverInfo):
         super()._persist_class_specific_fields(dict_representation, file_pers_service, dict_pers_service)
         dataset_id = self.dataset.persist(file_pers_service, dict_pers_service)
         train_info_id = self.train_info.persist(file_pers_service, dict_pers_service)
+        env_id = self.environment.persist(file_pers_service, dict_pers_service)
 
         print('train_info_id')
         print(train_info_id)
 
         dict_representation[DATASET] = dataset_id
         dict_representation[TRAIN_INFO] = train_info_id
+        dict_representation[ENVIRONMENT] = env_id
 
     def load_all_fields(self, file_pers_service: FilePersistenceService,
                         dict_pers_service: DictPersistenceService, restore_root: str,
@@ -207,6 +212,9 @@ class ProvenanceRecoverInfo(AbstractModelCodeRecoverInfo):
 
         self.train_info = _restore_train_info(
             dict_pers_service, file_pers_service, restore_root, restored_dict, load_recursive, load_files)
+
+        self.environment = _recover_environment(dict_pers_service, file_pers_service, load_recursive, restore_root,
+                                                restored_dict)
 
 
 def _data_dst_path():
@@ -248,3 +256,12 @@ def _restore_train_info(dict_pers_service, file_pers_service, restore_root, rest
         train_info = TrainInfo.load(
             train_info_id, file_pers_service, dict_pers_service, restore_root, load_recursive, load_files)
     return train_info
+
+
+def _recover_environment(dict_pers_service, file_pers_service, load_recursive, restore_root, restored_dict):
+    env_id = restored_dict[ENVIRONMENT]
+    if load_recursive:
+        env = Environment.load(env_id, file_pers_service, dict_pers_service, restore_root)
+    else:
+        env = Environment.load_placeholder(env_id)
+    return env
