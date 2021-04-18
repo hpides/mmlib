@@ -12,7 +12,6 @@ class ModelSaveInfoBuilder:
         self._model = None
         self._base_model = None
         self._code = None
-        self._class_name = None
         self._dummy_input_shape = None
         self._prov_raw_data = None
         self._prov_env = None
@@ -26,21 +25,18 @@ class ModelSaveInfoBuilder:
         self.general_model_info_added = False
         self.prov_model_info_added = False
 
-    def add_model_info(self, model: torch.nn.Module = None, code: str = None, class_name: str = None,
-                       base_model_id: str = None):
+    def add_model_info(self, model: torch.nn.Module = None, code: str = None, base_model_id: str = None):
         """
         Adds the general model information
         :param model: The actual model to save as an instance of torch.nn.Module.
         :param code: (only required if base model not given) The path to the code of the model
         (is needed for recover process).
-        :param class_name: (only required if base model not given) The name of the model, i.e. the model
         constructor (is needed for recover process).
         :param base_model_id: The id of the base model.
         """
         self._model = model
         self._base_model = base_model_id
         self._code = code
-        self._class_name = class_name
 
         self.general_model_info_added = True
 
@@ -83,7 +79,6 @@ class ModelSaveInfoBuilder:
             model=self._model,
             base_model=self._base_model,
             model_code=self._code,
-            model_class_name=self._class_name,
             dummy_input_shape=self._dummy_input_shape)
 
         return save_info
@@ -102,7 +97,6 @@ class ModelSaveInfoBuilder:
             model=self._model,
             base_model=self._base_model,
             model_code=self._code,
-            model_class_name=self._class_name,
             dummy_input_shape=self._dummy_input_shape,
             raw_dataset=self._prov_raw_data,
             train_info=prov_train_info)
@@ -110,7 +104,7 @@ class ModelSaveInfoBuilder:
         return save_info
 
     def _valid_baseline_save_model_info(self):
-        return self._code and self._class_name
+        return self._code
 
     def _valid_prov_save_model_info(self):
         return self._valid_baseline_save_model_info() and self._base_model \

@@ -26,8 +26,7 @@ if __name__ == '__main__':
     save_info_builder = ModelSaveInfoBuilder()
     save_info_builder.add_model_info(
         model=model,
-        code='../tests/networks/mynets/mobilenet.py',
-        class_name='mobilenet_v2')
+        code='../tests/networks/mynets/mobilenet.py')
     save_info = save_info_builder.build()
     # given the save info we can store the model, ad get a model id back
     model_id = save_service.save_model(save_info)

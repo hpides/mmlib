@@ -80,10 +80,9 @@ class TestProvSaveService(unittest.TestCase):
             code_file = MODEL_PATH.format(filename)
         else:
             code_file = MODEL_PATH.format(model_name)
-        class_name = model_name
 
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(model, code_file, class_name)
+        save_info_builder.add_model_info(model, code_file)
         save_info = save_info_builder.build()
 
         base_model_id = self.provenance_save_service.save_model(save_info)
@@ -172,7 +171,7 @@ class TestProvSaveService(unittest.TestCase):
         # having specified all the provenance information that will be used to train a model, we can store it
         ################################################################################################################
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(code=code_file, class_name=class_name, base_model_id=base_model_id)
+        save_info_builder.add_model_info(code=code_file, base_model_id=base_model_id)
         save_info_builder.add_prov_data(
             raw_data_path=raw_data, env=prov_env, train_service=imagenet_ts, train_kwargs=train_kwargs,
             train_service_code=prov_train_serv_code, train_service_class_name=prov_train_serv_class_name,
@@ -195,7 +194,7 @@ class TestProvSaveService(unittest.TestCase):
         # Having defined the provenance information above storing a second version is a lot shorter
         ################################################################################################################
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(code=code_file, class_name=class_name, base_model_id=model_id)
+        save_info_builder.add_model_info(code=code_file, base_model_id=model_id)
         save_info_builder.add_prov_data(
             raw_data_path=raw_data, env=prov_env, train_service=imagenet_ts, train_kwargs=train_kwargs,
             train_service_code=prov_train_serv_code, train_service_class_name=prov_train_serv_class_name,
