@@ -7,6 +7,7 @@ import torch
 from mmlib.constants import MMLIB_CONFIG, CURRENT_DATA_ROOT
 from mmlib.equal import model_equal
 from mmlib.persistence import FileSystemPersistenceService, MongoDictPersistenceService
+from schema.file_reference import FileReference
 from schema.restorable_object import RestorableObjectWrapper
 from tests.inference_and_training.imagenet_train import OptimizerWrapper, ImagenetTrainService, ImagenetTrainWrapper
 from tests.networks.custom_coco import TrainCustomCoco
@@ -46,7 +47,7 @@ class TestSave(unittest.TestCase):
 
             data_wrapper = TrainCustomCoco('./data/reduced-custom-coco-data')
             state_dict['data'] = RestorableObjectWrapper(
-                code='./networks/custom_coco.py',
+                code=FileReference(path='./networks/custom_coco.py'),
                 class_name='TrainCustomCoco',
                 init_args={},
                 config_args={'root': CURRENT_DATA_ROOT},

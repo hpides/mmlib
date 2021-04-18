@@ -19,14 +19,14 @@ class TestInitFromFIle(unittest.TestCase):
 
     def test_init_no_ref_args(self):
         init_args = {'state': 42}
-        obj = create_object_with_parameters('DummyA', init_args=init_args, code=CODE)
+        obj = create_object_with_parameters('DummyA', init_args=init_args, code_file=CODE)
 
         self.assertEqual(42, obj.state)
 
     def test_init_ref_args_code(self):
         init_args = {'arg1': 42, 'arg2': 43}
         ref_args = {'arg3': DummyA(42)}
-        obj = create_object_with_parameters('DummyB', init_args=init_args, init_ref_type_args=ref_args, code=CODE)
+        obj = create_object_with_parameters('DummyB', init_args=init_args, init_ref_type_args=ref_args, code_file=CODE)
 
         self.assertEqual(42, obj.state1)
         self.assertEqual(43, obj.state2)
@@ -34,7 +34,7 @@ class TestInitFromFIle(unittest.TestCase):
 
     def test_init_code_string(self):
         init_args = {'int_arg': 42, 'str_arg': '43'}
-        obj = create_object_with_parameters('DummyD', init_args=init_args, code=CODE)
+        obj = create_object_with_parameters('DummyD', init_args=init_args, code_file=CODE)
 
         self.assertEqual(42, obj.int_state)
         self.assertEqual('43', obj.str_state)

@@ -26,21 +26,21 @@ class ModelSaveInfoBuilder:
         self.general_model_info_added = False
         self.prov_model_info_added = False
 
-    def add_model_info(self, model: torch.nn.Module = None, code: str = None, model_class_name: str = None,
+    def add_model_info(self, model: torch.nn.Module = None, code: str = None, class_name: str = None,
                        base_model_id: str = None):
         """
         Adds the general model information
         :param model: The actual model to save as an instance of torch.nn.Module.
         :param code: (only required if base model not given) The path to the code of the model
         (is needed for recover process).
-        :param model_class_name: (only required if base model not given) The name of the model, i.e. the model
+        :param class_name: (only required if base model not given) The name of the model, i.e. the model
         constructor (is needed for recover process).
         :param base_model_id: The id of the base model.
         """
         self._model = model
         self._base_model = base_model_id
         self._code = code
-        self._class_name = model_class_name
+        self._class_name = class_name
 
         self.general_model_info_added = True
 

@@ -10,6 +10,7 @@ from mmlib.equal import model_equal
 from mmlib.persistence import FileSystemPersistenceService, MongoDictPersistenceService
 from mmlib.save import ProvenanceSaveService
 from mmlib.track_env import track_current_environment
+from schema.file_reference import FileReference
 from schema.restorable_object import OptimizerWrapper, RestorableObjectWrapper
 from schema.save_info_builder import ModelSaveInfoBuilder
 from tests.inference_and_training.imagenet_train import ImagenetTrainService
@@ -117,7 +118,7 @@ class TestProvSaveService(unittest.TestCase):
         # for this test case we will use the data from our custom coco dataset
         data_wrapper = TrainCustomCoco(raw_data)
         state_dict['data'] = RestorableObjectWrapper(
-            code='./networks/custom_coco.py',
+            code=FileReference(path='./networks/custom_coco.py'),
             class_name='TrainCustomCoco',
             init_args={},
             config_args={'root': CURRENT_DATA_ROOT},
@@ -167,7 +168,7 @@ class TestProvSaveService(unittest.TestCase):
         # having specified all the provenance information that will be used to train a model, we can store it
         ################################################################################################################
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(code=code_file, model_class_name=class_name, base_model_id=base_model_id)
+        save_info_builder.add_model_info(code=code_file, class_name=class_name, base_model_id=base_model_id)
         save_info_builder.add_prov_data(
             raw_data_path=raw_data, env=prov_env, train_service=imagenet_ts, train_kwargs=train_kwargs,
             train_service_code=prov_train_serv_code, train_service_class_name=prov_train_serv_class_name,
@@ -190,7 +191,7 @@ class TestProvSaveService(unittest.TestCase):
         # Having defined the provenance information above storing a second version is a lot shorter
         ################################################################################################################
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(code=code_file, model_class_name=class_name, base_model_id=model_id)
+        save_info_builder.add_model_info(code=code_file, class_name=class_name, base_model_id=model_id)
         save_info_builder.add_prov_data(
             raw_data_path=raw_data, env=prov_env, train_service=imagenet_ts, train_kwargs=train_kwargs,
             train_service_code=prov_train_serv_code, train_service_class_name=prov_train_serv_class_name,

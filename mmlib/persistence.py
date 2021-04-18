@@ -4,6 +4,7 @@ from shutil import copyfile
 
 from bson import ObjectId
 
+from schema.file_reference import FileReference
 from util.helper import find_file
 from util.mongo import MongoService
 
@@ -68,28 +69,27 @@ class DictPersistenceService(PersistenceService, metaclass=abc.ABCMeta):
 class FilePersistenceService(PersistenceService, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def save_file(self, file_path: str) -> str:
+    def save_file(self, file: FileReference):
         """
-        Persists a file.
-        :param file_path: The path the file to persist.
-        :return: The id that was used to store the file.
+        Persists the file given by the file reference, the id that was used to store the file is set for the given
+        file reference.
+        :param file: The file to persist given as a FileReference.
         """
 
     @abc.abstractmethod
-    def recover_file(self, file_id: str, dst_path) -> str:
+    def recover_file(self, file: FileReference, dst_path):
         """
-        Recovers a file.
-        :param file_id: The id that identifies the file to recover.
+        Recovers the file given by the file reference, the path for the restored file is set for the given
+        file reference.
+        :param file: The file to recover identified by FileReference.
         :param dst_path: The path where the restored file should be stored to.
-        :return: The path to the restored file.
         """
 
     @abc.abstractmethod
-    def file_size(self, file_id: str) -> int:
+    def file_size(self, file: str):
         """
-        Calculates and returns the size of a file in bytes.
-        :param file_id: The id to identify the file.
-        :return: The file size in bytes.
+        Calculates and sets the size property for the given file in bytes.
+        :param file: The file identified by FileReference.
         """
 
 
@@ -102,32 +102,29 @@ class FileSystemPersistenceService(FilePersistenceService):
     def __init__(self, base_path):
         self._base_path = os.path.abspath(base_path)
 
-    def save_file(self, file_path: str) -> str:
-        path, file_name = os.path.split(file_path)
+    def save_file(self, file: FileReference):
+        path, file_name = os.path.split(file.path)
         file_id = str(ObjectId())
         dst_path = self._get_store_path(file_id)
         os.mkdir(dst_path)
-        copyfile(file_path, os.path.join(dst_path, file_name))
+        copyfile(file.path, os.path.join(dst_path, file_name))
+        file.reference_id = FILE + file_id
 
-        return FILE + file_id
-
-    def recover_file(self, file_id: str, dst_path):
-        file_id = self._to_internal_file_id(file_id)
-        store_path = self._get_store_path(file_id)
-        file = find_file(store_path)
-        dst = os.path.join(os.path.abspath(dst_path), os.path.split(file)[1])
+    def recover_file(self, file: FileReference, dst_path):
+        internal_file_id = self._to_internal_file_id(file.reference_id)
+        store_path = self._get_store_path(internal_file_id)
+        file_path = find_file(store_path)
+        dst = os.path.join(os.path.abspath(dst_path), os.path.split(file_path)[1])
 
         assert not os.path.isfile(dst), 'file at {} exists already'.format(dst)
-        copyfile(file, dst)
+        copyfile(file_path, dst)
+        file.path = dst
 
-        return dst
-
-    def file_size(self, file_id: str) -> int:
-        file_id = self._to_internal_file_id(file_id)
-        store_path = self._get_store_path(file_id)
-        file = find_file(store_path)
-
-        return os.path.getsize(file)
+    def file_size(self, file: FileReference):
+        internal_file_id = self._to_internal_file_id(file.reference_id)
+        store_path = self._get_store_path(internal_file_id)
+        file_path = find_file(store_path)
+        file.size = os.path.getsize(file_path)
 
     def generate_id(self) -> str:
         return str(ObjectId())

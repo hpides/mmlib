@@ -5,6 +5,7 @@ import os
 from mmlib.constants import MMLIB_CONFIG, CURRENT_DATA_ROOT, VALUES, ID
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from schema.dataset import Dataset
+from schema.file_reference import FileReference
 from schema.schema_obj import SchemaObj
 from schema.train_info import TrainInfo
 from util.helper import copy_all_data, clean
@@ -24,15 +25,15 @@ MODEL_CLASS_NAME = 'model_class_name'
 
 class AbstractModelCodeRecoverInfo(AbstractRecoverInfo, metaclass=abc.ABCMeta):
 
-    def __init__(self, model_code: str, model_class_name: str, store_id: str = None):
+    def __init__(self, model_code: FileReference, model_class_name: str, store_id: str = None):
         super().__init__(store_id)
         self.model_code = model_code
         self.model_class_name = model_class_name
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
-        model_code_id = file_pers_service.save_file(self.model_code)
+        file_pers_service.save_file(self.model_code)
 
-        dict_representation[MODEL_CODE] = model_code_id
+        dict_representation[MODEL_CODE] = self.model_code.reference_id
         dict_representation[MODEL_CLASS_NAME] = self.model_class_name
 
     def size_in_bytes(self, file_pers_service: FilePersistenceService,
@@ -61,10 +62,10 @@ WEIGHTS = 'weights'
 
 class FullModelRecoverInfo(AbstractModelCodeRecoverInfo):
 
-    def __init__(self, weights_file_path: str = None, model_code=None, model_class_name: str = None,
+    def __init__(self, weights_file: FileReference = None, model_code=None, model_class_name: str = None,
                  store_id: str = None):
         super().__init__(model_code, model_class_name, store_id)
-        self.weights = weights_file_path
+        self.weights_file = weights_file
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: FilePersistenceService,
@@ -78,7 +79,7 @@ class FullModelRecoverInfo(AbstractModelCodeRecoverInfo):
         model_code = _recover_model_code(file_pers_service, load_files, restore_root, restored_dict)
         weights_file_path = _recover_weights(file_pers_service, load_files, restore_root, restored_dict)
 
-        return cls(weights_file_path=weights_file_path, model_code=model_code,
+        return cls(weights_file=weights_file_path, model_code=model_code,
                    model_class_name=model_class_name, store_id=store_id)
 
     def load_all_fields(self, file_pers_service: FilePersistenceService,
@@ -89,31 +90,33 @@ class FullModelRecoverInfo(AbstractModelCodeRecoverInfo):
         self.model_class_name = restored_dict[MODEL_CLASS_NAME]
 
         self.model_code = _recover_model_code(file_pers_service, load_files, restore_root, restored_dict)
-        self.weights = _recover_weights(file_pers_service, load_files, restore_root, restored_dict)
+        self.weights_file = _recover_weights(file_pers_service, load_files, restore_root, restored_dict)
 
     def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
         result = 0
 
-        result += file_pers_service.file_size(restored_dict[WEIGHTS])
+        result += file_pers_service.size(restored_dict[WEIGHTS])
 
         return result
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
         super()._persist_class_specific_fields(dict_representation, file_pers_service, dict_pers_service)
-        weights_id = file_pers_service.save_file(self.weights)
+        file_pers_service.save_file(self.weights_file)
 
-        dict_representation[WEIGHTS] = weights_id
+        dict_representation[WEIGHTS] = self.weights_file.reference_id
 
     def _representation_type(self) -> str:
         return RECOVER_INFO
 
 
 def _recover_weights(file_pers_service, load_files, restore_root, restored_dict):
-    weights_file_path = None
+    weights_file_id = restored_dict[WEIGHTS]
+    weights_file = FileReference(reference_id=weights_file_id)
+
     if load_files:
-        weights_file_id = restored_dict[WEIGHTS]
-        weights_file_path = file_pers_service.recover_file(weights_file_id, restore_root)
-    return weights_file_path
+        file_pers_service.recover_file(weights_file, restore_root)
+
+    return weights_file
 
 
 UPDATE = 'update'
@@ -123,7 +126,8 @@ INDEPENDENT = 'independent'
 
 class WeightsUpdateRecoverInfo(AbstractRecoverInfo):
 
-    def __init__(self, update: str = None, update_type: str = None, independent: bool = None, store_id: str = None):
+    def __init__(self, update: FileReference = None, update_type: str = None, independent: bool = None,
+                 store_id: str = None):
         super().__init__(store_id)
         self.update = update
         self.update_type = update_type
@@ -143,17 +147,18 @@ class WeightsUpdateRecoverInfo(AbstractRecoverInfo):
         pass
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
-        update_id = file_pers_service.save_file(self.update)
-        dict_representation[UPDATE] = update_id
+        file_pers_service.save_file(self.update)
+        dict_representation[UPDATE] = self.update.reference_id
         dict_representation[UPDATE_TYPE] = self.update_type
         dict_representation[INDEPENDENT] = self.independent
 
 
 def _restore_update(file_pers_service, load_files, restore_root, restored_dict):
-    update = None
+    update_id = restored_dict[UPDATE]
+    update = FileReference(reference_id=update_id)
+
     if load_files:
-        update_id = restored_dict[UPDATE]
-        update = file_pers_service.recover_file(update_id, restore_root)
+        file_pers_service.recover_file(update, restore_root)
 
     return update
 
@@ -220,19 +225,22 @@ def _recover_data(dataset_id, dict_pers_service, file_pers_service, load_files, 
         # TODO for now we copy the data, maybe if we run into performance issues we should use move instead of copy
         data_dst_path = _data_dst_path()
         clean(data_dst_path)
-        copy_all_data(dataset.raw_data, data_dst_path)
+        copy_all_data(dataset.raw_data.path, data_dst_path)
     return dataset
 
 
 def _recover_model_code(file_pers_service, load_files, restore_root, restored_dict):
-    model_code = None
+    model_code_id = restored_dict[MODEL_CODE]
+    model_code = FileReference(reference_id=model_code_id)
+
     if load_files:
-        model_code_id = restored_dict[MODEL_CODE]
-        model_code = file_pers_service.recover_file(model_code_id, restore_root)
+        file_pers_service.recover_file(model_code, restore_root)
+
     return model_code
 
 
-def _restore_train_info(dict_pers_service, file_pers_service, restore_root, restored_dict, load_recursive, load_files):
+def _restore_train_info(dict_pers_service, file_pers_service, restore_root, restored_dict, load_recursive,
+                        load_files):
     train_info_id = restored_dict[TRAIN_INFO]
     if not load_recursive:
         train_info = TrainInfo.load_placeholder(train_info_id)

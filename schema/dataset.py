@@ -1,6 +1,7 @@
 import os
 
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
+from schema.file_reference import FileReference
 from schema.schema_obj import SchemaObj
 from util.zip import zip_path, unzip
 
@@ -11,15 +12,17 @@ DATASET = 'dataset'
 
 class Dataset(SchemaObj):
 
-    def __init__(self, raw_data: str = None, store_id: str = None):
+    def __init__(self, raw_data: FileReference = None, store_id: str = None):
         super().__init__(store_id)
         self.raw_data = raw_data
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
-        zip_file_path = zip_path(self.raw_data)
-        raw_data_id = file_pers_service.save_file(zip_file_path)
+        raw_data_path = self.raw_data.path
+        zip_file_path = zip_path(raw_data_path)
+        zipped_raw_data = FileReference(path=zip_file_path)
+        file_pers_service.save_file(zipped_raw_data)
 
-        dict_representation[RAW_DATA] = raw_data_id
+        dict_representation[RAW_DATA] = zipped_raw_data.reference_id
 
     def load_all_fields(self, file_pers_service: FilePersistenceService,
                         dict_pers_service: DictPersistenceService, restore_root: str,
@@ -37,9 +40,13 @@ class Dataset(SchemaObj):
 
 def _recover_data(file_pers_service, load_files, restore_root, restored_dict):
     raw_data_id = restored_dict[RAW_DATA]
-    raw_data = None
+    raw_data = FileReference(reference_id=raw_data_id)
+
+    # TODO create zippable file ref
     if load_files:
-        zip_file_path = file_pers_service.recover_file(raw_data_id, restore_root)
+        file_pers_service.recover_file(raw_data, restore_root)
+        zip_file_path = raw_data.path
         restore_path = os.path.join(restore_root, 'data')
-        raw_data = unzip(zip_file_path, restore_path)
+        unzipped_raw_data = unzip(zip_file_path, restore_path)
+        raw_data = FileReference(path=unzipped_raw_data)
     return raw_data
