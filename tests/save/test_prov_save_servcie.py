@@ -21,14 +21,15 @@ from tests.save.test_baseline_save_servcie import MONGO_CONTAINER_NAME
 from util.dummy_data import imagenet_input
 from util.mongo import MongoService
 
-MODEL_PATH = '../example_files/mynets/{}.py'
-CONFIG = '../example_files/local-config.ini'
+FILE_PATH = os.path.dirname(os.path.realpath(__file__))
+MODEL_PATH = os.path.join(FILE_PATH, '../example_files/mynets/{}.py')
+CONFIG = os.path.join(FILE_PATH, '../example_files/local-config.ini')
 
 
 class TestProvSaveService(unittest.TestCase):
 
     def setUp(self) -> None:
-        assert os.path.isfile(CONFIG),\
+        assert os.path.isfile(CONFIG), \
             'to run these tests define your onw config file named \'local-config\' with respect to the template file'
 
         self.tmp_path = './filesystem-tmp'
@@ -94,16 +95,16 @@ class TestProvSaveService(unittest.TestCase):
         ################################################################################################################
         # define what train service will be used to train the model, in our case the ImagenetTrainService (inherits
         # from the abstract class TrainService)
-        prov_train_serv_code = '../example_files/imagenet_train.py'
+        prov_train_serv_code = os.path.join(FILE_PATH, '../example_files/imagenet_train.py')
         prov_train_serv_class_name = 'ImagenetTrainService'
         # define the train wrapper, in our case we use the ImagenetTrainWrapper (inherits from the abstract class
         # TrainService)
-        prov_train_wrapper_code = '../example_files/imagenet_train.py'
+        prov_train_wrapper_code = os.path.join(FILE_PATH, '../example_files/imagenet_train.py')
         prov_train_wrapper_class_name = 'ImagenetTrainWrapper'
         # we also have to track the current environment, to store it later
         prov_env = track_current_environment()
         # as a last step we have to define the data that should be used and how the train method should be parametrized
-        raw_data = '../example_files/data/reduced-custom-coco-data'
+        raw_data = os.path.join(FILE_PATH, '../example_files/data/reduced-custom-coco-data')
         train_kwargs = {'number_batches': 2}
 
         # to train the model we use the imagenet train service specified above
@@ -121,7 +122,7 @@ class TestProvSaveService(unittest.TestCase):
         # for this test case we will use the data from our custom coco dataset
         data_wrapper = TrainCustomCoco(raw_data)
         state_dict[DATA] = RestorableObjectWrapper(
-            code=FileReference(path='../example_files/data/custom_coco.py'),
+            code=FileReference(path=os.path.join(FILE_PATH, '../example_files/data/custom_coco.py')),
             class_name='TrainCustomCoco',
             init_args={},
             config_args={'root': CURRENT_DATA_ROOT},
