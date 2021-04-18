@@ -336,16 +336,12 @@ class ProvenanceSaveService(BaselineSaveService):
         super().__init__(file_pers_service, dict_pers_service)
 
     def save_model(self, model_save_info: ModelSaveInfo) -> str:
-        if model_save_info.base_model is None:
-            # if the base model is none, then we have to store the model as a full model
+        if model_save_info.base_model is None or not isinstance(model_save_info, ProvModelSaveInfo):
+            # if the base model is none or model save info does not provide provenance save info we have to store the
+            # model as a full model
             return super().save_model(model_save_info)
         else:
-            if isinstance(model_save_info, ProvModelSaveInfo):
-                return self._save_provenance_model(model_save_info)
-            else:
-                # if the model save info does not provide provenance save info we try to save it using the baseline
-                # approach
-                return super().save_model(model_save_info)
+            return self._save_provenance_model(model_save_info)
 
     def recover_model(self, model_id: str, execute_checks: bool = False,
                       recover_val_service: RecoverValidationService = None) -> RestoredModelInfo:
