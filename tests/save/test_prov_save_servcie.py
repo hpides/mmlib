@@ -86,10 +86,6 @@ class TestProvSaveService(unittest.TestCase):
         # All this information has to be only once, for every future version the same prov data can be used
         # exceptions are the train_kwargs and the raw_data
         ################################################################################################################
-        # define what train service will be used to train the model, in our case the ImagenetTrainService (inherits
-        # from the abstract class TrainService)
-        prov_train_serv_code = os.path.join(FILE_PATH, '../example_files/imagenet_train.py')
-        prov_train_serv_class_name = 'ImagenetTrainService'
         # define the train wrapper, in our case we use the ImagenetTrainWrapper (inherits from the abstract class
         # TrainService)
         prov_train_wrapper_code = os.path.join(FILE_PATH, '../example_files/imagenet_train.py')
@@ -168,7 +164,6 @@ class TestProvSaveService(unittest.TestCase):
         save_info_builder.add_model_info(base_model_id=base_model_id)
         save_info_builder.add_prov_data(
             raw_data_path=raw_data, env=prov_env, train_service=imagenet_ts, train_kwargs=train_kwargs,
-            train_service_code=prov_train_serv_code, train_service_class_name=prov_train_serv_class_name,
             wrapper_code=prov_train_wrapper_code, wrapper_class_name=prov_train_wrapper_class_name)
         save_info = save_info_builder.build()
 
@@ -191,7 +186,6 @@ class TestProvSaveService(unittest.TestCase):
         save_info_builder.add_model_info(base_model_id=model_id)
         save_info_builder.add_prov_data(
             raw_data_path=raw_data, env=prov_env, train_service=imagenet_ts, train_kwargs=train_kwargs,
-            train_service_code=prov_train_serv_code, train_service_class_name=prov_train_serv_class_name,
             wrapper_code=prov_train_wrapper_code, wrapper_class_name=prov_train_wrapper_class_name)
         save_info = save_info_builder.build()
 
