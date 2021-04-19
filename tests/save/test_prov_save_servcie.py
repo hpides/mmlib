@@ -39,14 +39,14 @@ class TestProvSaveService(unittest.TestCase):
         # run mongo DB locally in docker container
         os.system('docker run --rm --name %s -it -p 27017:27017 -d  mongo:4.4.3 ' % MONGO_CONTAINER_NAME)
 
+        os.mkdir(self.abs_tmp_path)
+
+        os.environ[MMLIB_CONFIG] = CONFIG
+
         self.mongo_service = MongoService('127.0.0.1', 'mmlib')
         file_pers_service = FileSystemPersistenceService(self.tmp_path)
         dict_pers_service = MongoDictPersistenceService()
         self.provenance_save_service = ProvenanceSaveService(file_pers_service, dict_pers_service)
-
-        os.mkdir(self.abs_tmp_path)
-
-        os.environ[MMLIB_CONFIG] = CONFIG
 
     def tearDown(self) -> None:
         self.__clean_up()
@@ -86,10 +86,6 @@ class TestProvSaveService(unittest.TestCase):
         # All this information has to be only once, for every future version the same prov data can be used
         # exceptions are the train_kwargs and the raw_data
         ################################################################################################################
-        # define the train wrapper, in our case we use the ImagenetTrainWrapper (inherits from the abstract class
-        # TrainService)
-        prov_train_wrapper_code = os.path.join(FILE_PATH, '../example_files/imagenet_train.py')
-        prov_train_wrapper_class_name = 'ImagenetTrainWrapper'
         # we also have to track the current environment, to store it later
         prov_env = track_current_environment()
         # as a last step we have to define the data that should be used and how the train method should be parametrized
