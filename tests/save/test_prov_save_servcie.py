@@ -3,6 +3,7 @@ import shutil
 import unittest
 
 import torch
+from torch.utils.data import DataLoader
 
 from mmlib.constants import CURRENT_DATA_ROOT, MMLIB_CONFIG
 from mmlib.deterministic import set_deterministic
@@ -110,26 +111,18 @@ class TestProvSaveService(unittest.TestCase):
         # for this test case we will use the data from our custom coco dataset
         data_wrapper = TrainCustomCoco(raw_data)
         state_dict[DATA] = RestorableObjectWrapper(
-            init_args={},
             config_args={'root': CURRENT_DATA_ROOT},
-            init_ref_type_args=[],
             instance=data_wrapper
         )
 
         # as a dataloader we use the standard implementation provided by pyTorch
         # this is why we instead of specifying the code path, we specify an import cmd
         # also we to track all arguments that have been used for initialization of this objects
-        batch_size = 5  # use very small batch size here to reduce test time
-        shuffle = True
-        num_workers = 0
-        pin_memory = True
-        dataloader = torch.utils.data.DataLoader(data_wrapper, batch_size=batch_size, shuffle=shuffle,
-                                                 num_workers=num_workers, pin_memory=pin_memory)
+        data_loader_kwargs = {'batch_size': 5, 'shuffle': True, 'num_workers': 0, 'pin_memory': True}
+        dataloader = DataLoader(data_wrapper, **data_loader_kwargs)
         state_dict[DATALOADER] = RestorableObjectWrapper(
             import_cmd='from torch.utils.data import DataLoader',
-            init_args={'batch_size': batch_size, 'shuffle': shuffle, 'num_workers': num_workers,
-                       'pin_memory': pin_memory},
-            config_args={},
+            init_args=data_loader_kwargs,
             init_ref_type_args=['dataset'],
             instance=dataloader
         )
@@ -137,14 +130,11 @@ class TestProvSaveService(unittest.TestCase):
         # while the other objects do not have an internal state (other than the basic parameters) an optimizer can have
         # some more extensive state. In pyTorch it offers also the method .state_dict(). To store and restore we use an
         # Optimizer wrapper object.
-        lr = 1e-4
-        momentum = 0.9
-        weight_decay = 1e-4
-        optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
+        optimizer_kwargs = {'lr': 1e-4, 'momentum': 0.9, 'weight_decay': 1e-4}
+        optimizer = torch.optim.SGD(model.parameters(), **optimizer_kwargs)
         state_dict[OPTIMIZER] = OptimizerWrapper(
             import_cmd='from torch.optim import SGD',
-            init_args={'lr': lr, 'momentum': momentum, 'weight_decay': weight_decay},
-            config_args={},
+            init_args=optimizer_kwargs,
             init_ref_type_args=['params'],
             instance=optimizer
         )
