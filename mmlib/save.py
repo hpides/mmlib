@@ -16,7 +16,6 @@ from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo, Wei
 from schema.restorable_object import RestoredModelInfo
 from schema.store_type import ModelStoreType
 from schema.train_info import TrainInfo
-from util.helper import class_name
 from util.init_from_file import create_object, create_type
 
 RESTORE_PATH = 'restore_path'
@@ -152,6 +151,15 @@ class BaselineSaveService(AbstractSaveService):
 
             derived_from = model_save_info.base_model if model_save_info.base_model else None
 
+            # models are recovered in a tmp directory and only the model object is returned
+            # this is why the inferred model code path might not exists anymore, we have to check this
+            # and if it is not existing anymore, we have to restore teh code for the base model
+
+            if not os.path.isfile(model_save_info.model_code):
+                assert derived_from, 'code not given and no base model'
+                model_code = self._restore_code_from_base_model(derived_from, tmp_path)
+                model_save_info.model_code = model_code.path
+
             recover_info = FullModelRecoverInfo(weights_file=FileReference(path=weights_path),
                                                 model_code=FileReference(path=model_save_info.model_code),
                                                 model_class_name=model_save_info.model_class_name)
@@ -162,6 +170,17 @@ class BaselineSaveService(AbstractSaveService):
             model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
 
             return model_info_id
+
+    def _restore_code_from_base_model(self, derived_from, tmp_path):
+        base_model_info = ModelInfo.load(
+            derived_from, self._file_pers_service, self._dict_pers_service, tmp_path,
+            load_recursive=True, load_files=False)  # load files false, we only wan to load one specific file
+
+        recover_info: FullModelRecoverInfo = base_model_info.recover_info
+        code: FileReference = recover_info.model_code
+        self._file_pers_service.recover_file(code, tmp_path)
+
+        return code
 
     def _pickle_weights(self, model, save_path):
         # store pickle dump of model

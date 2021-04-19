@@ -141,7 +141,7 @@ class TestBaselineSaveService(unittest.TestCase):
         self.assertTrue(model_equal(derived_model, restored_model_info.model, imagenet_input))
 
         # save derived model
-        derived_model_2 = resnet18()
+        derived_model_2 = restored_model_info.model
         save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(model=derived_model_2, base_model_id=derived_model_id)
         save_info = save_info_builder.build()
