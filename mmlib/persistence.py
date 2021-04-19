@@ -100,6 +100,7 @@ MMLIB = 'mmlib'
 class FileSystemPersistenceService(FilePersistenceService):
 
     def __init__(self, base_path):
+        assert os.path.isdir(base_path), 'base_path ({}) does not seem to exist'.format(base_path)
         self._base_path = os.path.abspath(base_path)
 
     def save_file(self, file: FileReference):
