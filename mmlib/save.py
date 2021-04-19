@@ -426,8 +426,6 @@ class ProvenanceSaveService(BaselineSaveService):
         )
         prov_recover_info = ProvenanceRecoverInfo(
             dataset=dataset,
-            model_code=FileReference(path=model_save_info.model_code),
-            model_class_name=model_save_info.model_class_name,
             train_info=train_info,
             environment=model_save_info.train_info.environment
         )

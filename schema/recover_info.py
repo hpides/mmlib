@@ -169,11 +169,11 @@ TRAIN_INFO = 'train_info'
 ENVIRONMENT = 'environment'
 
 
-class ProvenanceRecoverInfo(AbstractModelCodeRecoverInfo):
+class ProvenanceRecoverInfo(AbstractRecoverInfo):
 
-    def __init__(self, dataset: Dataset = None, model_code=None, model_class_name: str = None,
-                 train_info: TrainInfo = None, environment: Environment = None, store_id: str = None):
-        super().__init__(model_code, model_class_name, store_id)
+    def __init__(self, dataset: Dataset = None, train_info: TrainInfo = None, environment: Environment = None,
+                 store_id: str = None):
+        super().__init__(store_id)
         self.dataset = dataset
         self.train_info = train_info
         self.environment = environment
@@ -187,7 +187,6 @@ class ProvenanceRecoverInfo(AbstractModelCodeRecoverInfo):
         return result
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
-        super()._persist_class_specific_fields(dict_representation, file_pers_service, dict_pers_service)
         dataset_id = self.dataset.persist(file_pers_service, dict_pers_service)
         train_info_id = self.train_info.persist(file_pers_service, dict_pers_service)
         env_id = self.environment.persist(file_pers_service, dict_pers_service)
@@ -207,14 +206,17 @@ class ProvenanceRecoverInfo(AbstractModelCodeRecoverInfo):
         dataset_id = restored_dict[DATASET]
         self.dataset = _recover_data(dataset_id, dict_pers_service, file_pers_service, load_files, load_recursive,
                                      restore_root)
-        self.model_code = _recover_model_code(file_pers_service, load_files, restore_root, restored_dict)
-        self.model_class_name = restored_dict[MODEL_CLASS_NAME]
 
         self.train_info = _restore_train_info(
             dict_pers_service, file_pers_service, restore_root, restored_dict, load_recursive, load_files)
 
         self.environment = _recover_environment(dict_pers_service, file_pers_service, load_recursive, restore_root,
                                                 restored_dict)
+
+    def size_in_bytes(self, file_pers_service: FilePersistenceService,
+                      dict_pers_service: DictPersistenceService) -> int:
+        # TODO
+        pass
 
 
 def _data_dst_path():
