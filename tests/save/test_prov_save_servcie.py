@@ -14,7 +14,7 @@ from mmlib.track_env import track_current_environment
 from schema.restorable_object import OptimizerWrapper, RestorableObjectWrapper
 from schema.save_info_builder import ModelSaveInfoBuilder
 from tests.example_files.data.custom_coco import TrainCustomCoco
-from tests.example_files.imagenet_train import ImagenetTrainService, OPTIMIZER, DATALOADER, DATA
+from tests.example_files.imagenet_train import ImagenetTrainService, OPTIMIZER, DATALOADER, DATA, ImagenetTrainWrapper
 from tests.example_files.mynets.mobilenet import mobilenet_v2
 from tests.example_files.mynets.resnet18 import resnet18
 from tests.save.test_baseline_save_servcie import MONGO_CONTAINER_NAME
@@ -142,14 +142,15 @@ class TestProvSaveService(unittest.TestCase):
         # having created all the objects needed for imagenet training we can plug the state dict into the train servcie
         imagenet_ts.state_objs = state_dict
 
+        # finally we wrap the train service in the corresponding wrapper
+        ts_wrapper = ImagenetTrainWrapper(instance=imagenet_ts)
         ################################################################################################################
         # having specified all the provenance information that will be used to train a model, we can store it
         ################################################################################################################
         save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(base_model_id=base_model_id)
         save_info_builder.add_prov_data(
-            raw_data_path=raw_data, env=prov_env, train_service=imagenet_ts, train_kwargs=train_kwargs,
-            wrapper_code=prov_train_wrapper_code, wrapper_class_name=prov_train_wrapper_class_name)
+            raw_data_path=raw_data, env=prov_env, train_kwargs=train_kwargs, train_service_wrapper=ts_wrapper)
         save_info = save_info_builder.build()
 
         ################################################################################################################
@@ -170,8 +171,7 @@ class TestProvSaveService(unittest.TestCase):
         save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(base_model_id=model_id)
         save_info_builder.add_prov_data(
-            raw_data_path=raw_data, env=prov_env, train_service=imagenet_ts, train_kwargs=train_kwargs,
-            wrapper_code=prov_train_wrapper_code, wrapper_class_name=prov_train_wrapper_class_name)
+            raw_data_path=raw_data, env=prov_env, train_kwargs=train_kwargs, train_service_wrapper=ts_wrapper)
         save_info = save_info_builder.build()
 
         model_id_2 = self.provenance_save_service.save_model(save_info)
