@@ -22,8 +22,9 @@ class ModelSaveInfo:
         self.model = model
         self.base_model = base_model
         self.dummy_input_shape = dummy_input_shape
-        self.model_class_name = class_name(model)
-        self.model_code = model_code if model_code else source_file(model)
+        if model:
+            self.model_class_name = class_name(model)
+            self.model_code = model_code if model_code else source_file(model)
 
 
 class ProvModelSaveInfo(ModelSaveInfo):

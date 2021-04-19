@@ -149,15 +149,16 @@ class BaselineSaveService(AbstractSaveService):
         with tempfile.TemporaryDirectory() as tmp_path:
             weights_path = self._pickle_weights(model_save_info.model, tmp_path)
 
-            derived_from = model_save_info.base_model if model_save_info.base_model else None
+            base_model = model_save_info.base_model if model_save_info.base_model else None
 
             # models are recovered in a tmp directory and only the model object is returned
             # this is why the inferred model code path might not exists anymore, we have to check this
             # and if it is not existing anymore, we have to restore teh code for the base model
 
             if not os.path.isfile(model_save_info.model_code):
-                assert derived_from, 'code not given and no base model'
-                model_code = self._restore_code_from_base_model(derived_from, tmp_path)
+                assert base_model, 'code not given and no base model'
+                base_model_info = ModelInfo.load(base_model, self._file_pers_service, self._dict_pers_service, tmp_path)
+                model_code = self._restore_code_from_base_model(base_model_info, tmp_path)
                 model_save_info.model_code = model_code.path
 
             recover_info = FullModelRecoverInfo(weights_file=FileReference(path=weights_path),
@@ -165,22 +166,46 @@ class BaselineSaveService(AbstractSaveService):
                                                 model_class_name=model_save_info.model_class_name)
 
             model_info = ModelInfo(store_type=ModelStoreType.FULL_MODEL, recover_info=recover_info,
-                                   derived_from_id=derived_from)
+                                   derived_from_id=base_model)
 
             model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
 
             return model_info_id
 
-    def _restore_code_from_base_model(self, derived_from, tmp_path):
-        base_model_info = ModelInfo.load(
-            derived_from, self._file_pers_service, self._dict_pers_service, tmp_path,
-            load_recursive=True, load_files=False)  # load files false, we only wan to load one specific file
+    def _restore_code_from_base_model(self, model_info: ModelInfo, tmp_path):
+        assert isinstance(model_info, ModelInfo)
+        base_model_info = self._find_nearest_full_model_info(model_info, tmp_path)
 
-        recover_info: FullModelRecoverInfo = base_model_info.recover_info
+        code, _ = self._restore_code_and_class_name(base_model_info, tmp_path)
+        return code
+
+    def _find_nearest_full_model_info(self, model_info, restore_dir):
+        current_model_info = model_info
+        while not (hasattr(current_model_info, 'store_type') and
+                   current_model_info.store_type == ModelStoreType.FULL_MODEL):
+            base_model_id = current_model_info.derived_from
+            base_model_info = ModelInfo.load(
+                obj_id=base_model_id,
+                file_pers_service=self._file_pers_service,
+                dict_pers_service=self._dict_pers_service,
+                restore_root=restore_dir,
+            )
+            current_model_info = base_model_info
+        full_model_info: ModelInfo = current_model_info
+        return full_model_info
+
+    def _restore_code_and_class_name(self, model_info: ModelInfo, tmp_path):
+        assert isinstance(model_info.recover_info, FullModelRecoverInfo), 'model info has to be full model info'
+        recover_info: FullModelRecoverInfo = model_info.recover_info
+        # make sure all required fields are loaded
+        if not (recover_info.model_class_name and recover_info.model_code):
+            recover_info.load_all_fields(self._file_pers_service, self._dict_pers_service, tmp_path,
+                                                        load_recursive=True, load_files=False)
+        class_name = recover_info.model_class_name
         code: FileReference = recover_info.model_code
         self._file_pers_service.recover_file(code, tmp_path)
 
-        return code
+        return code, class_name
 
     def _pickle_weights(self, model, save_path):
         # store pickle dump of model
@@ -321,18 +346,7 @@ class WeightUpdateSaveService(BaselineSaveService):
         restore_dir = os.path.join(tmp_path, RESTORE_PATH)
         os.mkdir(restore_dir)
         # to find the model code and class name we have to find the "nearest" FULL MODEL
-        current_model_info = model_info
-        while not current_model_info.store_type == ModelStoreType.FULL_MODEL:
-            base_model_id = current_model_info.derived_from
-            base_model_info = ModelInfo.load(
-                obj_id=base_model_id,
-                file_pers_service=self._file_pers_service,
-                dict_pers_service=self._dict_pers_service,
-                restore_root=restore_dir,
-            )
-            current_model_info = base_model_info
-
-        full_model_info: ModelInfo = current_model_info
+        full_model_info = self._find_nearest_full_model_info(model_info, restore_dir)
         full_model_info.load_all_fields(
             file_pers_service=self._file_pers_service,
             dict_pers_service=self._dict_pers_service,

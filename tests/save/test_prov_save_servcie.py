@@ -57,12 +57,12 @@ class TestProvSaveService(unittest.TestCase):
             shutil.rmtree(self.abs_tmp_path)
 
     def test_save_restore_provenance_model_resnet18(self):
-        model_name = resnet18.__name__
-        self._test_save_restore_provenance_specific_model(model_name)
+        model = resnet18(pretrained=True)
+        self._test_save_restore_provenance_specific_model(model)
 
     def test_save_restore_provenance_model_mobilenet(self):
-        model_name = mobilenet_v2.__name__
-        self._test_save_restore_provenance_specific_model(model_name, filename='mobilenet')
+        model = mobilenet_v2(pretrained=True)
+        self._test_save_restore_provenance_specific_model(model)
 
     # googlenet has some problems when restored form state_dict with aux loss
     # NOTE think about not using googlenet for experiments
@@ -70,19 +70,13 @@ class TestProvSaveService(unittest.TestCase):
     #     model_name = googlenet.__name__
     #     self._test_save_restore_provenance_specific_model(model_name)
 
-    def _test_save_restore_provenance_specific_model(self, model_name, filename=None):
+    def _test_save_restore_provenance_specific_model(self, model):
         ###############################################################################
         # as a first step we store model model-0
         ###############################################################################
         # it will be stored as a full model since there is no model it was derived from
-        model = eval('{}(pretrained=True)'.format(model_name))
-        if filename:
-            code_file = MODEL_PATH.format(filename)
-        else:
-            code_file = MODEL_PATH.format(model_name)
-
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(model, code_file)
+        save_info_builder.add_model_info(model=model)
         save_info = save_info_builder.build()
 
         base_model_id = self.provenance_save_service.save_model(save_info)
@@ -171,7 +165,7 @@ class TestProvSaveService(unittest.TestCase):
         # having specified all the provenance information that will be used to train a model, we can store it
         ################################################################################################################
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(code=code_file, base_model_id=base_model_id)
+        save_info_builder.add_model_info(base_model_id=base_model_id)
         save_info_builder.add_prov_data(
             raw_data_path=raw_data, env=prov_env, train_service=imagenet_ts, train_kwargs=train_kwargs,
             train_service_code=prov_train_serv_code, train_service_class_name=prov_train_serv_class_name,
@@ -194,7 +188,7 @@ class TestProvSaveService(unittest.TestCase):
         # Having defined the provenance information above storing a second version is a lot shorter
         ################################################################################################################
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(code=code_file, base_model_id=model_id)
+        save_info_builder.add_model_info(base_model_id=model_id)
         save_info_builder.add_prov_data(
             raw_data_path=raw_data, env=prov_env, train_service=imagenet_ts, train_kwargs=train_kwargs,
             train_service_code=prov_train_serv_code, train_service_class_name=prov_train_serv_class_name,
