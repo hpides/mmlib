@@ -10,7 +10,6 @@ from mmlib.equal import model_equal
 from mmlib.persistence import FileSystemPersistenceService, MongoDictPersistenceService
 from mmlib.save import ProvenanceSaveService
 from mmlib.track_env import track_current_environment
-from schema.file_reference import FileReference
 from schema.restorable_object import OptimizerWrapper, RestorableObjectWrapper
 from schema.save_info_builder import ModelSaveInfoBuilder
 from tests.example_files.data.custom_coco import TrainCustomCoco
@@ -111,8 +110,6 @@ class TestProvSaveService(unittest.TestCase):
         # for this test case we will use the data from our custom coco dataset
         data_wrapper = TrainCustomCoco(raw_data)
         state_dict[DATA] = RestorableObjectWrapper(
-            code=FileReference(path=os.path.join(FILE_PATH, '../example_files/data/custom_coco.py')),
-            class_name='TrainCustomCoco',
             init_args={},
             config_args={'root': CURRENT_DATA_ROOT},
             init_ref_type_args=[],
@@ -130,7 +127,6 @@ class TestProvSaveService(unittest.TestCase):
                                                  num_workers=num_workers, pin_memory=pin_memory)
         state_dict[DATALOADER] = RestorableObjectWrapper(
             import_cmd='from torch.utils.data import DataLoader',
-            class_name='DataLoader',
             init_args={'batch_size': batch_size, 'shuffle': shuffle, 'num_workers': num_workers,
                        'pin_memory': pin_memory},
             config_args={},
@@ -146,8 +142,7 @@ class TestProvSaveService(unittest.TestCase):
         weight_decay = 1e-4
         optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
         state_dict[OPTIMIZER] = OptimizerWrapper(
-            import_cmd='import torch',
-            class_name='torch.optim.SGD',
+            import_cmd='from torch.optim import SGD',
             init_args={'lr': lr, 'momentum': momentum, 'weight_decay': weight_decay},
             config_args={},
             init_ref_type_args=['params'],
@@ -194,6 +189,5 @@ class TestProvSaveService(unittest.TestCase):
         imagenet_ts.train(model, **train_kwargs)
 
         recovered_model_info = self.provenance_save_service.recover_model(model_id_2)
-
         self.assertTrue(model_equal(model, recovered_model_info.model, imagenet_input))
         self.assertFalse(model_equal(recovered_model_1, recovered_model_info.model, imagenet_input))

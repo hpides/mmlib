@@ -9,9 +9,7 @@ class TrainSaveInfo:
     def __init__(self, train_service: StateDictObj, train_kwargs: dict, train_wrapper_code: str,
                  train_wrapper_class_name: str, environment: Environment):
         self.train_service = train_service
-        if train_service:
-            self.train_service_code = source_file(train_service)
-            self.train_service_class_name = class_name(train_service)
+        # TODO check if we can replace wrapper code and class name
         self.train_wrapper_code = train_wrapper_code
         self.train_wrapper_class_name = train_wrapper_class_name
         self.train_kwargs = train_kwargs

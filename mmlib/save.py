@@ -413,13 +413,12 @@ class ProvenanceSaveService(BaselineSaveService):
         tw_code = FileReference(path=model_save_info.train_info.train_wrapper_code)
         type_ = create_type(code=tw_code.path, type_name=tw_class_name)
         train_service_wrapper = type_(
-            class_name=model_save_info.train_info.train_service_class_name,
-            code=FileReference(path=model_save_info.train_info.train_service_code),
             instance=model_save_info.train_info.train_service
         )
         dataset = Dataset(FileReference(path=model_save_info.raw_dataset))
         train_info = TrainInfo(
             ts_wrapper=train_service_wrapper,
+            # TODO see if we can replace this
             ts_wrapper_code=tw_code,
             ts_wrapper_class_name=tw_class_name,
             train_kwargs=model_save_info.train_info.train_kwargs,
