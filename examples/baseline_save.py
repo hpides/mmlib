@@ -16,6 +16,7 @@ if __name__ == '__main__':
     abs_tmp_path = os.path.abspath(TARGET_FILE_SYSTEM_DIR)
     file_pers_service = FileSystemPersistenceService(abs_tmp_path)
     # run mongoDB locally in docker container and initialize service to store dictionaries (JSON)
+    os.system('docker kill %s' % CONTAINER_NAME)
     os.system('docker run --rm --name %s -it -p 27017:27017 -d  mongo:4.4.3 ' % CONTAINER_NAME)
     dict_pers_service = MongoDictPersistenceService()
     # initialize baseline save service
@@ -24,10 +25,7 @@ if __name__ == '__main__':
     model = mobilenet_v2(pretrained=True)
     # create the info to save the model
     save_info_builder = ModelSaveInfoBuilder()
-    save_info_builder.add_model_info(
-        model=model,
-        code='../tests/networks/mynets/mobilenet.py',
-        class_name='mobilenet_v2')
+    save_info_builder.add_model_info(model=model)
     save_info = save_info_builder.build()
     # given the save info we can store the model, ad get a model id back
     model_id = save_service.save_model(save_info)

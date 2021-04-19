@@ -2,7 +2,7 @@ import torch
 
 from mmlib.save_info import ModelSaveInfo, TrainSaveInfo, ProvModelSaveInfo
 from schema.environment import Environment
-from schema.restorable_object import StateDictObj
+from schema.restorable_object import StateDictRestorableObjectWrapper
 
 
 class ModelSaveInfoBuilder:
@@ -12,59 +12,42 @@ class ModelSaveInfoBuilder:
         self._model = None
         self._base_model = None
         self._code = None
-        self._class_name = None
         self._dummy_input_shape = None
         self._prov_raw_data = None
         self._prov_env = None
-        self._prov_train_service = None
         self._prov_train_kwargs = None
-        self._prov_train_service_code = None
-        self._prov_train_service_class_name = None
-        self._prov_train_wrapper_code = None
-        self._prov_train_wrapper_class_name = None
+        self._prov_train_service_wrapper = None
 
         self.general_model_info_added = False
         self.prov_model_info_added = False
 
-    def add_model_info(self, model: torch.nn.Module = None, code: str = None, class_name: str = None,
-                       base_model_id: str = None):
+    def add_model_info(self, model: torch.nn.Module = None, code: str = None, base_model_id: str = None):
         """
         Adds the general model information
         :param model: The actual model to save as an instance of torch.nn.Module.
-        :param code: (only required if base model not given) The path to the code of the model
-        (is needed for recover process).
-        :param class_name: (only required if base model not given) The name of the model, i.e. the model
+        :param code: (only required if base model not given or if it can not be automatically inferred) The path to the
+         code of the model .
         constructor (is needed for recover process).
         :param base_model_id: The id of the base model.
         """
         self._model = model
         self._base_model = base_model_id
         self._code = code
-        self._class_name = class_name
-
         self.general_model_info_added = True
 
-    def add_prov_data(self, raw_data_path: str, env: Environment, train_service: StateDictObj, train_service_code: str,
-                      train_service_class_name: str, train_kwargs: dict, wrapper_code: str, wrapper_class_name: str):
+    def add_prov_data(self, raw_data_path: str, env: Environment, train_kwargs: dict,
+                      train_service_wrapper: StateDictRestorableObjectWrapper):
         """
         Adds information that is required to store a model using its provenance data.
         :param raw_data_path: The path to the raw data that was used as the dataset.
         :param env: The environment the training was/will be performed in.
-        :param train_service: The train service that was/will be used to train the model.
-        :param train_service_code: The file path to the file holding the code for the train service.
-        :param train_service_class_name: The class name of the used train service.
         :param train_kwargs: The kwargs that will be given to the train method of the train service.
-        :param wrapper_code: The path to the code for the train service wrapper.
-        :param wrapper_class_name: The class name of the train service wrapper.
+        :param train_service_wrapper: The train service wrapper that wraps the train service used to train the model.
         """
         self._prov_raw_data = raw_data_path
         self._prov_env = env
-        self._prov_train_service = train_service
-        self._prov_train_service_code = train_service_code
-        self._prov_train_service_class_name = train_service_class_name
         self._prov_train_kwargs = train_kwargs
-        self._prov_train_wrapper_code = wrapper_code
-        self._prov_train_wrapper_class_name = wrapper_class_name
+        self._prov_train_service_wrapper = train_service_wrapper
 
         self.prov_model_info_added = True
 
@@ -83,18 +66,13 @@ class ModelSaveInfoBuilder:
             model=self._model,
             base_model=self._base_model,
             model_code=self._code,
-            model_class_name=self._class_name,
             dummy_input_shape=self._dummy_input_shape)
 
         return save_info
 
     def _build_prov_save_info(self):
         prov_train_info = TrainSaveInfo(
-            train_service=self._prov_train_service,
-            train_service_code=self._prov_train_service_code,
-            train_service_class_name=self._prov_train_service_class_name,
-            train_wrapper_code=self._prov_train_wrapper_code,
-            train_wrapper_class_name=self._prov_train_wrapper_class_name,
+            train_service_wrapper=self._prov_train_service_wrapper,
             train_kwargs=self._prov_train_kwargs,
             environment=self._prov_env)
 
@@ -102,7 +80,6 @@ class ModelSaveInfoBuilder:
             model=self._model,
             base_model=self._base_model,
             model_code=self._code,
-            model_class_name=self._class_name,
             dummy_input_shape=self._dummy_input_shape,
             raw_dataset=self._prov_raw_data,
             train_info=prov_train_info)
@@ -110,10 +87,9 @@ class ModelSaveInfoBuilder:
         return save_info
 
     def _valid_baseline_save_model_info(self):
-        return self._code and self._class_name
+        return self._model or self._base_model
 
     def _valid_prov_save_model_info(self):
         return self._valid_baseline_save_model_info() and self._base_model \
-               and self._prov_raw_data and self._prov_env and self._prov_train_service and \
-               self._prov_train_service_class_name and self._prov_train_kwargs and self._prov_train_kwargs \
-               and self._prov_train_wrapper_code and self._prov_train_wrapper_class_name
+               and self._prov_raw_data and self._prov_env and self._prov_train_service_wrapper \
+               and self._prov_train_kwargs and self._prov_train_kwargs

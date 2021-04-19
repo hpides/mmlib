@@ -55,29 +55,20 @@ class TestBaselineSaveService(unittest.TestCase):
             shutil.rmtree(self.abs_tmp_path)
 
     def test_save_restore_mobilenet(self):
-        class_name = mobilenet_v2.__name__
         model = mobilenet_v2(pretrained=True)
-        code_file = NETWORK_CODE_TEMPLATE.format(MOBILENET)
-
-        self._test_save_restore_model(code_file, class_name, model)
+        self._test_save_restore_model(model)
 
     def test_save_restore_resnet18(self):
-        class_name = resnet18.__name__
         model = resnet18(pretrained=True)
-        code_file = NETWORK_CODE_TEMPLATE.format(RESNET_18)
-
-        self._test_save_restore_model(code_file, class_name, model)
+        self._test_save_restore_model(model)
 
     def test_save_restore_model_googlenet(self):
-        class_name = GOOGLENET
         model = googlenet(aux_logits=True)
-        code_file = NETWORK_CODE_TEMPLATE.format(GOOGLENET)
+        self._test_save_restore_model(model)
 
-        self._test_save_restore_model(code_file, class_name, model)
-
-    def _test_save_restore_model(self, code_file, code_name, model):
+    def _test_save_restore_model(self, model):
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(model, code_file, code_name)
+        save_info_builder.add_model_info(model=model)
         save_info = save_info_builder.build()
 
         model_id = self.save_service.save_model(save_info)
@@ -85,29 +76,20 @@ class TestBaselineSaveService(unittest.TestCase):
         self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
 
     def test_save_restore_mobilenet_val_info(self):
-        class_name = mobilenet_v2.__name__
         model = mobilenet_v2(pretrained=True)
-        code_file = NETWORK_CODE_TEMPLATE.format(MOBILENET)
-
-        self._test_save_restore_model_and_validation_info(code_file, class_name, model, DUMMY_INPUT_SHAPE)
+        self._test_save_restore_model_and_validation_info(model, DUMMY_INPUT_SHAPE)
 
     def test_save_restore_resnet18_val_info(self):
-        class_name = resnet18.__name__
         model = resnet18(pretrained=True)
-        code_file = NETWORK_CODE_TEMPLATE.format(RESNET_18)
-
-        self._test_save_restore_model_and_validation_info(code_file, class_name, model, DUMMY_INPUT_SHAPE)
+        self._test_save_restore_model_and_validation_info(model, DUMMY_INPUT_SHAPE)
 
     def test_save_restore_model_googlenet_val_info(self):
-        class_name = GOOGLENET
         model = googlenet(aux_logits=True)
-        code_file = NETWORK_CODE_TEMPLATE.format(GOOGLENET)
+        self._test_save_restore_model_and_validation_info(model, DUMMY_INPUT_SHAPE)
 
-        self._test_save_restore_model_and_validation_info(code_file, class_name, model, DUMMY_INPUT_SHAPE)
-
-    def _test_save_restore_model_and_validation_info(self, code_file, class_name, model, dummy_input_shape):
+    def _test_save_restore_model_and_validation_info(self, model, dummy_input_shape):
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(model, code_file, class_name)
+        save_info_builder.add_model_info(model=model)
         save_info = save_info_builder.build()
 
         model_id = self.save_service.save_model(save_info)
@@ -119,23 +101,52 @@ class TestBaselineSaveService(unittest.TestCase):
         self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
 
     def test_save_restore_derived_models(self):
-        class_name = resnet18.__name__
-        code_file = NETWORK_CODE_TEMPLATE.format(RESNET_18)
         initial_model = resnet18()
 
         # save initial model
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(initial_model, code_file, class_name)
+        save_info_builder.add_model_info(model=initial_model)
         save_info = save_info_builder.build()
         initial_model_id = self.save_service.save_model(save_info)
 
         # save derived model
         derived_model = resnet18(pretrained=True)
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(derived_model, code_file, class_name, base_model_id=initial_model_id)
+        save_info_builder.add_model_info(model=derived_model, base_model_id=initial_model_id)
         save_info = save_info_builder.build()
         derived_model_id = self.save_service.save_model(save_info)
 
         restored_model_info = self.save_service.recover_model(derived_model_id)
 
         self.assertTrue(model_equal(derived_model, restored_model_info.model, imagenet_input))
+
+    def test_save_restore_multiple_derived_models(self):
+        initial_model = resnet18()
+
+        # save initial model
+        save_info_builder = ModelSaveInfoBuilder()
+        save_info_builder.add_model_info(model=initial_model)
+        save_info = save_info_builder.build()
+        initial_model_id = self.save_service.save_model(save_info)
+
+        # save derived model
+        derived_model = resnet18(pretrained=True)
+        save_info_builder = ModelSaveInfoBuilder()
+        save_info_builder.add_model_info(model=derived_model, base_model_id=initial_model_id)
+        save_info = save_info_builder.build()
+        derived_model_id = self.save_service.save_model(save_info)
+
+        restored_model_info = self.save_service.recover_model(derived_model_id)
+
+        self.assertTrue(model_equal(derived_model, restored_model_info.model, imagenet_input))
+
+        # save derived model
+        derived_model_2 = restored_model_info.model
+        save_info_builder = ModelSaveInfoBuilder()
+        save_info_builder.add_model_info(model=derived_model_2, base_model_id=derived_model_id)
+        save_info = save_info_builder.build()
+        derived_model_id_2 = self.save_service.save_model(save_info)
+
+        restored_model_info_2 = self.save_service.recover_model(derived_model_id_2)
+
+        self.assertTrue(model_equal(derived_model_2, restored_model_info_2.model, imagenet_input))

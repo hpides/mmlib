@@ -3,6 +3,7 @@ import shutil
 import unittest
 
 import torch
+from torch.utils.data import DataLoader
 
 from mmlib.constants import CURRENT_DATA_ROOT, MMLIB_CONFIG
 from mmlib.deterministic import set_deterministic
@@ -10,11 +11,10 @@ from mmlib.equal import model_equal
 from mmlib.persistence import FileSystemPersistenceService, MongoDictPersistenceService
 from mmlib.save import ProvenanceSaveService
 from mmlib.track_env import track_current_environment
-from schema.file_reference import FileReference
 from schema.restorable_object import OptimizerWrapper, RestorableObjectWrapper
 from schema.save_info_builder import ModelSaveInfoBuilder
 from tests.example_files.data.custom_coco import TrainCustomCoco
-from tests.example_files.imagenet_train import ImagenetTrainService, OPTIMIZER, DATALOADER, DATA
+from tests.example_files.imagenet_train import ImagenetTrainService, OPTIMIZER, DATALOADER, DATA, ImagenetTrainWrapper
 from tests.example_files.mynets.mobilenet import mobilenet_v2
 from tests.example_files.mynets.resnet18 import resnet18
 from tests.save.test_baseline_save_servcie import MONGO_CONTAINER_NAME
@@ -39,14 +39,14 @@ class TestProvSaveService(unittest.TestCase):
         # run mongo DB locally in docker container
         os.system('docker run --rm --name %s -it -p 27017:27017 -d  mongo:4.4.3 ' % MONGO_CONTAINER_NAME)
 
+        os.mkdir(self.abs_tmp_path)
+
+        os.environ[MMLIB_CONFIG] = CONFIG
+
         self.mongo_service = MongoService('127.0.0.1', 'mmlib')
         file_pers_service = FileSystemPersistenceService(self.tmp_path)
         dict_pers_service = MongoDictPersistenceService()
         self.provenance_save_service = ProvenanceSaveService(file_pers_service, dict_pers_service)
-
-        os.mkdir(self.abs_tmp_path)
-
-        os.environ[MMLIB_CONFIG] = CONFIG
 
     def tearDown(self) -> None:
         self.__clean_up()
@@ -57,12 +57,12 @@ class TestProvSaveService(unittest.TestCase):
             shutil.rmtree(self.abs_tmp_path)
 
     def test_save_restore_provenance_model_resnet18(self):
-        model_name = resnet18.__name__
-        self._test_save_restore_provenance_specific_model(model_name)
+        model = resnet18(pretrained=True)
+        self._test_save_restore_provenance_specific_model(model)
 
     def test_save_restore_provenance_model_mobilenet(self):
-        model_name = mobilenet_v2.__name__
-        self._test_save_restore_provenance_specific_model(model_name, filename='mobilenet')
+        model = mobilenet_v2(pretrained=True)
+        self._test_save_restore_provenance_specific_model(model)
 
     # googlenet has some problems when restored form state_dict with aux loss
     # NOTE think about not using googlenet for experiments
@@ -70,20 +70,13 @@ class TestProvSaveService(unittest.TestCase):
     #     model_name = googlenet.__name__
     #     self._test_save_restore_provenance_specific_model(model_name)
 
-    def _test_save_restore_provenance_specific_model(self, model_name, filename=None):
+    def _test_save_restore_provenance_specific_model(self, model):
         ###############################################################################
         # as a first step we store model model-0
         ###############################################################################
         # it will be stored as a full model since there is no model it was derived from
-        model = eval('{}(pretrained=True)'.format(model_name))
-        if filename:
-            code_file = MODEL_PATH.format(filename)
-        else:
-            code_file = MODEL_PATH.format(model_name)
-        class_name = model_name
-
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(model, code_file, class_name)
+        save_info_builder.add_model_info(model=model)
         save_info = save_info_builder.build()
 
         base_model_id = self.provenance_save_service.save_model(save_info)
@@ -93,14 +86,6 @@ class TestProvSaveService(unittest.TestCase):
         # All this information has to be only once, for every future version the same prov data can be used
         # exceptions are the train_kwargs and the raw_data
         ################################################################################################################
-        # define what train service will be used to train the model, in our case the ImagenetTrainService (inherits
-        # from the abstract class TrainService)
-        prov_train_serv_code = os.path.join(FILE_PATH, '../example_files/imagenet_train.py')
-        prov_train_serv_class_name = 'ImagenetTrainService'
-        # define the train wrapper, in our case we use the ImagenetTrainWrapper (inherits from the abstract class
-        # TrainService)
-        prov_train_wrapper_code = os.path.join(FILE_PATH, '../example_files/imagenet_train.py')
-        prov_train_wrapper_class_name = 'ImagenetTrainWrapper'
         # we also have to track the current environment, to store it later
         prov_env = track_current_environment()
         # as a last step we have to define the data that should be used and how the train method should be parametrized
@@ -122,29 +107,18 @@ class TestProvSaveService(unittest.TestCase):
         # for this test case we will use the data from our custom coco dataset
         data_wrapper = TrainCustomCoco(raw_data)
         state_dict[DATA] = RestorableObjectWrapper(
-            code=FileReference(path=os.path.join(FILE_PATH, '../example_files/data/custom_coco.py')),
-            class_name='TrainCustomCoco',
-            init_args={},
             config_args={'root': CURRENT_DATA_ROOT},
-            init_ref_type_args=[],
             instance=data_wrapper
         )
 
         # as a dataloader we use the standard implementation provided by pyTorch
         # this is why we instead of specifying the code path, we specify an import cmd
         # also we to track all arguments that have been used for initialization of this objects
-        batch_size = 5  # use very small batch size here to reduce test time
-        shuffle = True
-        num_workers = 0
-        pin_memory = True
-        dataloader = torch.utils.data.DataLoader(data_wrapper, batch_size=batch_size, shuffle=shuffle,
-                                                 num_workers=num_workers, pin_memory=pin_memory)
+        data_loader_kwargs = {'batch_size': 5, 'shuffle': True, 'num_workers': 0, 'pin_memory': True}
+        dataloader = DataLoader(data_wrapper, **data_loader_kwargs)
         state_dict[DATALOADER] = RestorableObjectWrapper(
             import_cmd='from torch.utils.data import DataLoader',
-            class_name='DataLoader',
-            init_args={'batch_size': batch_size, 'shuffle': shuffle, 'num_workers': num_workers,
-                       'pin_memory': pin_memory},
-            config_args={},
+            init_args=data_loader_kwargs,
             init_ref_type_args=['dataset'],
             instance=dataloader
         )
@@ -152,15 +126,11 @@ class TestProvSaveService(unittest.TestCase):
         # while the other objects do not have an internal state (other than the basic parameters) an optimizer can have
         # some more extensive state. In pyTorch it offers also the method .state_dict(). To store and restore we use an
         # Optimizer wrapper object.
-        lr = 1e-4
-        momentum = 0.9
-        weight_decay = 1e-4
-        optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
+        optimizer_kwargs = {'lr': 1e-4, 'momentum': 0.9, 'weight_decay': 1e-4}
+        optimizer = torch.optim.SGD(model.parameters(), **optimizer_kwargs)
         state_dict[OPTIMIZER] = OptimizerWrapper(
-            import_cmd='import torch',
-            class_name='torch.optim.SGD',
-            init_args={'lr': lr, 'momentum': momentum, 'weight_decay': weight_decay},
-            config_args={},
+            import_cmd='from torch.optim import SGD',
+            init_args=optimizer_kwargs,
             init_ref_type_args=['params'],
             instance=optimizer
         )
@@ -168,15 +138,15 @@ class TestProvSaveService(unittest.TestCase):
         # having created all the objects needed for imagenet training we can plug the state dict into the train servcie
         imagenet_ts.state_objs = state_dict
 
+        # finally we wrap the train service in the corresponding wrapper
+        ts_wrapper = ImagenetTrainWrapper(instance=imagenet_ts)
         ################################################################################################################
         # having specified all the provenance information that will be used to train a model, we can store it
         ################################################################################################################
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(code=code_file, class_name=class_name, base_model_id=base_model_id)
+        save_info_builder.add_model_info(base_model_id=base_model_id)
         save_info_builder.add_prov_data(
-            raw_data_path=raw_data, env=prov_env, train_service=imagenet_ts, train_kwargs=train_kwargs,
-            train_service_code=prov_train_serv_code, train_service_class_name=prov_train_serv_class_name,
-            wrapper_code=prov_train_wrapper_code, wrapper_class_name=prov_train_wrapper_class_name)
+            raw_data_path=raw_data, env=prov_env, train_kwargs=train_kwargs, train_service_wrapper=ts_wrapper)
         save_info = save_info_builder.build()
 
         ################################################################################################################
@@ -195,11 +165,9 @@ class TestProvSaveService(unittest.TestCase):
         # Having defined the provenance information above storing a second version is a lot shorter
         ################################################################################################################
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(code=code_file, class_name=class_name, base_model_id=model_id)
+        save_info_builder.add_model_info(base_model_id=model_id)
         save_info_builder.add_prov_data(
-            raw_data_path=raw_data, env=prov_env, train_service=imagenet_ts, train_kwargs=train_kwargs,
-            train_service_code=prov_train_serv_code, train_service_class_name=prov_train_serv_class_name,
-            wrapper_code=prov_train_wrapper_code, wrapper_class_name=prov_train_wrapper_class_name)
+            raw_data_path=raw_data, env=prov_env, train_kwargs=train_kwargs, train_service_wrapper=ts_wrapper)
         save_info = save_info_builder.build()
 
         model_id_2 = self.provenance_save_service.save_model(save_info)
@@ -207,6 +175,5 @@ class TestProvSaveService(unittest.TestCase):
         imagenet_ts.train(model, **train_kwargs)
 
         recovered_model_info = self.provenance_save_service.recover_model(model_id_2)
-
         self.assertTrue(model_equal(model, recovered_model_info.model, imagenet_input))
         self.assertFalse(model_equal(recovered_model_1, recovered_model_info.model, imagenet_input))

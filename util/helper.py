@@ -1,3 +1,4 @@
+import inspect
 import os
 import shutil
 from zipfile import ZipFile
@@ -67,3 +68,11 @@ def move_data(src_root, dst_root):
     dst_root = os.path.abspath(dst_root)
 
     shutil.move(src_root, dst_root)
+
+
+def class_name(obj: object) -> str:
+    return obj.__class__.__name__
+
+
+def source_file(obj: object) -> str:
+    return inspect.getsourcefile(obj.__class__)
