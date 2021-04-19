@@ -174,9 +174,8 @@ class BaselineSaveService(AbstractSaveService):
 
     def _restore_code_from_base_model(self, model_info: ModelInfo, tmp_path):
         assert isinstance(model_info, ModelInfo)
-        base_model_info = self._find_nearest_full_model_info(model_info, tmp_path)
 
-        code, _ = self._restore_code_and_class_name(base_model_info, tmp_path)
+        code, _ = self._restore_code_and_class_name(model_info, tmp_path)
         return code
 
     def _find_nearest_full_model_info(self, model_info, restore_dir):
@@ -195,12 +194,13 @@ class BaselineSaveService(AbstractSaveService):
         return full_model_info
 
     def _restore_code_and_class_name(self, model_info: ModelInfo, tmp_path):
-        assert isinstance(model_info.recover_info, FullModelRecoverInfo), 'model info has to be full model info'
-        recover_info: FullModelRecoverInfo = model_info.recover_info
+        full_model_info = self._find_nearest_full_model_info(model_info, tmp_path)
+        assert isinstance(full_model_info.recover_info, FullModelRecoverInfo), 'model info has to be full model info'
+        recover_info: FullModelRecoverInfo = full_model_info.recover_info
         # make sure all required fields are loaded
         if not (recover_info.model_class_name and recover_info.model_code):
             recover_info.load_all_fields(self._file_pers_service, self._dict_pers_service, tmp_path,
-                                                        load_recursive=True, load_files=False)
+                                         load_recursive=True, load_files=False)
         class_name = recover_info.model_class_name
         code: FileReference = recover_info.model_code
         self._file_pers_service.recover_file(code, tmp_path)
@@ -292,7 +292,7 @@ class WeightUpdateSaveService(BaselineSaveService):
         return restored_model_info
 
     def _restore_independent_update(self, model_info, tmp_path):
-        model_code, model_class_name = self._get_model_code_and_class_name(model_info, tmp_path)
+        model_code, model_class_name = self._restore_code_and_class_name(model_info, tmp_path)
         recover_info: WeightsUpdateRecoverInfo = model_info.recover_info
 
         model = create_object(model_code.path, model_class_name)
@@ -340,23 +340,6 @@ class WeightUpdateSaveService(BaselineSaveService):
 
         # this method is always independent from other models since we always store the full weights
         return model_weights, "default_weight_store", True
-
-    def _get_model_code_and_class_name(self, model_info, tmp_path):
-        # TODO maybe can be replaced when using FileRef Object
-        restore_dir = os.path.join(tmp_path, RESTORE_PATH)
-        os.mkdir(restore_dir)
-        # to find the model code and class name we have to find the "nearest" FULL MODEL
-        full_model_info = self._find_nearest_full_model_info(model_info, restore_dir)
-        full_model_info.load_all_fields(
-            file_pers_service=self._file_pers_service,
-            dict_pers_service=self._dict_pers_service,
-            restore_root=restore_dir,
-            load_recursive=True,
-            load_files=True
-        )
-        recover_info: FullModelRecoverInfo = full_model_info.recover_info
-
-        return recover_info.model_code, recover_info.model_class_name
 
 
 class ProvenanceSaveService(BaselineSaveService):
