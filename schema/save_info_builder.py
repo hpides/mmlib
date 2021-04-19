@@ -29,8 +29,8 @@ class ModelSaveInfoBuilder:
         """
         Adds the general model information
         :param model: The actual model to save as an instance of torch.nn.Module.
-        :param code: (only required if base model not given) The path to the code of the model
-        (is needed for recover process).
+        :param code: (only required if base model not given or if it can not be automatically inferred) The path to the
+         code of the model .
         constructor (is needed for recover process).
         :param base_model_id: The id of the base model.
         """
@@ -104,7 +104,7 @@ class ModelSaveInfoBuilder:
         return save_info
 
     def _valid_baseline_save_model_info(self):
-        return self._code
+        return self._model
 
     def _valid_prov_save_model_info(self):
         return self._valid_baseline_save_model_info() and self._base_model \
