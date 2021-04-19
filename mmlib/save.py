@@ -418,7 +418,6 @@ class ProvenanceSaveService(BaselineSaveService):
         dataset = Dataset(FileReference(path=model_save_info.raw_dataset))
         train_info = TrainInfo(
             ts_wrapper=train_service_wrapper,
-            # TODO see if we can replace this
             ts_wrapper_code=tw_code,
             ts_wrapper_class_name=tw_class_name,
             train_kwargs=model_save_info.train_info.train_kwargs,
