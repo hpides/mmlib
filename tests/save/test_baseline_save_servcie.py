@@ -38,10 +38,10 @@ class TestBaselineSaveService(unittest.TestCase):
         self.mongo_service = MongoService('127.0.0.1', 'mmlib')
 
         os.mkdir(self.abs_tmp_path)
-        file_pers_service = FileSystemPersistenceService(self.tmp_path)
-        dict_pers_service = MongoDictPersistenceService()
-        self.recover_val_service = RecoverValidationService(dict_pers_service)
-        self.init_save_service(dict_pers_service, file_pers_service)
+        self.file_pers_service = FileSystemPersistenceService(self.tmp_path)
+        self.dict_pers_service = MongoDictPersistenceService()
+        self.recover_val_service = RecoverValidationService(self.dict_pers_service)
+        self.init_save_service(self.dict_pers_service, self.file_pers_service)
 
     def init_save_service(self, dict_pers_service, file_pers_service):
         self.save_service = BaselineSaveService(file_pers_service, dict_pers_service)
