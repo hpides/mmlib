@@ -19,6 +19,10 @@ from schema.store_type import ModelStoreType
 from schema.train_info import TrainInfo
 from util.init_from_file import create_object, create_type
 
+PICKLED_MODEL_WEIGHTS = 'pickled_model_weights'
+
+WEIGHTS_PATCH = "weights_patch"
+
 RESTORE_PATH = 'restore_path'
 
 MODEL_WEIGHTS = 'model_weights'
@@ -344,16 +348,16 @@ class WeightUpdateSaveService(BaselineSaveService):
         current_model_weights = model_save_info.model.state_dict()
 
         weights_patch = self._state_dict_patch(base_model_weights, current_model_weights)
-
-        # for now the weight update is just storing the weights with the standard pytorch method
-        model_weights = super()._pickle_state_dict(weights_patch, tmp_path)
-
-        # for now this is hardcoded
-        return model_weights, "weight_store_patch", False
+        if len(weights_patch.keys()) < len(base_model_weights.keys()):
+            # if the patch actually saves something
+            model_weights = super()._pickle_state_dict(weights_patch, tmp_path)
+            return model_weights, WEIGHTS_PATCH, False
+        else:
+            model_weights = self._pickle_weights(current_model_weights, tmp_path)
+            return model_weights, PICKLED_MODEL_WEIGHTS, True
 
     def _state_dict_patch(self, base_model_weights, current_model_weights):
         assert base_model_weights.keys() == current_model_weights.keys(), 'given state dicts are not compatible'
-        # TODO if we cant remove anything -> set independent true and store all weights
         for k in list(current_model_weights.keys()):
             if tensor_equal(base_model_weights[k], current_model_weights[k]):
                 del current_model_weights[k]
