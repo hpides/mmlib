@@ -86,7 +86,7 @@ class FilePersistenceService(PersistenceService, metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def file_size(self, file: str):
+    def file_size(self, file: FileReference):
         """
         Calculates and sets the size property for the given file in bytes.
         :param file: The file identified by FileReference.
