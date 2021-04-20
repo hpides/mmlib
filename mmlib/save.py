@@ -209,10 +209,15 @@ class BaselineSaveService(AbstractSaveService):
         return code, class_name
 
     def _pickle_weights(self, model, save_path):
-        # store pickle dump of model
-        weight_path = os.path.join(save_path, MODEL_WEIGHTS)
-        torch.save(model.state_dict(), weight_path)
+        # store pickle dump of model weights
+        state_dict = model.state_dict()
+        weight_path = self._pickle_state_dict(state_dict, save_path)
 
+        return weight_path
+
+    def _pickle_state_dict(self, state_dict, save_path):
+        weight_path = os.path.join(save_path, MODEL_WEIGHTS)
+        torch.save(state_dict, weight_path)
         return weight_path
 
     def _recover_pickled_weights(self, weights_file):
@@ -282,7 +287,6 @@ class WeightUpdateSaveService(BaselineSaveService):
             if recover_info.independent:
                 recovered_model = self._restore_independent_update(model_info, tmp_path)
             else:
-                # NOTE so far all weight updates are independent
                 recovered_model = self._restore_dependent_update(model_info)
 
             restored_model_info = RestoredModelInfo(model=recovered_model)
@@ -304,14 +308,13 @@ class WeightUpdateSaveService(BaselineSaveService):
         return model
 
     def _restore_dependent_update(self, model_info):
-        base_model = self.recover_model(model_info.derived_from)
-
         recover_info: WeightsUpdateRecoverInfo = model_info.recover_info
+        base_model_info = self.recover_model(model_info.derived_from)
+        base_model = base_model_info.model
+        weights_patch = torch.load(recover_info.update.path)
+        self._apply_weight_patch(base_model, weights_patch)
 
-        return self._update_model(base_model, recover_info)
-
-    def _update_model(self, base_model, recover_info):
-        pass
+        return base_model
 
     def _save_updated_model(self, model_save_info):
         base_model_id = model_save_info.base_model
@@ -343,20 +346,26 @@ class WeightUpdateSaveService(BaselineSaveService):
         weights_patch = self._state_dict_patch(base_model_weights, current_model_weights)
 
         # for now the weight update is just storing the weights with the standard pytorch method
-        model_weights = super()._pickle_weights(weights_patch, tmp_path)
+        model_weights = super()._pickle_state_dict(weights_patch, tmp_path)
 
-        # this method is always independent from other models since we always store the full weights
+        # for now this is hardcoded
         return model_weights, "weight_store_patch", False
 
     def _state_dict_patch(self, base_model_weights, current_model_weights):
         assert base_model_weights.keys() == current_model_weights.keys(), 'given state dicts are not compatible'
-
-        keys = current_model_weights.keys()
-        for k in keys:
+        # TODO if we cant remove anything -> set independent true and store all weights
+        for k in list(current_model_weights.keys()):
             if tensor_equal(base_model_weights[k], current_model_weights[k]):
                 del current_model_weights[k]
 
         return current_model_weights
+
+    def _apply_weight_patch(self, base_model: torch.nn.Module, weights_patch):
+        patched_state_dict = base_model.state_dict()
+        for k, patch in weights_patch.items():
+            patched_state_dict[k] = patch
+
+        return base_model.load_state_dict(patched_state_dict)
 
 
 class ProvenanceSaveService(BaselineSaveService):
