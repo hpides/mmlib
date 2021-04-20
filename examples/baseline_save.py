@@ -27,7 +27,7 @@ if __name__ == '__main__':
     save_info_builder = ModelSaveInfoBuilder()
     save_info_builder.add_model_info(model=model)
     save_info = save_info_builder.build()
-    # given the save info we can store the model, ad get a model id back
+    # given the save info we can store the model, and get a model id back
     model_id = save_service.save_model(save_info)
     # having this model id, we can restore the model using the save service
     # it accesses the mongoDB for meta info, and the file system for files (model weights and code)
