@@ -5,6 +5,7 @@ import warnings
 
 import torch
 
+from mmlib.equal import tensor_equal
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from mmlib.recover_validation import RecoverValidationService
 from mmlib.save_info import ModelSaveInfo, ProvModelSaveInfo
@@ -313,18 +314,20 @@ class WeightUpdateSaveService(BaselineSaveService):
         pass
 
     def _save_updated_model(self, model_save_info):
-        assert model_save_info.base_model, 'no base model given'
+        base_model_id = model_save_info.base_model
+        assert base_model_id, 'no base model given'
 
         with tempfile.TemporaryDirectory() as tmp_path:
-            weights_update, update_type, independent = self._generate_weights_update(model_save_info, tmp_path)
+            base_model_info = self.recover_model(base_model_id)
 
-            derived_from = model_save_info.base_model
+            weights_update, update_type, independent = \
+                self._generate_weights_update(model_save_info, base_model_info, tmp_path)
 
             recover_info = WeightsUpdateRecoverInfo(update=FileReference(path=weights_update), update_type=update_type,
                                                     independent=independent)
 
             model_info = ModelInfo(store_type=ModelStoreType.WEIGHT_UPDATES, recover_info=recover_info,
-                                   derived_from_id=derived_from)
+                                   derived_from_id=base_model_id)
 
             model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
 
@@ -333,13 +336,27 @@ class WeightUpdateSaveService(BaselineSaveService):
     def _base_model_given(self, model_save_info):
         return model_save_info.base_model is not None
 
-    def _generate_weights_update(self, model_save_info, tmp_path):
+    def _generate_weights_update(self, model_save_info, base_model_info, tmp_path):
+        base_model_weights = base_model_info.model.state_dict()
+        current_model_weights = model_save_info.model.state_dict()
+
+        weights_patch = self._state_dict_patch(base_model_weights, current_model_weights)
+
         # for now the weight update is just storing the weights with the standard pytorch method
-        model = model_save_info.model
-        model_weights = super()._pickle_weights(model, tmp_path)
+        model_weights = super()._pickle_weights(weights_patch, tmp_path)
 
         # this method is always independent from other models since we always store the full weights
-        return model_weights, "default_weight_store", True
+        return model_weights, "weight_store_patch", False
+
+    def _state_dict_patch(self, base_model_weights, current_model_weights):
+        assert base_model_weights.keys() == current_model_weights.keys(), 'given state dicts are not compatible'
+
+        keys = current_model_weights.keys()
+        for k in keys:
+            if tensor_equal(base_model_weights[k], current_model_weights[k]):
+                del current_model_weights[k]
+
+        return current_model_weights
 
 
 class ProvenanceSaveService(BaselineSaveService):
