@@ -152,8 +152,6 @@ class BaselineSaveService(AbstractSaveService):
         assert model_save_info.model_class_name, 'model class name is not set'
 
     def _save_full_model(self, model_save_info: ModelSaveInfo, add_weights_hash_info=False) -> str:
-        if add_weights_hash_info:
-            assert model_save_info.model, "to compute a weights info hash the a model has to be given"
 
         with tempfile.TemporaryDirectory() as tmp_path:
             weights_path = self._pickle_weights(model_save_info.model, tmp_path)
@@ -173,9 +171,8 @@ class BaselineSaveService(AbstractSaveService):
             recover_info = FullModelRecoverInfo(weights_file=FileReference(path=weights_path),
                                                 model_code=FileReference(path=model_save_info.model_code),
                                                 model_class_name=model_save_info.model_class_name)
-            weights_hash_info = None
-            if add_weights_hash_info:
-                weights_hash_info = WeightDictMerkleTree(model_save_info.model.state_dict())
+
+            weights_hash_info = _get_weights_info_hash(add_weights_hash_info, model_save_info)
 
             model_info = ModelInfo(store_type=ModelStoreType.FULL_MODEL, recover_info=recover_info,
                                    derived_from_id=base_model, weights_hash_info=weights_hash_info)
@@ -485,3 +482,11 @@ class ProvenanceSaveService(BaselineSaveService):
         recover_info: ProvenanceRecoverInfo = model_info.recover_info
         envs_match = compare_env_to_current(recover_info.environment)
         assert envs_match, 'The current environment and the environment that was used to '
+
+
+def _get_weights_info_hash(add_weights_hash_info, model_save_info):
+    weights_hash_info = None
+    if add_weights_hash_info:
+        assert model_save_info.model, "to compute a weights info hash the a model has to be given"
+        weights_hash_info = WeightDictMerkleTree(model_save_info.model.state_dict())
+    return weights_hash_info
