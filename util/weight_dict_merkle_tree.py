@@ -1,0 +1,2 @@
+class WeightDictMerkleTree:
+    pass

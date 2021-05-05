@@ -3,6 +3,7 @@ from schema.recover_info import FullModelRecoverInfo, AbstractRecoverInfo, Weigh
     ProvenanceRecoverInfo
 from schema.schema_obj import SchemaObj
 from schema.store_type import ModelStoreType
+from util.weight_dict_merkle_tree import WeightDictMerkleTree
 
 STORE_TYPE = 'store_type'
 RECOVER_INFO_ID = 'recover_info_id'
@@ -16,11 +17,12 @@ MODEL_INFO = 'model_info'
 class ModelInfo(SchemaObj):
 
     def __init__(self, store_type: ModelStoreType = None, recover_info: AbstractRecoverInfo = None,
-                 store_id: str = None, derived_from_id: str = None):
+                 store_id: str = None, derived_from_id: str = None, hash_info: WeightDictMerkleTree = None):
         super().__init__(store_id)
         self.store_type = store_type
         self.recover_info = recover_info
         self.derived_from = derived_from_id
+        self.hash_info = hash_info
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
 
