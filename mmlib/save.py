@@ -150,7 +150,10 @@ class BaselineSaveService(AbstractSaveService):
         # the class name of the model
         assert model_save_info.model_class_name, 'model class name is not set'
 
-    def _save_full_model(self, model_save_info: ModelSaveInfo) -> str:
+    def _save_full_model(self, model_save_info: ModelSaveInfo, add_weights_hash_info=False) -> str:
+        if add_weights_hash_info:
+            assert model_save_info.model, "to compute a weights info hash the a model has to be given"
+
         with tempfile.TemporaryDirectory() as tmp_path:
             weights_path = self._pickle_weights(model_save_info.model, tmp_path)
 
