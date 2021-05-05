@@ -1,2 +1,3 @@
 class WeightDictMerkleTree:
-    pass
+    def to_dict(self) -> dict:
+        pass

@@ -8,8 +8,7 @@ from util.weight_dict_merkle_tree import WeightDictMerkleTree
 STORE_TYPE = 'store_type'
 RECOVER_INFO_ID = 'recover_info_id'
 DERIVED_FROM = 'derived_from'
-INFERENCE_INFO_ID = 'inference_info_id'
-TRAIN_INFO_ID = 'train_info_id'
+HASH_INFO = 'hash_info'
 
 MODEL_INFO = 'model_info'
 
@@ -37,6 +36,8 @@ class ModelInfo(SchemaObj):
         # add optional fields if set
         if self.derived_from:
             dict_representation[DERIVED_FROM] = self.derived_from
+        if self.hash_info:
+            dict_representation[HASH_INFO] = self.hash_info.to_dict()
 
     def load_all_fields(self, file_pers_service: FilePersistenceService,
                         dict_pers_service: DictPersistenceService, restore_root: str,
