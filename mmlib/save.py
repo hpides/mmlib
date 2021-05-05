@@ -329,18 +329,16 @@ class WeightUpdateSaveService(BaselineSaveService):
         assert base_model_id, 'no base model given'
 
         with tempfile.TemporaryDirectory() as tmp_path:
-            base_model_info = self.recover_model(base_model_id)
+            weights_hash_info = _get_weights_info_hash(add_weights_hash_info, model_save_info)
 
             weights_update, update_type, independent = \
-                self._generate_weights_update(model_save_info, base_model_info, tmp_path)
+                self._generate_weights_update(model_save_info, base_model_id, weights_hash_info, tmp_path)
 
             recover_info = WeightsUpdateRecoverInfo(update=FileReference(path=weights_update), update_type=update_type,
                                                     independent=independent)
 
-            weights_hash_info = _get_weights_info_hash(add_weights_hash_info, model_save_info)
-
             model_info = ModelInfo(store_type=ModelStoreType.WEIGHT_UPDATES, recover_info=recover_info,
-                                   derived_from_id=base_model_id)
+                                   derived_from_id=base_model_id, weights_hash_info=weights_hash_info)
 
             model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
 
@@ -349,18 +347,37 @@ class WeightUpdateSaveService(BaselineSaveService):
     def _base_model_given(self, model_save_info):
         return model_save_info.base_model is not None
 
-    def _generate_weights_update(self, model_save_info, base_model_info, tmp_path):
-        base_model_weights = base_model_info.model.state_dict()
+    def _generate_weights_update(self, model_save_info, base_model_id, weights_hash_info, tmp_path):
+        base_model_info = ModelInfo.load(base_model_id, self._file_pers_service, self._dict_pers_service, tmp_path)
         current_model_weights = model_save_info.model.state_dict()
 
-        weights_patch = self._state_dict_patch(base_model_weights, current_model_weights)
-        if len(weights_patch.keys()) < len(base_model_weights.keys()):
-            # if the patch actually saves something
-            model_weights = super()._pickle_state_dict(weights_patch, tmp_path)
-            return model_weights, WEIGHTS_PATCH, False
+        if base_model_info.weights_hash_info:
+            diff_indices = weights_hash_info.get_diff_indices(base_model_info.weights_hash_info)
+            # all keys that do to differ can be deleted -> we only need the diff of the weights
+            del_keys = []
+            for i, key in enumerate(current_model_weights.keys()):
+                if i not in diff_indices:
+                    del_keys.append(key)
+
+            # delete all weights that have not changed compared to the base model
+            for key in del_keys:
+                del current_model_weights[key]
+
+            return current_model_weights, WEIGHTS_PATCH, False
         else:
-            model_weights = self._pickle_weights(current_model_weights, tmp_path)
-            return model_weights, PICKLED_MODEL_WEIGHTS, True
+            # if there is no weights hash info given we have to fall back and load the base models
+            base_model_info = self.recover_model(base_model_id)
+            base_model_weights = base_model_info.model.state_dict()
+            current_model_weights = model_save_info.model.state_dict()
+
+            weights_patch = self._state_dict_patch(base_model_weights, current_model_weights)
+            if len(weights_patch.keys()) < len(base_model_weights.keys()):
+                # if the patch actually saves something
+                model_weights = super()._pickle_state_dict(weights_patch, tmp_path)
+                return model_weights, WEIGHTS_PATCH, False
+            else:
+                model_weights = self._pickle_weights(current_model_weights, tmp_path)
+                return model_weights, PICKLED_MODEL_WEIGHTS, True
 
     def _state_dict_patch(self, base_model_weights, current_model_weights):
         assert base_model_weights.keys() == current_model_weights.keys(), 'given state dicts are not compatible'
