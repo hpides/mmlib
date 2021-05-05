@@ -12,7 +12,7 @@ from mmlib.save_info import ModelSaveInfo, ProvModelSaveInfo
 from mmlib.track_env import compare_env_to_current
 from schema.dataset import Dataset
 from schema.file_reference import FileReference
-from schema.model_info import ModelInfo, MODEL_INFO
+from schema.model_info import ModelInfo, MODEL_INFO, WEIGHTS_HASH_INFO
 from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo, WeightsUpdateRecoverInfo
 from schema.restorable_object import RestoredModelInfo
 from schema.store_type import ModelStoreType
@@ -462,8 +462,10 @@ class ProvenanceSaveService(BaselineSaveService):
 
         return model_info_id
 
-    def add_weights_hash_info(self, model_id:str, model:torch.nn.Module):
-        _get_weights_hash_info()
+    def add_weights_hash_info(self, model_id: str, model: torch.nn.Module):
+        weights_hash_info = WeightDictMerkleTree(model.state_dict())
+        # Note would be nicer to cover this through ModelInfo
+        self._dict_pers_service.add_field(model_id, WEIGHTS_HASH_INFO, weights_hash_info)
 
     def _build_prov_model_info(self, model_save_info):
         tw_class_name = model_save_info.train_info.train_wrapper_class_name
