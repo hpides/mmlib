@@ -172,7 +172,7 @@ class BaselineSaveService(AbstractSaveService):
                                                 model_code=FileReference(path=model_save_info.model_code),
                                                 model_class_name=model_save_info.model_class_name)
 
-            weights_hash_info = _get_weights_info_hash(add_weights_hash_info, model_save_info)
+            weights_hash_info = _get_weights_hash_info(add_weights_hash_info, model_save_info)
 
             model_info = ModelInfo(store_type=ModelStoreType.FULL_MODEL, recover_info=recover_info,
                                    derived_from_id=base_model, weights_hash_info=weights_hash_info)
@@ -329,7 +329,7 @@ class WeightUpdateSaveService(BaselineSaveService):
         assert base_model_id, 'no base model given'
 
         with tempfile.TemporaryDirectory() as tmp_path:
-            weights_hash_info = _get_weights_info_hash(add_weights_hash_info, model_save_info)
+            weights_hash_info = _get_weights_hash_info(add_weights_hash_info, model_save_info)
 
             weights_update, update_type, independent = \
                 self._generate_weights_update(model_save_info, base_model_id, weights_hash_info, tmp_path)
@@ -462,6 +462,9 @@ class ProvenanceSaveService(BaselineSaveService):
 
         return model_info_id
 
+    def add_weights_hash_info(self, model_id:str, model:torch.nn.Module):
+        _get_weights_hash_info()
+
     def _build_prov_model_info(self, model_save_info):
         tw_class_name = model_save_info.train_info.train_wrapper_class_name
         tw_code = FileReference(path=model_save_info.train_info.train_wrapper_code)
@@ -504,7 +507,7 @@ class ProvenanceSaveService(BaselineSaveService):
         assert envs_match, 'The current environment and the environment that was used to '
 
 
-def _get_weights_info_hash(add_weights_hash_info, model_save_info):
+def _get_weights_hash_info(add_weights_hash_info, model_save_info):
     weights_hash_info = None
     if add_weights_hash_info:
         assert model_save_info.model, "to compute a weights info hash the a model has to be given"
