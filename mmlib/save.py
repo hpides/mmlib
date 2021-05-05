@@ -43,14 +43,12 @@ class AbstractSaveService(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def recover_model(self, model_id: str, execute_checks: bool = False,
-                      recover_val_service: RecoverValidationService = None) -> RestoredModelInfo:
+    def recover_model(self, model_id: str, execute_checks: bool = False) -> RestoredModelInfo:
         """
         Recovers a the model and metadata identified by the given model id.
         :param model_id: The id to identify the model with.
         :param execute_checks: Indicates if additional checks should be performed to ensure a correct recovery of
         the model. If set to True setting it to True recover_val_service must be given - might decrease the performance.
-        :param recover_val_service: An instance of RecoverValidationService.
         :return: The recovered model and metadata bundled in an object of type ModelRestoreInfo.
         """
         raise NotImplementedError
@@ -413,8 +411,7 @@ class ProvenanceSaveService(BaselineSaveService):
         else:
             return self._save_provenance_model(model_save_info)
 
-    def recover_model(self, model_id: str, execute_checks: bool = False,
-                      recover_val_service: RecoverValidationService = None) -> RestoredModelInfo:
+    def recover_model(self, model_id: str, execute_checks: bool = False) -> RestoredModelInfo:
 
         base_model_id = self._get_base_model(model_id)
         if base_model_id is None:
