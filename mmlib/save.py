@@ -151,7 +151,7 @@ class BaselineSaveService(AbstractSaveService):
         # the class name of the model
         assert model_save_info.model_class_name, 'model class name is not set'
 
-    def _save_full_model(self, model_save_info: ModelSaveInfo, add_weights_hash_info=False) -> str:
+    def _save_full_model(self, model_save_info: ModelSaveInfo, add_weights_hash_info=True) -> str:
 
         with tempfile.TemporaryDirectory() as tmp_path:
             weights_path = self._pickle_weights(model_save_info.model, tmp_path)
@@ -324,7 +324,7 @@ class WeightUpdateSaveService(BaselineSaveService):
 
         return base_model
 
-    def _save_updated_model(self, model_save_info):
+    def _save_updated_model(self, model_save_info, add_weights_hash_info=True):
         base_model_id = model_save_info.base_model
         assert base_model_id, 'no base model given'
 
@@ -336,6 +336,8 @@ class WeightUpdateSaveService(BaselineSaveService):
 
             recover_info = WeightsUpdateRecoverInfo(update=FileReference(path=weights_update), update_type=update_type,
                                                     independent=independent)
+
+            weights_hash_info = _get_weights_info_hash(add_weights_hash_info, model_save_info)
 
             model_info = ModelInfo(store_type=ModelStoreType.WEIGHT_UPDATES, recover_info=recover_info,
                                    derived_from_id=base_model_id)
