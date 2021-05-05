@@ -8,7 +8,7 @@ from util.weight_dict_merkle_tree import WeightDictMerkleTree
 STORE_TYPE = 'store_type'
 RECOVER_INFO_ID = 'recover_info_id'
 DERIVED_FROM = 'derived_from'
-HASH_INFO = 'hash_info'
+WEIGHTS_HASH_INFO = 'weights_hash_info'
 
 MODEL_INFO = 'model_info'
 
@@ -37,7 +37,7 @@ class ModelInfo(SchemaObj):
         if self.derived_from:
             dict_representation[DERIVED_FROM] = self.derived_from
         if self.weights_hash_info:
-            dict_representation[HASH_INFO] = self.weights_hash_info.to_dict()
+            dict_representation[WEIGHTS_HASH_INFO] = self.weights_hash_info.to_dict()
 
     def load_all_fields(self, file_pers_service: FilePersistenceService,
                         dict_pers_service: DictPersistenceService, restore_root: str,
@@ -56,6 +56,9 @@ class ModelInfo(SchemaObj):
         # optional fields
         if not self.derived_from:
             self.derived_from = _recover_derived_from(restored_dict)
+
+        if not self.weights_hash_info:
+            self.weights_hash_info = _recover_weights_hash_info(restored_dict)
 
     def size_in_bytes(self, file_pers_service: FilePersistenceService,
                       dict_pers_service: DictPersistenceService) -> int:
@@ -113,3 +116,9 @@ def _recover_recover_info(restored_dict, dict_pers_service, file_pers_service, r
 
 def _recover_derived_from(restored_dict):
     return restored_dict[DERIVED_FROM] if DERIVED_FROM in restored_dict else None
+
+
+def _recover_weights_hash_info(restored_dict):
+    hash_info_dict = restored_dict[WEIGHTS_HASH_INFO]
+    if hash_info_dict:
+        return WeightDictMerkleTree.from_dict(hash_info_dict)
