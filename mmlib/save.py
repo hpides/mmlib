@@ -18,6 +18,7 @@ from schema.restorable_object import RestoredModelInfo
 from schema.store_type import ModelStoreType
 from schema.train_info import TrainInfo
 from util.init_from_file import create_object, create_type
+from util.weight_dict_merkle_tree import WeightDictMerkleTree
 
 PICKLED_MODEL_WEIGHTS = 'pickled_model_weights'
 
@@ -172,9 +173,12 @@ class BaselineSaveService(AbstractSaveService):
             recover_info = FullModelRecoverInfo(weights_file=FileReference(path=weights_path),
                                                 model_code=FileReference(path=model_save_info.model_code),
                                                 model_class_name=model_save_info.model_class_name)
+            weights_hash_info = None
+            if add_weights_hash_info:
+                weights_hash_info = WeightDictMerkleTree(model_save_info.model.state_dict())
 
             model_info = ModelInfo(store_type=ModelStoreType.FULL_MODEL, recover_info=recover_info,
-                                   derived_from_id=base_model)
+                                   derived_from_id=base_model, weights_hash_info=weights_hash_info)
 
             model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
 
