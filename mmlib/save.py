@@ -454,7 +454,8 @@ class ProvenanceSaveService(BaselineSaveService):
     def model_save_size(self, model_id: str) -> int:
         pass
 
-    def _save_provenance_model(self, model_save_info):
+    def _save_provenance_model(self, model_save_info, add_weights_hash_info=False):
+
         model_info = self._build_prov_model_info(model_save_info)
 
         model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
