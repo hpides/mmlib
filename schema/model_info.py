@@ -16,12 +16,12 @@ MODEL_INFO = 'model_info'
 class ModelInfo(SchemaObj):
 
     def __init__(self, store_type: ModelStoreType = None, recover_info: AbstractRecoverInfo = None,
-                 store_id: str = None, derived_from_id: str = None, hash_info: WeightDictMerkleTree = None):
+                 store_id: str = None, derived_from_id: str = None, weights_hash_info: WeightDictMerkleTree = None):
         super().__init__(store_id)
         self.store_type = store_type
         self.recover_info = recover_info
         self.derived_from = derived_from_id
-        self.hash_info = hash_info
+        self.weights_hash_info = weights_hash_info
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
 
@@ -36,8 +36,8 @@ class ModelInfo(SchemaObj):
         # add optional fields if set
         if self.derived_from:
             dict_representation[DERIVED_FROM] = self.derived_from
-        if self.hash_info:
-            dict_representation[HASH_INFO] = self.hash_info.to_dict()
+        if self.weights_hash_info:
+            dict_representation[HASH_INFO] = self.weights_hash_info.to_dict()
 
     def load_all_fields(self, file_pers_service: FilePersistenceService,
                         dict_pers_service: DictPersistenceService, restore_root: str,
