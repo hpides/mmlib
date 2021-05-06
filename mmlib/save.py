@@ -106,8 +106,7 @@ class BaselineSaveService(AbstractSaveService):
 
         return model_id
 
-    def recover_model(self, model_id: str, execute_checks: bool = False,
-                      recover_val_service: RecoverValidationService = None) -> RestoredModelInfo:
+    def recover_model(self, model_id: str, execute_checks: bool = False) -> RestoredModelInfo:
         # in this baseline approach we always store the full model (pickled weights + code)
 
         with tempfile.TemporaryDirectory() as tmp_path:
@@ -273,8 +272,7 @@ class WeightUpdateSaveService(BaselineSaveService):
             # if there is a base model, we can store the update and for a restore refer to the base model
             return self._save_updated_model(model_save_info)
 
-    def recover_model(self, model_id: str, execute_checks: bool = False,
-                      recover_val_service: RecoverValidationService = None) -> RestoredModelInfo:
+    def recover_model(self, model_id: str, execute_checks: bool = False) -> RestoredModelInfo:
 
         store_type = self._get_store_type(model_id)
 
