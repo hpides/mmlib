@@ -139,7 +139,7 @@ class BaselineSaveService(AbstractSaveService):
 
             # models are recovered in a tmp directory and only the model object is returned
             # this is why the inferred model code path might not exists anymore, we have to check this
-            # and if it is not existing anymore, we have to restore teh code for the base model
+            # and if it is not existing anymore, we have to restore the code for the base model
 
             if not os.path.isfile(model_save_info.model_code):
                 assert base_model, 'code not given and no base model'
