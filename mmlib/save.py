@@ -69,20 +69,6 @@ class AbstractSaveService(metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-    @abc.abstractmethod
-    def save_validation_info(self, model: torch.nn.Module, model_id: str, dummy_input_shape: [int],
-                             recover_val_service: RecoverValidationService):
-        """
-        Saves validation info for the given model. This info can be used to validate the model when it is restored.
-        To activate the check when restoring a model set the parameter execute_checks = True
-        :param model: The model to save the validation info for.
-        :param model_id: The id of the model to save the recover information for.
-        :param dummy_input_shape: The input shape to generate a dummy output for the model.
-        :param recover_val_service: An instance of RecoverValidationService.
-        fields are 'model' and 'dummy_input_shape'.
-        """
-        raise NotImplementedError
-
 
 class BaselineSaveService(AbstractSaveService):
     """A Service that offers functionality to store PyTorch models by making use of a persistence service.
@@ -135,9 +121,6 @@ class BaselineSaveService(AbstractSaveService):
 
     def all_model_ids(self) -> [str]:
         return self._dict_pers_service.all_ids_for_type(MODEL_INFO)
-
-    def save_validation_info(self, model, model_id, dummy_input_shape, recover_val_service):
-        recover_val_service.save_recover_val_info(model, model_id, dummy_input_shape)
 
     def _check_consistency(self, model_save_info):
         # when storing a full model we need the following information
@@ -248,6 +231,7 @@ class BaselineSaveService(AbstractSaveService):
             valid_recovery = recover_val_service.check_recover_val(model_id, model)
             assert valid_recovery, 'The current given model differs from the model that was stored'
         except IndexError:
+            # TODO adjust warning
             warnings.warn('no recover validation info found'
                           ' - check that save_validation_info=True when saving model')
 

@@ -4,7 +4,6 @@ import unittest
 
 from mmlib.equal import model_equal
 from mmlib.persistence import FileSystemPersistenceService, MongoDictPersistenceService
-from mmlib.recover_validation import RecoverValidationService
 from mmlib.save import BaselineSaveService
 from schema.save_info_builder import ModelSaveInfoBuilder
 from tests.example_files.mynets.googlenet import googlenet
@@ -16,8 +15,6 @@ from util.mongo import MongoService
 FILE_PATH = os.path.dirname(os.path.realpath(__file__))
 NETWORK_CODE_TEMPLATE = os.path.join(FILE_PATH, '../example_files/mynets/{}.py')
 MONGO_CONTAINER_NAME = 'mongo-test'
-
-DUMMY_INPUT_SHAPE = [10, 3, 300, 400]
 
 GOOGLENET = 'googlenet'
 MOBILENET = 'mobilenet'
@@ -40,7 +37,6 @@ class TestBaselineSaveService(unittest.TestCase):
         os.mkdir(self.abs_tmp_path)
         self.file_pers_service = FileSystemPersistenceService(self.tmp_path)
         self.dict_pers_service = MongoDictPersistenceService()
-        self.recover_val_service = RecoverValidationService(self.dict_pers_service)
         self.init_save_service(self.dict_pers_service, self.file_pers_service)
 
     def init_save_service(self, dict_pers_service, file_pers_service):
@@ -77,17 +73,17 @@ class TestBaselineSaveService(unittest.TestCase):
 
     def test_save_restore_mobilenet_val_info(self):
         model = mobilenet_v2(pretrained=True)
-        self._test_save_restore_model_and_validation_info(model, DUMMY_INPUT_SHAPE)
+        self._test_save_restore_model_and_validation_info(model)
 
     def test_save_restore_resnet18_val_info(self):
         model = resnet18(pretrained=True)
-        self._test_save_restore_model_and_validation_info(model, DUMMY_INPUT_SHAPE)
+        self._test_save_restore_model_and_validation_info(model)
 
     def test_save_restore_model_googlenet_val_info(self):
         model = googlenet(aux_logits=True)
-        self._test_save_restore_model_and_validation_info(model, DUMMY_INPUT_SHAPE)
+        self._test_save_restore_model_and_validation_info(model)
 
-    def _test_save_restore_model_and_validation_info(self, model, dummy_input_shape):
+    def _test_save_restore_model_and_validation_info(self, model):
         save_info_builder = ModelSaveInfoBuilder()
         save_info_builder.add_model_info(model=model)
         save_info = save_info_builder.build()
@@ -95,9 +91,7 @@ class TestBaselineSaveService(unittest.TestCase):
         model_id = self.save_service.save_model(save_info)
 
         # save additionally validation info
-        self.save_service.save_validation_info(model, model_id, dummy_input_shape, self.recover_val_service)
-        restored_model_info = self.save_service.recover_model(model_id, execute_checks=True,
-                                                              recover_val_service=self.recover_val_service)
+        restored_model_info = self.save_service.recover_model(model_id, execute_checks=True)
         self.assertTrue(model_equal(model, restored_model_info.model, imagenet_input))
 
     def test_save_restore_derived_models(self):
