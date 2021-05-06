@@ -23,6 +23,7 @@ class WeightDictMerkleTreeNode:
 class WeightDictMerkleTree:
 
     def __init__(self, weight_dict: Dict[str, Tensor]):
+        self.root = self._build_tree(weight_dict)
         pass
 
     def to_dict(self) -> dict:
@@ -39,3 +40,23 @@ class WeightDictMerkleTree:
     def __hash__(self):
         # here we can just return the root hash
         return hash(self)
+
+    def _build_tree(self, weight_dict):
+
+        # unlike a normal tree for a merkel tree we start with the leaves
+        leaves = []
+        for key, value in weight_dict.items():
+            weight_hash = tensor_hash(value)
+            leaves.append(WeightDictMerkleTreeNode(weight_hash))
+
+        # after having all leave nodes we add layer by layer on top until we have only one single node left
+        # the single node left is then the root node
+        current_layer = leaves
+        while len(current_layer) > 1:
+            current_layer = self._build_next_layer(current_layer)
+
+        assert len(current_layer) == 1
+        return current_layer[0]
+
+    def _build_next_layer(self, current_layer):
+        pass
