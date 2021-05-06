@@ -48,7 +48,7 @@ class AbstractSaveService(metaclass=abc.ABCMeta):
         Recovers a the model and metadata identified by the given model id.
         :param model_id: The id to identify the model with.
         :param execute_checks: Indicates if additional checks should be performed to ensure a correct recovery of
-        the model. If set to True setting it to True recover_val_service must be given - might decrease the performance.
+        the model.
         :return: The recovered model and metadata bundled in an object of type ModelRestoreInfo.
         """
         raise NotImplementedError
@@ -109,7 +109,7 @@ class BaselineSaveService(AbstractSaveService):
             restored_model_info = RestoredModelInfo(model=model)
 
             if execute_checks:
-                self._execute_checks(model, model_info, recover_val_service)
+                self._execute_checks(model, model_info)
 
         return restored_model_info
 
@@ -223,17 +223,15 @@ class BaselineSaveService(AbstractSaveService):
             model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path)
             return model_info.derived_from
 
-    def _execute_checks(self, model: torch.nn.Module, model_info: ModelInfo,
-                        recover_val_service: RecoverValidationService):
-        assert recover_val_service, 'if execute_checks is True recover_val_service must be given'
-        model_id = model_info.store_id
-        try:
-            valid_recovery = recover_val_service.check_recover_val(model_id, model)
-            assert valid_recovery, 'The current given model differs from the model that was stored'
-        except IndexError:
-            # TODO adjust warning
-            warnings.warn('no recover validation info found'
-                          ' - check that save_validation_info=True when saving model')
+    def _execute_checks(self, model: torch.nn.Module, model_info: ModelInfo):
+        if not model_info.weights_hash_info:
+            warnings.warn('no weights_hash_info available for this models')
+
+        restored_merkle_tree: WeightDictMerkleTree = model_info.weights_hash_info
+        model_merkle_tree = WeightDictMerkleTree(model.state_dict())
+
+        # NOTE maybe replace assert by throwing exception
+        assert restored_merkle_tree == model_merkle_tree, 'The recovered model differs from the model that was stored'
 
 
 class WeightUpdateSaveService(BaselineSaveService):
@@ -263,9 +261,9 @@ class WeightUpdateSaveService(BaselineSaveService):
         if store_type == ModelStoreType.FULL_MODEL:
             return super().recover_model(model_id)
         else:
-            return self._recover_from_weight_update(model_id, execute_checks, recover_val_service)
+            return self._recover_from_weight_update(model_id, execute_checks)
 
-    def _recover_from_weight_update(self, model_id, execute_checks, recover_val_service):
+    def _recover_from_weight_update(self, model_id, execute_checks):
         with tempfile.TemporaryDirectory() as tmp_path:
             model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path,
                                         load_recursive=True, load_files=True)
@@ -280,7 +278,7 @@ class WeightUpdateSaveService(BaselineSaveService):
             restored_model_info = RestoredModelInfo(model=recovered_model)
 
             if execute_checks:
-                self._execute_checks(recovered_model, model_info, recover_val_service)
+                self._execute_checks(recovered_model, model_info)
 
         return restored_model_info
 
@@ -426,7 +424,7 @@ class ProvenanceSaveService(BaselineSaveService):
                 restored_model_info = RestoredModelInfo(model=restored_model)
 
                 if execute_checks:
-                    self._execute_checks(restored_model, model_info, recover_val_service)
+                    self._execute_checks(restored_model, model_info)
 
                 return restored_model_info
 
@@ -478,9 +476,8 @@ class ProvenanceSaveService(BaselineSaveService):
         else:
             raise NotImplementedError
 
-    def _execute_checks(self, model: torch.nn.Module, model_info: ModelInfo,
-                        recover_val_service: RecoverValidationService):
-        super()._execute_checks(model, model_info, recover_val_service)
+    def _execute_checks(self, model: torch.nn.Module, model_info: ModelInfo):
+        super()._execute_checks(model, model_info)
 
         # check environment
         recover_info: ProvenanceRecoverInfo = model_info.recover_info
