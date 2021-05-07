@@ -1,52 +1,66 @@
 import math
 from typing import Dict
 
-import torch
-from torch import Tensor, tensor
+from torch import Tensor
 
 from util.hash import tensor_hash, hash_string
 
 HASH_VALUE = 'hash_value'
 LEFT = 'left'
 RIGHT = 'right'
+LAYER_KEY = 'layer_key'
+LAYER_WEIGHT_HASH = 'layer_weight_hash'
 
 
 class WeightDictMerkleTreeNode:
-    def __init__(self, value, left=None, right=None):
-        self._value = value
+    def __init__(self, hash_value=None, left=None, right=None, layer_key=None, layer_weights_hash=None):
+        if hash_value is None:
+            assert layer_key and layer_weights_hash
+            hash_value = hash_string(layer_weights_hash + layer_key)
+        self.hash_value = hash_value
         self.left = left
         self.right = right
-
-    @property
-    def hash_value(self):
-        if isinstance(self._value, str):
-            return self._value
-        elif isinstance(self._value, tensor):
-            return tensor_hash(self._value)
+        self.layer_key = layer_key
+        self.layer_weights_hash = layer_weights_hash
 
     def to_dict(self):
         result = {HASH_VALUE: self.hash_value}
+        if self.layer_key:
+            result[LAYER_KEY] = self.layer_key
+            result[LAYER_WEIGHT_HASH] = self.layer_weights_hash
+            assert self.left is None and self.right is None, 'only a leave has a layer key'
+            assert self.layer_weights_hash is not None, 'if layer key is given weight hash also must be givens'
         if self.left:
-            result[LEFT] = self.hash_value
+            result[LEFT] = self.left.to_dict()
         if self.right:
-            result[RIGHT] = self.hash_value
+            result[RIGHT] = self.right.to_dict()
 
         return result
 
+    def check_integrity(self):
+        if self.left and self.right:
+            return self.left.check_integrity() and \
+                   self.right.check_integrity() and \
+                   self.hash_value == hash_string(self.left.hash_value + self.right.hash_value)
+        else:
+            assert self.left is None and self.right is None
+            return self.hash_value == hash_string(self.layer_weights_hash + self.layer_key)
+
 
 def to_node(hash_info_dict):
-    if HASH_VALUE not in hash_info_dict:
-        return None
-    else:
-        value = hash_info_dict[HASH_VALUE]
-        left = None
-        right = None
-        if LEFT in hash_info_dict:
-            left = to_node(hash_info_dict[LEFT])
-        if RIGHT in hash_info_dict:
-            right = to_node(hash_info_dict[RIGHT])
+    value = hash_info_dict[HASH_VALUE]
+    layer_key = hash_info_dict[LAYER_KEY] if LAYER_KEY in hash_info_dict else None
+    layer_weight_hash = hash_info_dict[LAYER_WEIGHT_HASH] if LAYER_WEIGHT_HASH in hash_info_dict else None
+    left = None
+    right = None
 
-        return WeightDictMerkleTreeNode(value=value, left=left, right=right)
+    if LEFT in hash_info_dict:
+        left = to_node(hash_info_dict[LEFT])
+    if RIGHT in hash_info_dict:
+        right = to_node(hash_info_dict[RIGHT])
+
+    return WeightDictMerkleTreeNode(
+        hash_value=value, left=left, right=right, layer_key=layer_key, layer_weights_hash=layer_weight_hash)
 
 
 class WeightDictMerkleTree:
@@ -63,6 +77,7 @@ class WeightDictMerkleTree:
     def from_dict(cls, hash_info_dict):
         tree = WeightDictMerkleTree()
         tree.root = to_node(hash_info_dict)
+        assert tree.root.check_integrity()  # TODO maybe throw parsing error
         return tree
 
     def __eq__(self, other):
@@ -77,8 +92,7 @@ class WeightDictMerkleTree:
         # unlike a normal tree for a merkel tree we start with the leaves
         leaves = []
         for key, value in weight_dict.items():
-            weight_hash = tensor_hash(value)
-            leaves.append(WeightDictMerkleTreeNode(weight_hash))
+            leaves.append(WeightDictMerkleTreeNode(layer_key=key, layer_weights_hash=tensor_hash(value)))
 
         # as soon as we build all leave nodes we have to build the upper layers
         # to build a balance tree we start taking 2 nodes from the beginning of the leave nodes an build a new node
@@ -89,11 +103,11 @@ class WeightDictMerkleTree:
             left = leaves.pop(0)
             right = leaves.pop(0)
             value = hash_string(left.hash_value + right.hash_value)
-            node = WeightDictMerkleTreeNode(value=value, left=left, right=right)
+            node = WeightDictMerkleTreeNode(hash_value=value, left=left, right=right)
             current_layer.append(node)
             num_leaves -= 1
 
-        current_layer = leaves + current_layer
+        current_layer += leaves
         # now we know that the current layer has a number fo elements equal to 2^x
         # we combine nodes as long as in the current layer there is only one node -> the root
         while len(current_layer) > 1:
@@ -110,7 +124,7 @@ class WeightDictMerkleTree:
             left = current_layer[i]
             right = current_layer[i + 1]
             value = hash_string(left.hash_value + right.hash_value)
-            node = WeightDictMerkleTreeNode(value=value, left=left, right=right)
+            node = WeightDictMerkleTreeNode(hash_value=value, left=left, right=right)
             new_layer.append(node)
 
         return new_layer

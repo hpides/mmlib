@@ -1,28 +1,57 @@
 import unittest
 
+import torch
 from torchvision.models import mobilenet_v2
 
-from util.weight_dict_merkle_tree import WeightDictMerkleTree
+from util.weight_dict_merkle_tree import WeightDictMerkleTree, LEFT, LAYER_KEY
 
 
 class TestWeightDictMerkleTree(unittest.TestCase):
 
-    def test_mobile_net_to_dict_from_dict(self):
+    def setUp(self) -> None:
+        torch.manual_seed(42)
+        self.dummy_dict = {
+            'layer1': torch.rand([10, 10]),
+            'layer2': torch.rand([10, 10]),
+            'layer3': torch.rand([10, 10]),
+            'layer4': torch.rand([10, 10]),
+            'layer5': torch.rand([10, 10])
+        }
+
+    def test_dummy_to_dict_to_tree(self):
+        self._test_to_dict_to_tree(self.dummy_dict)
+
+    def test_mobilenet_to_dict_to_tree(self):
         mobilenet = mobilenet_v2(pretrained=True)
         state_dict = mobilenet.state_dict()
+        self._test_to_dict_to_tree(state_dict)
 
-        tree = WeightDictMerkleTree(state_dict)
-        tree_to_dict = tree.to_dict()
-        new_tree = WeightDictMerkleTree.from_dict(tree_to_dict)
+    def _test_to_dict_to_tree(self, _dict):
+        tree1 = WeightDictMerkleTree(_dict)
+        dict1 = tree1.to_dict()
 
-        self.assertEqual(tree, new_tree)
+        tree2 = WeightDictMerkleTree.from_dict(dict1)
+        dict2 = tree2.to_dict()
 
-    def test_two_dict_same_tree(self):
+        tree3 = WeightDictMerkleTree.from_dict(dict2)
+        dict3 = tree3.to_dict()
+
+        self.assertEqual(tree1, tree2)
+        self.assertEqual(tree2, tree3)
+        self.assertEqual(dict1, dict2)
+        self.assertEqual(dict2, dict3)
+
+    def test_dummy_two_dict_same_tree(self):
+        self._test_two_dict_same_tree(self.dummy_dict)
+
+    def test_mobilenet_two_dict_same_tree(self):
         mobilenet = mobilenet_v2(pretrained=True)
         state_dict = mobilenet.state_dict()
+        self._test_two_dict_same_tree(state_dict)
 
-        tree1 = WeightDictMerkleTree(state_dict)
-        tree2 = WeightDictMerkleTree(state_dict)
+    def _test_two_dict_same_tree(self, _dict):
+        tree1 = WeightDictMerkleTree(_dict)
+        tree2 = WeightDictMerkleTree(_dict)
         self.assertEqual(tree1, tree2)
 
     def test_diff_dict_diff_tree(self):
@@ -37,9 +66,24 @@ class TestWeightDictMerkleTree(unittest.TestCase):
 
         self.assertNotEqual(tree1, tree2)
 
+    def test_diff_last_layer_name(self):
+        state_dict = self.dummy_dict
 
+        tree1 = WeightDictMerkleTree(state_dict)
 
+        last_key = list(state_dict.keys())[-1]
+        tmp = state_dict[last_key]
+        del state_dict[last_key]
+        state_dict[last_key + 'x'] = tmp
+        tree2 = WeightDictMerkleTree(state_dict)
 
+        self.assertNotEqual(tree1, tree2)
 
+    def test_not_integer_dict(self):
+        tree1 = WeightDictMerkleTree(self.dummy_dict)
+        dict1 = tree1.to_dict()
 
+        dict1[LEFT][LEFT][LEFT][LAYER_KEY] += 'x'
+        with self.assertRaises(Exception):
+            WeightDictMerkleTree.from_dict(dict1)
 
