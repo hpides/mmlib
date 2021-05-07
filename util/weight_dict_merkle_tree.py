@@ -34,9 +34,24 @@ class WeightDictMerkleTreeNode:
         return result
 
 
+def to_node(hash_info_dict):
+    if HASH_VALUE not in hash_info_dict:
+        return None
+    else:
+        value = hash_info_dict[HASH_VALUE]
+        left = None
+        right = None
+        if LEFT in hash_info_dict:
+            left = to_node(hash_info_dict[LEFT])
+        if RIGHT in hash_info_dict:
+            right = to_node(hash_info_dict[RIGHT])
+
+        return WeightDictMerkleTreeNode(value=value, left=left, right=right)
+
+
 class WeightDictMerkleTree:
 
-    def __init__(self, weight_dict: Dict[str, Tensor]):
+    def __init__(self, weight_dict: Dict[str, Tensor] = None):
         self.root = self._build_tree(weight_dict)
         pass
 
@@ -45,7 +60,9 @@ class WeightDictMerkleTree:
 
     @classmethod
     def from_dict(cls, hash_info_dict):
-        pass
+        tree = WeightDictMerkleTree()
+        tree.root = to_node(hash_info_dict)
+        return tree
 
     def __eq__(self, other):
         return self.root.hash_value == other.root.hash_value
