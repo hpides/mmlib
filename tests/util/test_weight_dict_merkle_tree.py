@@ -17,5 +17,29 @@ class TestWeightDictMerkleTree(unittest.TestCase):
 
         self.assertEqual(tree, new_tree)
 
+    def test_two_dict_same_tree(self):
+        mobilenet = mobilenet_v2(pretrained=True)
+        state_dict = mobilenet.state_dict()
+
+        tree1 = WeightDictMerkleTree(state_dict)
+        tree2 = WeightDictMerkleTree(state_dict)
+        self.assertEqual(tree1, tree2)
+
+    def test_diff_dict_diff_tree(self):
+        mobilenet = mobilenet_v2(pretrained=True)
+        state_dict = mobilenet.state_dict()
+
+        tree1 = WeightDictMerkleTree(state_dict)
+
+        last_key = list(state_dict.keys())[-1]
+        del state_dict[last_key]
+        tree2 = WeightDictMerkleTree(state_dict)
+
+        self.assertNotEqual(tree1, tree2)
+
+
+
+
+
 
 
