@@ -37,19 +37,18 @@ class WeightDictMerkleTreeNode:
 class WeightDictMerkleTree:
 
     def __init__(self, weight_dict: Dict[str, Tensor]):
-        self._root = self._build_tree(weight_dict)
+        self.root = self._build_tree(weight_dict)
         pass
 
     def to_dict(self) -> dict:
-        return self._root.to_dict()
+        return self.root.to_dict()
 
     @classmethod
     def from_dict(cls, hash_info_dict):
         pass
 
     def __eq__(self, other):
-        # to implement this method we only have to compare the root hash
-        return False
+        return self.root.hash_value == other.root.hash_value
 
     def __hash__(self):
         # here we can just return the root hash
