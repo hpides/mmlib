@@ -2,7 +2,7 @@ import math
 from typing import Dict
 
 import torch
-from torch import Tensor
+from torch import Tensor, tensor
 
 from util.hash import tensor_hash, hash_string
 
@@ -19,9 +19,9 @@ class WeightDictMerkleTreeNode:
 
     @property
     def hash_value(self):
-        if isinstance(str, self._value):
+        if isinstance(self._value, str):
             return self._value
-        elif isinstance(torch.tensor, self._value):
+        elif isinstance(self._value, tensor):
             return tensor_hash(self._value)
 
     def to_dict(self):
@@ -52,8 +52,9 @@ def to_node(hash_info_dict):
 class WeightDictMerkleTree:
 
     def __init__(self, weight_dict: Dict[str, Tensor] = None):
-        self.root = self._build_tree(weight_dict)
-        pass
+        self.root = None
+        if weight_dict:
+            self.root = self._build_tree(weight_dict)
 
     def to_dict(self) -> dict:
         return self.root.to_dict()
@@ -92,9 +93,9 @@ class WeightDictMerkleTree:
             current_layer.append(node)
             num_leaves -= 1
 
+        current_layer = leaves + current_layer
         # now we know that the current layer has a number fo elements equal to 2^x
         # we combine nodes as long as in the current layer there is only one node -> the root
-        current_layer = leaves
         while len(current_layer) > 1:
             current_layer = self._build_next_layer(current_layer)
 
@@ -108,7 +109,7 @@ class WeightDictMerkleTree:
         for i in range(0, len(current_layer), 2):
             left = current_layer[i]
             right = current_layer[i + 1]
-            value = hash_string(left + right)
+            value = hash_string(left.hash_value + right.hash_value)
             node = WeightDictMerkleTreeNode(value=value, left=left, right=right)
             new_layer.append(node)
 
