@@ -6,6 +6,10 @@ from torch import Tensor
 
 from util.hash import tensor_hash, hash_string
 
+HASH_VALUE = 'hash_value'
+LEFT = 'left'
+RIGHT = 'right'
+
 
 class WeightDictMerkleTreeNode:
     def __init__(self, value, left=None, right=None):
@@ -20,15 +24,24 @@ class WeightDictMerkleTreeNode:
         elif isinstance(torch.tensor, self._value):
             return tensor_hash(self._value)
 
+    def to_dict(self):
+        result = {HASH_VALUE: self.hash_value}
+        if self.left:
+            result[LEFT] = self.hash_value
+        if self.right:
+            result[RIGHT] = self.hash_value
+
+        return result
+
 
 class WeightDictMerkleTree:
 
     def __init__(self, weight_dict: Dict[str, Tensor]):
-        self.root = self._build_tree(weight_dict)
+        self._root = self._build_tree(weight_dict)
         pass
 
     def to_dict(self) -> dict:
-        pass
+        return self._root.to_dict()
 
     @classmethod
     def from_dict(cls, hash_info_dict):
