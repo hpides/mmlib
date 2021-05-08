@@ -116,6 +116,18 @@ def to_node(hash_info_dict):
         hash_value=value, left=left, right=right, layer_key=layer_key, layer_weights_hash=layer_weight_hash)
 
 
+def _index_by_layer_key(diff):
+    result = {}
+    for node in diff:
+        result[node.layer_key] = node
+    return result
+
+
+def _remove_keys(dictionary, keys):
+    for key in keys:
+        del dictionary[key]
+
+
 class WeightDictMerkleTree:
 
     def __init__(self, weight_dict: Dict[str, Tensor] = None):
@@ -183,4 +195,22 @@ class WeightDictMerkleTree:
         return new_layer
 
     def diff_layers(self, other):
-        return self.root.diff_layers(other.root)
+        diff_nodes = {}
+
+        diff = self.root.diff_layers(other.root)
+        this_diff = _index_by_layer_key(diff[THIS])
+        other_diff = _index_by_layer_key(diff[OTHER])
+
+        diff_weights = set(this_diff.keys()).intersection(set(other_diff.keys()))
+
+        _remove_keys(this_diff, diff_weights)
+        _remove_keys(other_diff, diff_weights)
+
+        diff_nodes[THIS] = set(this_diff.keys())
+        diff_nodes[OTHER] = set(other_diff.keys())
+
+
+
+        return diff_weights, diff_nodes
+
+
