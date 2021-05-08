@@ -42,7 +42,7 @@ class AbstractSaveService(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def recover_model(self, model_id: str, execute_checks: bool = False) -> RestoredModelInfo:
+    def recover_model(self, model_id: str, execute_checks: bool = True) -> RestoredModelInfo:
         """
         Recovers a the model and metadata identified by the given model id.
         :param model_id: The id to identify the model with.
@@ -91,7 +91,7 @@ class BaselineSaveService(AbstractSaveService):
 
         return model_id
 
-    def recover_model(self, model_id: str, execute_checks: bool = False) -> RestoredModelInfo:
+    def recover_model(self, model_id: str, execute_checks: bool = True) -> RestoredModelInfo:
         # in this baseline approach we always store the full model (pickled weights + code)
 
         with tempfile.TemporaryDirectory() as tmp_path:
@@ -227,7 +227,7 @@ class BaselineSaveService(AbstractSaveService):
             warnings.warn('no weights_hash_info available for this models')
 
         restored_merkle_tree: WeightDictMerkleTree = model_info.weights_hash_info
-        model_merkle_tree = WeightDictMerkleTree(model.state_dict())
+        model_merkle_tree = WeightDictMerkleTree.from_state_dict(model.state_dict())
 
         # NOTE maybe replace assert by throwing exception
         assert restored_merkle_tree == model_merkle_tree, 'The recovered model differs from the model that was stored'
@@ -253,7 +253,7 @@ class WeightUpdateSaveService(BaselineSaveService):
             # if there is a base model, we can store the update and for a restore refer to the base model
             return self._save_updated_model(model_save_info)
 
-    def recover_model(self, model_id: str, execute_checks: bool = False) -> RestoredModelInfo:
+    def recover_model(self, model_id: str, execute_checks: bool = True) -> RestoredModelInfo:
 
         store_type = self._get_store_type(model_id)
 
@@ -390,7 +390,7 @@ class ProvenanceSaveService(BaselineSaveService):
         else:
             return self._save_provenance_model(model_save_info)
 
-    def recover_model(self, model_id: str, execute_checks: bool = False) -> RestoredModelInfo:
+    def recover_model(self, model_id: str, execute_checks: bool = True) -> RestoredModelInfo:
 
         base_model_id = self._get_base_model(model_id)
         if base_model_id is None:
