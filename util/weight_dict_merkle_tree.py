@@ -5,6 +5,10 @@ from torch import Tensor
 
 from util.hash import tensor_hash, hash_string
 
+OTHER = 'other'
+
+THIS = 'this'
+
 HASH_VALUE = 'hash_value'
 LEFT = 'left'
 RIGHT = 'right'
@@ -22,6 +26,10 @@ class WeightDictMerkleTreeNode:
         self.right = right
         self.layer_key = layer_key
         self.layer_weights_hash = layer_weights_hash
+
+    @property
+    def is_leave(self):
+        return self.left is None and self.right is None
 
     def to_dict(self):
         result = {HASH_VALUE: self.hash_value}
@@ -45,6 +53,51 @@ class WeightDictMerkleTreeNode:
         else:
             assert self.left is None and self.right is None
             return self.hash_value == hash_string(self.layer_weights_hash + self.layer_key)
+
+    def __eq__(self, other):
+        return self.hash_value == other.hash_value
+
+    def __hash__(self):
+        return hash(self.hash_value)
+
+    def diff_layers(self, other):
+        diff_layers = {THIS: set(), OTHER: set()}
+        if self == other:
+            return diff_layers
+        elif other is None:
+            diff_layers[THIS] = diff_layers[THIS].union(self.get_all_leaves())
+            return diff_layers
+        else:
+            diff_layers = {THIS: set(), OTHER: set()}
+            if self.is_leave or other.is_leave:
+                this_leaves = self.get_all_leaves()
+                diff_layers[THIS] = diff_layers[THIS].union(this_leaves)
+                other_leaves = other.get_all_leaves()
+                diff_layers[OTHER] = diff_layers[OTHER].union(other_leaves)
+            else:
+                if self.left:
+                    left_diff = self.left.diff_layers(other.left)
+                    diff_layers[THIS] = diff_layers[THIS].union(left_diff[THIS])
+                    diff_layers[OTHER] = diff_layers[OTHER].union(left_diff[OTHER])
+                if self.right:
+                    right_diff = self.right.diff_layers(other.right)
+                    diff_layers[THIS] = diff_layers[THIS].union(right_diff[THIS])
+                    diff_layers[OTHER] = diff_layers[OTHER].union(right_diff[OTHER])
+
+            # TODO filter
+            return diff_layers
+
+    def get_all_leaves(self):
+        leaves = set()
+        if self.is_leave:
+            leaves.add(self)
+            return leaves
+        else:
+            if self.left:
+                leaves.union(self.left.get_all_leaves)
+            if self.right:
+                leaves.union(self.right.get_all_leaves)
+            return leaves
 
 
 def to_node(hash_info_dict):
@@ -128,3 +181,6 @@ class WeightDictMerkleTree:
             new_layer.append(node)
 
         return new_layer
+
+    def diff_layers(self, other):
+        return self.root.diff_layers(other.root)

@@ -3,7 +3,7 @@ import unittest
 import torch
 from torchvision.models import mobilenet_v2
 
-from util.weight_dict_merkle_tree import WeightDictMerkleTree, LEFT, LAYER_KEY
+from util.weight_dict_merkle_tree import WeightDictMerkleTree, LEFT, LAYER_KEY, THIS, OTHER
 
 
 class TestWeightDictMerkleTree(unittest.TestCase):
@@ -17,6 +17,14 @@ class TestWeightDictMerkleTree(unittest.TestCase):
             'layer4': torch.rand([10, 10]),
             'layer5': torch.rand([10, 10])
         }
+
+        self.dummy_dict2 = self.dummy_dict.copy()
+        self.dummy_dict2['layer4'] = torch.rand([10, 10])
+        self.dummy_dict2['layer5'] = torch.rand([10, 10])
+
+        self.dummy_dict3 = self.dummy_dict.copy()
+        self.dummy_dict3['layer6'] = torch.rand([10, 10])
+        self.dummy_dict3['layer7'] = torch.rand([10, 10])
 
     def test_dummy_to_dict_to_tree(self):
         self._test_to_dict_to_tree(self.dummy_dict)
@@ -86,4 +94,20 @@ class TestWeightDictMerkleTree(unittest.TestCase):
         dict1[LEFT][LEFT][LEFT][LAYER_KEY] += 'x'
         with self.assertRaises(Exception):
             WeightDictMerkleTree.from_dict(dict1)
+
+    def test_diff_same_trees(self):
+        tree1 = WeightDictMerkleTree(self.dummy_dict)
+        tree2 = WeightDictMerkleTree(self.dummy_dict)
+
+        diff = tree1.diff_layers(tree2)
+        expected = {THIS: set(), OTHER: set()}
+        self.assertEqual(diff, expected)
+
+    def test_diff_same_architecture_diff_weights(self):
+        tree1 = WeightDictMerkleTree(self.dummy_dict)
+        tree2 = WeightDictMerkleTree(self.dummy_dict2)
+
+        diff = tree1.diff_layers(tree2)
+        self.assertEqual(len(diff[THIS]), 2)
+        self.assertEqual(len(diff[OTHER]), 2)
 
