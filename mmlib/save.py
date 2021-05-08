@@ -17,7 +17,7 @@ from schema.restorable_object import RestoredModelInfo
 from schema.store_type import ModelStoreType
 from schema.train_info import TrainInfo
 from util.init_from_file import create_object, create_type
-from util.weight_dict_merkle_tree import WeightDictMerkleTree
+from util.weight_dict_merkle_tree import WeightDictMerkleTree, THIS, OTHER
 
 PICKLED_MODEL_WEIGHTS = 'pickled_model_weights'
 
@@ -329,18 +329,18 @@ class WeightUpdateSaveService(BaselineSaveService):
         current_model_weights = model_save_info.model.state_dict()
 
         if base_model_info.weights_hash_info:
-            diff_indices = weights_hash_info.get_diff_indices(base_model_info.weights_hash_info)
-            # all keys that do to differ can be deleted -> we only need the diff of the weights
-            del_keys = []
-            for i, key in enumerate(current_model_weights.keys()):
-                if i not in diff_indices:
-                    del_keys.append(key)
+            diff_weights, diff_nodes = base_model_info.weights_hash_info.diff(weights_hash_info)
+            assert len(diff_nodes[THIS]) == 0 and len(diff_nodes[OTHER]) == 0,\
+                'models with different architecture not supported for now'
 
-            # delete all weights that have not changed compared to the base model
-            for key in del_keys:
-                del current_model_weights[key]
+            weights_patch = current_model_weights.copy()
+            # delete all keys that are the same, meaning not in the diff list
+            for key in current_model_weights.keys():
+                if key not in diff_weights:
+                    del weights_patch[key]
 
-            return current_model_weights, WEIGHTS_PATCH, False
+            model_weights = super()._pickle_state_dict(weights_patch, tmp_path)
+            return model_weights, WEIGHTS_PATCH, False
         else:
             # if there is no weights hash info given we have to fall back and load the base models
             base_model_info = self.recover_model(base_model_id)
