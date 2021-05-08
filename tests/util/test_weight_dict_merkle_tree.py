@@ -48,7 +48,7 @@ class TestWeightDictMerkleTree(unittest.TestCase):
         state_dict = mobilenet.state_dict()
         self._test_to_dict_to_tree(state_dict)
 
-    def test_mobilenet_to_dict_to_tree(self):
+    def test_resnet_to_dict_to_tree(self):
         resnet = resnet152(pretrained=True)
         state_dict = resnet.state_dict()
         self._test_to_dict_to_tree(state_dict)
