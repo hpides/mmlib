@@ -84,7 +84,10 @@ class WeightDictMerkleTreeNode:
                     diff_layers[THIS] = diff_layers[THIS].union(right_diff[THIS])
                     diff_layers[OTHER] = diff_layers[OTHER].union(right_diff[OTHER])
 
-            # TODO filter
+            # NOTE there must be a better solution, but for now we go with this one
+            tmp = diff_layers[THIS].copy()
+            diff_layers[THIS] = diff_layers[THIS].difference(diff_layers[OTHER])
+            diff_layers[OTHER] = diff_layers[OTHER].difference(tmp)
             return diff_layers
 
     def get_all_leaves(self):
@@ -94,9 +97,9 @@ class WeightDictMerkleTreeNode:
             return leaves
         else:
             if self.left:
-                leaves.union(self.left.get_all_leaves)
+                leaves = leaves.union(self.left.get_all_leaves())
             if self.right:
-                leaves.union(self.right.get_all_leaves)
+                leaves = leaves.union(self.right.get_all_leaves())
             return leaves
 
 

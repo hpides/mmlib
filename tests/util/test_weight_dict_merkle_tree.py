@@ -121,4 +121,13 @@ class TestWeightDictMerkleTree(unittest.TestCase):
         self.assertEqual(diff_weights, {LAYER_4, LAYER_5})
         self.assertEqual(diff_nodes, {THIS: set(), OTHER: set()})
 
+    def test_added_layers(self):
+        tree1 = WeightDictMerkleTree(self.dummy_dict)
+        tree2 = WeightDictMerkleTree(self.dummy_dict3)
+
+        diff_weights, diff_nodes = tree1.diff_layers(tree2)
+        self.assertEqual(diff_weights, set())
+        self.assertEqual(0, len(diff_nodes[THIS]))
+        self.assertEqual(2, len(diff_nodes[OTHER]))
+
 
