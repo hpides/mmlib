@@ -54,14 +54,14 @@ class TestWeightDictMerkleTree(unittest.TestCase):
         self._test_to_dict_to_tree(state_dict)
 
     def _test_to_dict_to_tree(self, _dict):
-        tree1 = WeightDictMerkleTree(_dict)
-        dict1 = tree1.to_dict()
+        tree1 = WeightDictMerkleTree.from_state_dict(_dict)
+        dict1 = tree1.to_python_dict()
 
-        tree2 = WeightDictMerkleTree.from_dict(dict1)
-        dict2 = tree2.to_dict()
+        tree2 = WeightDictMerkleTree.from_python_dict(dict1)
+        dict2 = tree2.to_python_dict()
 
-        tree3 = WeightDictMerkleTree.from_dict(dict2)
-        dict3 = tree3.to_dict()
+        tree3 = WeightDictMerkleTree.from_python_dict(dict2)
+        dict3 = tree3.to_python_dict()
 
         self.assertEqual(tree1, tree2)
         self.assertEqual(tree2, tree3)
@@ -82,8 +82,8 @@ class TestWeightDictMerkleTree(unittest.TestCase):
         self._test_two_dict_same_tree(state_dict)
 
     def _test_two_dict_same_tree(self, _dict):
-        tree1 = WeightDictMerkleTree(_dict)
-        tree2 = WeightDictMerkleTree(_dict)
+        tree1 = WeightDictMerkleTree.from_state_dict(_dict)
+        tree2 = WeightDictMerkleTree.from_state_dict(_dict)
         self.assertEqual(tree1, tree2)
 
     def test_diff_dict_diff_tree(self):
@@ -94,14 +94,14 @@ class TestWeightDictMerkleTree(unittest.TestCase):
 
         last_key = list(state_dict.keys())[-1]
         del state_dict[last_key]
-        tree2 = WeightDictMerkleTree(state_dict)
+        tree2 = WeightDictMerkleTree.from_state_dict(state_dict)
 
         self.assertNotEqual(tree1, tree2)
 
     def test_diff_last_layer_name(self):
         state_dict = self.dummy_dict
 
-        tree1 = WeightDictMerkleTree(state_dict)
+        tree1 = WeightDictMerkleTree.from_state_dict(state_dict)
 
         last_key = list(state_dict.keys())[-1]
         tmp = state_dict[last_key]
@@ -112,43 +112,43 @@ class TestWeightDictMerkleTree(unittest.TestCase):
         self.assertNotEqual(tree1, tree2)
 
     def test_not_integer_dict(self):
-        tree1 = WeightDictMerkleTree(self.dummy_dict)
-        dict1 = tree1.to_dict()
+        tree1 = WeightDictMerkleTree.from_state_dict(self.dummy_dict)
+        dict1 = tree1.to_python_dict()
 
         dict1[LEFT][LEFT][LEFT][LAYER_KEY] += 'x'
         with self.assertRaises(Exception):
-            WeightDictMerkleTree.from_dict(dict1)
+            WeightDictMerkleTree.from_python_dict(dict1)
 
     def test_diff_same_trees(self):
-        tree1 = WeightDictMerkleTree(self.dummy_dict)
-        tree2 = WeightDictMerkleTree(self.dummy_dict)
+        tree1 = WeightDictMerkleTree.from_state_dict(self.dummy_dict)
+        tree2 = WeightDictMerkleTree.from_state_dict(self.dummy_dict)
 
-        diff_weights, diff_nodes = tree1.diff_layers(tree2)
+        diff_weights, diff_nodes = tree1.diff(tree2)
         self.assertEqual(diff_weights, set())
         self.assertEqual(diff_nodes, {THIS: set(), OTHER: set()})
 
     def test_diff_same_architecture_diff_weights(self):
-        tree1 = WeightDictMerkleTree(self.dummy_dict)
-        tree2 = WeightDictMerkleTree(self.dummy_dict2)
+        tree1 = WeightDictMerkleTree.from_state_dict(self.dummy_dict)
+        tree2 = WeightDictMerkleTree.from_state_dict(self.dummy_dict2)
 
-        diff_weights, diff_nodes = tree1.diff_layers(tree2)
+        diff_weights, diff_nodes = tree1.diff(tree2)
         self.assertEqual(diff_weights, {LAYER_4, LAYER_5})
         self.assertEqual(diff_nodes, {THIS: set(), OTHER: set()})
 
     def test_added_layers(self):
-        tree1 = WeightDictMerkleTree(self.dummy_dict)
-        tree2 = WeightDictMerkleTree(self.dummy_dict3)
+        tree1 = WeightDictMerkleTree.from_state_dict(self.dummy_dict)
+        tree2 = WeightDictMerkleTree.from_state_dict(self.dummy_dict3)
 
-        diff_weights, diff_nodes = tree1.diff_layers(tree2)
+        diff_weights, diff_nodes = tree1.diff(tree2)
         self.assertEqual(diff_weights, set())
         self.assertEqual(diff_nodes[THIS], set())
         self.assertEqual(diff_nodes[OTHER], {LAYER_6, LAYER_7})
 
     def test_added_layers_and_diff_layers(self):
-        tree1 = WeightDictMerkleTree(self.dummy_dict)
-        tree2 = WeightDictMerkleTree(self.dummy_dict4)
+        tree1 = WeightDictMerkleTree.from_state_dict(self.dummy_dict)
+        tree2 = WeightDictMerkleTree.from_state_dict(self.dummy_dict4)
 
-        diff_weights, diff_nodes = tree1.diff_layers(tree2)
+        diff_weights, diff_nodes = tree1.diff(tree2)
         self.assertEqual(diff_weights, {LAYER_1})
         self.assertEqual(diff_nodes[THIS], set())
         self.assertEqual(diff_nodes[OTHER], {LAYER_6, LAYER_7})

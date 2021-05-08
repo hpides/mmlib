@@ -37,7 +37,7 @@ class ModelInfo(SchemaObj):
         if self.derived_from:
             dict_representation[DERIVED_FROM] = self.derived_from
         if self.weights_hash_info:
-            dict_representation[WEIGHTS_HASH_INFO] = self.weights_hash_info.to_dict()
+            dict_representation[WEIGHTS_HASH_INFO] = self.weights_hash_info.to_python_dict()
 
     def load_all_fields(self, file_pers_service: FilePersistenceService,
                         dict_pers_service: DictPersistenceService, restore_root: str,
@@ -121,4 +121,4 @@ def _recover_derived_from(restored_dict):
 def _recover_weights_hash_info(restored_dict):
     hash_info_dict = restored_dict[WEIGHTS_HASH_INFO]
     if hash_info_dict:
-        return WeightDictMerkleTree.from_dict(hash_info_dict)
+        return WeightDictMerkleTree.from_python_dict(hash_info_dict)
