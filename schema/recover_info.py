@@ -94,6 +94,8 @@ class FullModelRecoverInfo(AbstractModelCodeRecoverInfo):
 
         self.model_code = _recover_model_code(file_pers_service, load_files, restore_root, restored_dict)
         self.weights_file = _recover_weights(file_pers_service, load_files, restore_root, restored_dict)
+        self.environment = _recover_environment(dict_pers_service, file_pers_service, load_recursive, restore_root,
+                                                restored_dict)
 
     def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
         result = 0
@@ -122,6 +124,15 @@ def _recover_weights(file_pers_service, load_files, restore_root, restored_dict)
         file_pers_service.recover_file(weights_file, restore_root)
 
     return weights_file
+
+
+def _recover_environment(dict_pers_service, file_pers_service, load_recursive, restore_root, restored_dict):
+    env_id = restored_dict[ENVIRONMENT]
+    if load_recursive:
+        env = Environment.load(env_id, file_pers_service, dict_pers_service, restore_root)
+    else:
+        env = Environment.load_placeholder(env_id)
+    return env
 
 
 UPDATE = 'update'
@@ -261,12 +272,3 @@ def _restore_train_info(dict_pers_service, file_pers_service, restore_root, rest
         train_info = TrainInfo.load(
             train_info_id, file_pers_service, dict_pers_service, restore_root, load_recursive, load_files)
     return train_info
-
-
-def _recover_environment(dict_pers_service, file_pers_service, load_recursive, restore_root, restored_dict):
-    env_id = restored_dict[ENVIRONMENT]
-    if load_recursive:
-        env = Environment.load(env_id, file_pers_service, dict_pers_service, restore_root)
-    else:
-        env = Environment.load_placeholder(env_id)
-    return env
