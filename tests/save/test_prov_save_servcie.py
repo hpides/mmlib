@@ -1,6 +1,4 @@
 import os
-import shutil
-import unittest
 
 import torch
 from torch.utils.data import DataLoader
@@ -8,7 +6,6 @@ from torch.utils.data import DataLoader
 from mmlib.constants import CURRENT_DATA_ROOT, MMLIB_CONFIG
 from mmlib.deterministic import set_deterministic
 from mmlib.equal import model_equal
-from mmlib.persistence import FileSystemPersistenceService, MongoDictPersistenceService
 from mmlib.save import ProvenanceSaveService
 from mmlib.track_env import track_current_environment
 from schema.restorable_object import OptimizerWrapper, RestorableObjectWrapper
@@ -17,9 +14,8 @@ from tests.example_files.data.custom_coco import TrainCustomCoco
 from tests.example_files.imagenet_train import ImagenetTrainService, OPTIMIZER, DATALOADER, DATA, ImagenetTrainWrapper
 from tests.example_files.mynets.mobilenet import mobilenet_v2
 from tests.example_files.mynets.resnet18 import resnet18
-from tests.save.test_baseline_save_servcie import MONGO_CONTAINER_NAME, TestBaselineSaveService
+from tests.save.test_baseline_save_servcie import TestBaselineSaveService
 from util.dummy_data import imagenet_input
-from util.mongo import MongoService
 
 FILE_PATH = os.path.dirname(os.path.realpath(__file__))
 MODEL_PATH = os.path.join(FILE_PATH, '../example_files/mynets/{}.py')
