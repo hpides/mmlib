@@ -12,7 +12,6 @@ class ModelSaveInfoBuilder:
         self._model = None
         self._base_model = None
         self._code = None
-        self._dummy_input_shape = None
         self._prov_raw_data = None
         self._env = None
         self._prov_train_kwargs = None
@@ -67,7 +66,6 @@ class ModelSaveInfoBuilder:
             model=self._model,
             base_model=self._base_model,
             model_code=self._code,
-            dummy_input_shape=self._dummy_input_shape,
             environment=self._env)
 
         return save_info
@@ -82,7 +80,6 @@ class ModelSaveInfoBuilder:
             model=self._model,
             base_model=self._base_model,
             model_code=self._code,
-            dummy_input_shape=self._dummy_input_shape,
             raw_dataset=self._prov_raw_data,
             train_info=prov_train_info,
             environment=self._env)
