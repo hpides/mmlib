@@ -439,7 +439,7 @@ class ProvenanceSaveService(BaselineSaveService):
         return model_info_id
 
     def add_weights_hash_info(self, model_id: str, model: torch.nn.Module):
-        weights_hash_info = WeightDictMerkleTree(model.state_dict())
+        weights_hash_info = WeightDictMerkleTree.from_state_dict(model.state_dict())
         # Note would be nicer to cover this through ModelInfo
         self._dict_pers_service.add_field(model_id, WEIGHTS_HASH_INFO, weights_hash_info)
 
