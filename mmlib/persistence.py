@@ -65,6 +65,15 @@ class DictPersistenceService(PersistenceService, metaclass=abc.ABCMeta):
         :return: all ids as a list of strings
         """
 
+    @abc.abstractmethod
+    def add_field(self, dict_id: str, represent_type: str, add_dict: dict):
+        """
+        Adds a field to a given, stored dictionary
+        :param dict_id: The id of the dictionary to add the field to.
+        :param represent_type: The type of the collection.
+        :param add_dict: The data that should be added represented as a dict
+        """
+
 
 class FilePersistenceService(PersistenceService, metaclass=abc.ABCMeta):
 
@@ -174,6 +183,10 @@ class MongoDictPersistenceService(DictPersistenceService):
     def id_exists(self, dict_id: str, represent_type: str) -> bool:
         dict_id = self._to_mongo_dict_id(dict_id)
         return self._mongo_service.id_exists(dict_id, represent_type)
+
+    def add_field(self, dict_id: str, represent_type: str, add_dict: dict):
+        dict_id = self._to_mongo_dict_id(dict_id)
+        self._mongo_service.add_attribute(dict_id, add_dict, represent_type)
 
     def _to_mongo_dict_id(self, dict_id):
         return ObjectId(dict_id.replace(DICT, ''))

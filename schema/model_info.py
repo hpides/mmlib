@@ -73,6 +73,11 @@ class ModelInfo(SchemaObj):
 
         return result
 
+    def add_and_persist_weights_hash_info(self, weights_hash_info: WeightDictMerkleTree,
+                                          dict_pers_service: DictPersistenceService):
+        add_dict = {WEIGHTS_HASH_INFO: weights_hash_info.to_python_dict()}
+        dict_pers_service.add_field(self.store_id, MODEL_INFO, add_dict)
+
     def _representation_type(self) -> str:
         return MODEL_INFO
 

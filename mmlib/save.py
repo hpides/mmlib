@@ -11,7 +11,7 @@ from mmlib.save_info import ModelSaveInfo, ProvModelSaveInfo
 from mmlib.track_env import compare_env_to_current
 from schema.dataset import Dataset
 from schema.file_reference import FileReference
-from schema.model_info import ModelInfo, MODEL_INFO, WEIGHTS_HASH_INFO
+from schema.model_info import ModelInfo, MODEL_INFO
 from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo, WeightsUpdateRecoverInfo
 from schema.restorable_object import RestoredModelInfo
 from schema.store_type import ModelStoreType
@@ -330,7 +330,7 @@ class WeightUpdateSaveService(BaselineSaveService):
 
         if base_model_info.weights_hash_info:
             diff_weights, diff_nodes = base_model_info.weights_hash_info.diff(weights_hash_info)
-            assert len(diff_nodes[THIS]) == 0 and len(diff_nodes[OTHER]) == 0,\
+            assert len(diff_nodes[THIS]) == 0 and len(diff_nodes[OTHER]) == 0, \
                 'models with different architecture not supported for now'
 
             weights_patch = current_model_weights.copy()
@@ -439,9 +439,10 @@ class ProvenanceSaveService(BaselineSaveService):
         return model_info_id
 
     def add_weights_hash_info(self, model_id: str, model: torch.nn.Module):
+        model_info = ModelInfo.load_placeholder(model_id)
         weights_hash_info = WeightDictMerkleTree.from_state_dict(model.state_dict())
-        # Note would be nicer to cover this through ModelInfo
-        self._dict_pers_service.add_field(model_id, WEIGHTS_HASH_INFO, weights_hash_info)
+
+        model_info.add_and_persist_weights_hash_info(weights_hash_info, self._dict_pers_service)
 
     def _build_prov_model_info(self, model_save_info):
         tw_class_name = model_save_info.train_info.train_wrapper_class_name
@@ -478,10 +479,11 @@ class ProvenanceSaveService(BaselineSaveService):
     def _execute_checks(self, model: torch.nn.Module, model_info: ModelInfo):
         super()._execute_checks(model, model_info)
 
-        # check environment
-        recover_info: ProvenanceRecoverInfo = model_info.recover_info
-        envs_match = compare_env_to_current(recover_info.environment)
-        assert envs_match, 'The current environment and the environment that was used to when storing the model differ'
+        if model_info.store_type == ModelStoreType.PROVENANCE:
+            # check environment
+            recover_info: ProvenanceRecoverInfo = model_info.recover_info
+            envs_match = compare_env_to_current(recover_info.environment)
+            assert envs_match, 'The current environment and the environment that was used to when storing the model differ'
 
 
 def _get_weights_hash_info(add_weights_hash_info, model_save_info):
