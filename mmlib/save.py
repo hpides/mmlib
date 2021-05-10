@@ -7,7 +7,6 @@ import torch
 
 from mmlib.equal import tensor_equal
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
-from mmlib.recover_validation import RecoverValidationService
 from mmlib.save_info import ModelSaveInfo, ProvModelSaveInfo
 from mmlib.track_env import compare_env_to_current
 from schema.dataset import Dataset
@@ -18,6 +17,7 @@ from schema.restorable_object import RestoredModelInfo
 from schema.store_type import ModelStoreType
 from schema.train_info import TrainInfo
 from util.init_from_file import create_object, create_type
+from util.weight_dict_merkle_tree import WeightDictMerkleTree, THIS, OTHER
 
 PICKLED_MODEL_WEIGHTS = 'pickled_model_weights'
 
@@ -42,14 +42,12 @@ class AbstractSaveService(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def recover_model(self, model_id: str, execute_checks: bool = False,
-                      recover_val_service: RecoverValidationService = None) -> RestoredModelInfo:
+    def recover_model(self, model_id: str, execute_checks: bool = True) -> RestoredModelInfo:
         """
         Recovers a the model and metadata identified by the given model id.
         :param model_id: The id to identify the model with.
         :param execute_checks: Indicates if additional checks should be performed to ensure a correct recovery of
-        the model. If set to True setting it to True recover_val_service must be given - might decrease the performance.
-        :param recover_val_service: An instance of RecoverValidationService.
+        the model.
         :return: The recovered model and metadata bundled in an object of type ModelRestoreInfo.
         """
         raise NotImplementedError
@@ -67,20 +65,6 @@ class AbstractSaveService(metaclass=abc.ABCMeta):
     def all_model_ids(self) -> [str]:
         """
         Retuns a list of all stored model_ids
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def save_validation_info(self, model: torch.nn.Module, model_id: str, dummy_input_shape: [int],
-                             recover_val_service: RecoverValidationService):
-        """
-        Saves validation info for the given model. This info can be used to validate the model when it is restored.
-        To activate the check when restoring a model set the parameter execute_checks = True
-        :param model: The model to save the validation info for.
-        :param model_id: The id of the model to save the recover information for.
-        :param dummy_input_shape: The input shape to generate a dummy output for the model.
-        :param recover_val_service: An instance of RecoverValidationService.
-        fields are 'model' and 'dummy_input_shape'.
         """
         raise NotImplementedError
 
@@ -107,8 +91,7 @@ class BaselineSaveService(AbstractSaveService):
 
         return model_id
 
-    def recover_model(self, model_id: str, execute_checks: bool = False,
-                      recover_val_service: RecoverValidationService = None) -> RestoredModelInfo:
+    def recover_model(self, model_id: str, execute_checks: bool = True) -> RestoredModelInfo:
         # in this baseline approach we always store the full model (pickled weights + code)
 
         with tempfile.TemporaryDirectory() as tmp_path:
@@ -125,7 +108,7 @@ class BaselineSaveService(AbstractSaveService):
             restored_model_info = RestoredModelInfo(model=model)
 
             if execute_checks:
-                self._execute_checks(model, model_info, recover_val_service)
+                self._execute_checks(model, model_info)
 
         return restored_model_info
 
@@ -138,9 +121,6 @@ class BaselineSaveService(AbstractSaveService):
     def all_model_ids(self) -> [str]:
         return self._dict_pers_service.all_ids_for_type(MODEL_INFO)
 
-    def save_validation_info(self, model, model_id, dummy_input_shape, recover_val_service):
-        recover_val_service.save_recover_val_info(model, model_id, dummy_input_shape)
-
     def _check_consistency(self, model_save_info):
         # when storing a full model we need the following information
         # the model itself
@@ -150,7 +130,8 @@ class BaselineSaveService(AbstractSaveService):
         # the class name of the model
         assert model_save_info.model_class_name, 'model class name is not set'
 
-    def _save_full_model(self, model_save_info: ModelSaveInfo) -> str:
+    def _save_full_model(self, model_save_info: ModelSaveInfo, add_weights_hash_info=True) -> str:
+
         with tempfile.TemporaryDirectory() as tmp_path:
             weights_path = self._pickle_weights(model_save_info.model, tmp_path)
 
@@ -158,7 +139,7 @@ class BaselineSaveService(AbstractSaveService):
 
             # models are recovered in a tmp directory and only the model object is returned
             # this is why the inferred model code path might not exists anymore, we have to check this
-            # and if it is not existing anymore, we have to restore teh code for the base model
+            # and if it is not existing anymore, we have to restore the code for the base model
 
             if not os.path.isfile(model_save_info.model_code):
                 assert base_model, 'code not given and no base model'
@@ -170,8 +151,10 @@ class BaselineSaveService(AbstractSaveService):
                                                 model_code=FileReference(path=model_save_info.model_code),
                                                 model_class_name=model_save_info.model_class_name)
 
+            weights_hash_info = _get_weights_hash_info(add_weights_hash_info, model_save_info)
+
             model_info = ModelInfo(store_type=ModelStoreType.FULL_MODEL, recover_info=recover_info,
-                                   derived_from_id=base_model)
+                                   derived_from_id=base_model, weights_hash_info=weights_hash_info)
 
             model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
 
@@ -239,16 +222,15 @@ class BaselineSaveService(AbstractSaveService):
             model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path)
             return model_info.derived_from
 
-    def _execute_checks(self, model: torch.nn.Module, model_info: ModelInfo,
-                        recover_val_service: RecoverValidationService):
-        assert recover_val_service, 'if execute_checks is True recover_val_service must be given'
-        model_id = model_info.store_id
-        try:
-            valid_recovery = recover_val_service.check_recover_val(model_id, model)
-            assert valid_recovery, 'The current given model differs from the model that was stored'
-        except IndexError:
-            warnings.warn('no recover validation info found'
-                          ' - check that save_validation_info=True when saving model')
+    def _execute_checks(self, model: torch.nn.Module, model_info: ModelInfo):
+        if not model_info.weights_hash_info:
+            warnings.warn('no weights_hash_info available for this models')
+
+        restored_merkle_tree: WeightDictMerkleTree = model_info.weights_hash_info
+        model_merkle_tree = WeightDictMerkleTree.from_state_dict(model.state_dict())
+
+        # NOTE maybe replace assert by throwing exception
+        assert restored_merkle_tree == model_merkle_tree, 'The recovered model differs from the model that was stored'
 
 
 class WeightUpdateSaveService(BaselineSaveService):
@@ -271,17 +253,16 @@ class WeightUpdateSaveService(BaselineSaveService):
             # if there is a base model, we can store the update and for a restore refer to the base model
             return self._save_updated_model(model_save_info)
 
-    def recover_model(self, model_id: str, execute_checks: bool = False,
-                      recover_val_service: RecoverValidationService = None) -> RestoredModelInfo:
+    def recover_model(self, model_id: str, execute_checks: bool = True) -> RestoredModelInfo:
 
         store_type = self._get_store_type(model_id)
 
         if store_type == ModelStoreType.FULL_MODEL:
             return super().recover_model(model_id)
         else:
-            return self._recover_from_weight_update(model_id, execute_checks, recover_val_service)
+            return self._recover_from_weight_update(model_id, execute_checks)
 
-    def _recover_from_weight_update(self, model_id, execute_checks, recover_val_service):
+    def _recover_from_weight_update(self, model_id, execute_checks):
         with tempfile.TemporaryDirectory() as tmp_path:
             model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path,
                                         load_recursive=True, load_files=True)
@@ -296,7 +277,7 @@ class WeightUpdateSaveService(BaselineSaveService):
             restored_model_info = RestoredModelInfo(model=recovered_model)
 
             if execute_checks:
-                self._execute_checks(recovered_model, model_info, recover_val_service)
+                self._execute_checks(recovered_model, model_info)
 
         return restored_model_info
 
@@ -320,21 +301,21 @@ class WeightUpdateSaveService(BaselineSaveService):
 
         return base_model
 
-    def _save_updated_model(self, model_save_info):
+    def _save_updated_model(self, model_save_info, add_weights_hash_info=True):
         base_model_id = model_save_info.base_model
         assert base_model_id, 'no base model given'
 
         with tempfile.TemporaryDirectory() as tmp_path:
-            base_model_info = self.recover_model(base_model_id)
+            weights_hash_info = _get_weights_hash_info(add_weights_hash_info, model_save_info)
 
             weights_update, update_type, independent = \
-                self._generate_weights_update(model_save_info, base_model_info, tmp_path)
+                self._generate_weights_update(model_save_info, base_model_id, weights_hash_info, tmp_path)
 
             recover_info = WeightsUpdateRecoverInfo(update=FileReference(path=weights_update), update_type=update_type,
                                                     independent=independent)
 
             model_info = ModelInfo(store_type=ModelStoreType.WEIGHT_UPDATES, recover_info=recover_info,
-                                   derived_from_id=base_model_id)
+                                   derived_from_id=base_model_id, weights_hash_info=weights_hash_info)
 
             model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
 
@@ -343,18 +324,37 @@ class WeightUpdateSaveService(BaselineSaveService):
     def _base_model_given(self, model_save_info):
         return model_save_info.base_model is not None
 
-    def _generate_weights_update(self, model_save_info, base_model_info, tmp_path):
-        base_model_weights = base_model_info.model.state_dict()
+    def _generate_weights_update(self, model_save_info, base_model_id, weights_hash_info, tmp_path):
+        base_model_info = ModelInfo.load(base_model_id, self._file_pers_service, self._dict_pers_service, tmp_path)
         current_model_weights = model_save_info.model.state_dict()
 
-        weights_patch = self._state_dict_patch(base_model_weights, current_model_weights)
-        if len(weights_patch.keys()) < len(base_model_weights.keys()):
-            # if the patch actually saves something
+        if base_model_info.weights_hash_info:
+            diff_weights, diff_nodes = base_model_info.weights_hash_info.diff(weights_hash_info)
+            assert len(diff_nodes[THIS]) == 0 and len(diff_nodes[OTHER]) == 0, \
+                'models with different architecture not supported for now'
+
+            weights_patch = current_model_weights.copy()
+            # delete all keys that are the same, meaning not in the diff list
+            for key in current_model_weights.keys():
+                if key not in diff_weights:
+                    del weights_patch[key]
+
             model_weights = super()._pickle_state_dict(weights_patch, tmp_path)
             return model_weights, WEIGHTS_PATCH, False
         else:
-            model_weights = self._pickle_weights(current_model_weights, tmp_path)
-            return model_weights, PICKLED_MODEL_WEIGHTS, True
+            # if there is no weights hash info given we have to fall back and load the base models
+            base_model_info = self.recover_model(base_model_id)
+            base_model_weights = base_model_info.model.state_dict()
+            current_model_weights = model_save_info.model.state_dict()
+
+            weights_patch = self._state_dict_patch(base_model_weights, current_model_weights)
+            if len(weights_patch.keys()) < len(base_model_weights.keys()):
+                # if the patch actually saves something
+                model_weights = super()._pickle_state_dict(weights_patch, tmp_path)
+                return model_weights, WEIGHTS_PATCH, False
+            else:
+                model_weights = self._pickle_weights(current_model_weights, tmp_path)
+                return model_weights, PICKLED_MODEL_WEIGHTS, True
 
     def _state_dict_patch(self, base_model_weights, current_model_weights):
         assert base_model_weights.keys() == current_model_weights.keys(), 'given state dicts are not compatible'
@@ -390,8 +390,7 @@ class ProvenanceSaveService(BaselineSaveService):
         else:
             return self._save_provenance_model(model_save_info)
 
-    def recover_model(self, model_id: str, execute_checks: bool = False,
-                      recover_val_service: RecoverValidationService = None) -> RestoredModelInfo:
+    def recover_model(self, model_id: str, execute_checks: bool = True) -> RestoredModelInfo:
 
         base_model_id = self._get_base_model(model_id)
         if base_model_id is None:
@@ -424,7 +423,7 @@ class ProvenanceSaveService(BaselineSaveService):
                 restored_model_info = RestoredModelInfo(model=restored_model)
 
                 if execute_checks:
-                    self._execute_checks(restored_model, model_info, recover_val_service)
+                    self._execute_checks(restored_model, model_info)
 
                 return restored_model_info
 
@@ -432,11 +431,18 @@ class ProvenanceSaveService(BaselineSaveService):
         pass
 
     def _save_provenance_model(self, model_save_info):
+
         model_info = self._build_prov_model_info(model_save_info)
 
         model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
 
         return model_info_id
+
+    def add_weights_hash_info(self, model_id: str, model: torch.nn.Module):
+        model_info = ModelInfo.load_placeholder(model_id)
+        weights_hash_info = WeightDictMerkleTree.from_state_dict(model.state_dict())
+
+        model_info.add_and_persist_weights_hash_info(weights_hash_info, self._dict_pers_service)
 
     def _build_prov_model_info(self, model_save_info):
         tw_class_name = model_save_info.train_info.train_wrapper_class_name
@@ -470,11 +476,19 @@ class ProvenanceSaveService(BaselineSaveService):
         else:
             raise NotImplementedError
 
-    def _execute_checks(self, model: torch.nn.Module, model_info: ModelInfo,
-                        recover_val_service: RecoverValidationService):
-        super()._execute_checks(model, model_info, recover_val_service)
+    def _execute_checks(self, model: torch.nn.Module, model_info: ModelInfo):
+        super()._execute_checks(model, model_info)
 
-        # check environment
-        recover_info: ProvenanceRecoverInfo = model_info.recover_info
-        envs_match = compare_env_to_current(recover_info.environment)
-        assert envs_match, 'The current environment and the environment that was used to '
+        if model_info.store_type == ModelStoreType.PROVENANCE:
+            # check environment
+            recover_info: ProvenanceRecoverInfo = model_info.recover_info
+            envs_match = compare_env_to_current(recover_info.environment)
+            assert envs_match, 'The current environment and the environment that was used to when storing the model differ'
+
+
+def _get_weights_hash_info(add_weights_hash_info, model_save_info):
+    weights_hash_info = None
+    if add_weights_hash_info:
+        assert model_save_info.model, "to compute a weights info hash the a model has to be given"
+        weights_hash_info = WeightDictMerkleTree.from_state_dict(model_save_info.model.state_dict())
+    return weights_hash_info

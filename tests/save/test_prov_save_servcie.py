@@ -157,9 +157,9 @@ class TestProvSaveService(unittest.TestCase):
         model_id = self.provenance_save_service.save_model(save_info)
 
         imagenet_ts.train(model, **train_kwargs)
+        self.provenance_save_service.add_weights_hash_info(model_id, model)
         recovered_model_info = self.provenance_save_service.recover_model(model_id)
         recovered_model_1 = recovered_model_info.model
-        self.assertTrue(model_equal(model, recovered_model_1, imagenet_input))
 
         ################################################################################################################
         # Having defined the provenance information above storing a second version is a lot shorter
@@ -173,6 +173,8 @@ class TestProvSaveService(unittest.TestCase):
         model_id_2 = self.provenance_save_service.save_model(save_info)
 
         imagenet_ts.train(model, **train_kwargs)
+        self.provenance_save_service.add_weights_hash_info(model_id_2, model)
+
 
         recovered_model_info = self.provenance_save_service.recover_model(model_id_2)
         self.assertTrue(model_equal(model, recovered_model_info.model, imagenet_input))

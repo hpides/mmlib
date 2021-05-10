@@ -57,3 +57,11 @@ def tensor_hash(tensor: torch.tensor, device: torch.device = None) -> str:
     md5.update(numpy_data)
 
     return md5.hexdigest()
+
+
+def hash_string(string):
+    md5 = hashlib.md5()
+
+    md5.update(string.encode(encoding='UTF-8'))
+
+    return md5.hexdigest()
