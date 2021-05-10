@@ -481,7 +481,7 @@ class ProvenanceSaveService(BaselineSaveService):
         # check environment
         recover_info: ProvenanceRecoverInfo = model_info.recover_info
         envs_match = compare_env_to_current(recover_info.environment)
-        assert envs_match, 'The current environment and the environment that was used to '
+        assert envs_match, 'The current environment and the environment that was used to when storing the model differ'
 
 
 def _get_weights_hash_info(add_weights_hash_info, model_save_info):
