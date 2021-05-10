@@ -5,6 +5,7 @@ import unittest
 from mmlib.equal import model_equal
 from mmlib.persistence import FileSystemPersistenceService, MongoDictPersistenceService
 from mmlib.save import BaselineSaveService
+from mmlib.track_env import track_current_environment
 from schema.save_info_builder import ModelSaveInfoBuilder
 from tests.example_files.mynets.googlenet import googlenet
 from tests.example_files.mynets.mobilenet import mobilenet_v2
@@ -64,7 +65,8 @@ class TestBaselineSaveService(unittest.TestCase):
 
     def _test_save_restore_model(self, model):
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(model=model)
+        env = track_current_environment()
+        save_info_builder.add_model_info(model=model, env=env)
         save_info = save_info_builder.build()
 
         model_id = self.save_service.save_model(save_info)
@@ -85,7 +87,8 @@ class TestBaselineSaveService(unittest.TestCase):
 
     def _test_save_restore_model_and_validation_info(self, model):
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(model=model)
+        env = track_current_environment()
+        save_info_builder.add_model_info(model=model, env=env)
         save_info = save_info_builder.build()
 
         model_id = self.save_service.save_model(save_info)
@@ -99,14 +102,16 @@ class TestBaselineSaveService(unittest.TestCase):
 
         # save initial model
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(model=initial_model)
+        env = track_current_environment()
+        save_info_builder.add_model_info(model=initial_model, env=env)
         save_info = save_info_builder.build()
         initial_model_id = self.save_service.save_model(save_info)
 
         # save derived model
         derived_model = resnet18(pretrained=True)
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(model=derived_model, base_model_id=initial_model_id)
+        env = track_current_environment()
+        save_info_builder.add_model_info(model=derived_model, base_model_id=initial_model_id, env=env)
         save_info = save_info_builder.build()
         derived_model_id = self.save_service.save_model(save_info)
 
@@ -119,14 +124,16 @@ class TestBaselineSaveService(unittest.TestCase):
 
         # save initial model
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(model=initial_model)
+        env = track_current_environment()
+        save_info_builder.add_model_info(model=initial_model, env=env)
         save_info = save_info_builder.build()
         initial_model_id = self.save_service.save_model(save_info)
 
         # save derived model
         derived_model = resnet18(pretrained=True)
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(model=derived_model, base_model_id=initial_model_id)
+        env = track_current_environment()
+        save_info_builder.add_model_info(model=derived_model, base_model_id=initial_model_id, env=env)
         save_info = save_info_builder.build()
         derived_model_id = self.save_service.save_model(save_info)
 
@@ -137,7 +144,8 @@ class TestBaselineSaveService(unittest.TestCase):
         # save derived model
         derived_model_2 = restored_model_info.model
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(model=derived_model_2, base_model_id=derived_model_id)
+        env = track_current_environment()
+        save_info_builder.add_model_info(model=derived_model_2, base_model_id=derived_model_id, env=env)
         save_info = save_info_builder.build()
         derived_model_id_2 = self.save_service.save_model(save_info)
 

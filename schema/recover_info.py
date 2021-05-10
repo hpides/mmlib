@@ -2,7 +2,7 @@ import abc
 import configparser
 import os
 
-from mmlib.constants import MMLIB_CONFIG, CURRENT_DATA_ROOT, VALUES, ID
+from mmlib.constants import MMLIB_CONFIG, CURRENT_DATA_ROOT, VALUES
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from schema.dataset import Dataset
 from schema.environment import Environment
@@ -59,29 +59,16 @@ class AbstractModelCodeRecoverInfo(AbstractRecoverInfo, metaclass=abc.ABCMeta):
 
 
 WEIGHTS = 'weights'
+ENVIRONMENT = 'environment'
 
 
 class FullModelRecoverInfo(AbstractModelCodeRecoverInfo):
 
     def __init__(self, weights_file: FileReference = None, model_code=None, model_class_name: str = None,
-                 store_id: str = None):
+                 environment: Environment = None, store_id: str = None):
         super().__init__(model_code, model_class_name, store_id)
         self.weights_file = weights_file
-
-    @classmethod
-    def load(cls, obj_id: str, file_pers_service: FilePersistenceService,
-             dict_pers_service: DictPersistenceService, restore_root: str, load_recursive: bool = False,
-             load_files: bool = False):
-        restored_dict = dict_pers_service.recover_dict(obj_id, RECOVER_INFO)
-
-        store_id = restored_dict[ID]
-        model_class_name = restored_dict[MODEL_CLASS_NAME]
-
-        model_code = _recover_model_code(file_pers_service, load_files, restore_root, restored_dict)
-        weights_file_path = _recover_weights(file_pers_service, load_files, restore_root, restored_dict)
-
-        return cls(weights_file=weights_file_path, model_code=model_code,
-                   model_class_name=model_class_name, store_id=store_id)
+        self.environment = environment
 
     def load_all_fields(self, file_pers_service: FilePersistenceService,
                         dict_pers_service: DictPersistenceService, restore_root: str,
@@ -92,6 +79,8 @@ class FullModelRecoverInfo(AbstractModelCodeRecoverInfo):
 
         self.model_code = _recover_model_code(file_pers_service, load_files, restore_root, restored_dict)
         self.weights_file = _recover_weights(file_pers_service, load_files, restore_root, restored_dict)
+        self.environment = _recover_environment(dict_pers_service, file_pers_service, load_recursive, restore_root,
+                                                restored_dict)
 
     def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
         result = 0
@@ -103,8 +92,10 @@ class FullModelRecoverInfo(AbstractModelCodeRecoverInfo):
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
         super()._persist_class_specific_fields(dict_representation, file_pers_service, dict_pers_service)
         file_pers_service.save_file(self.weights_file)
+        env_id = self.environment.persist(file_pers_service, dict_pers_service)
 
         dict_representation[WEIGHTS] = self.weights_file.reference_id
+        dict_representation[ENVIRONMENT] = env_id
 
     def _representation_type(self) -> str:
         return RECOVER_INFO
@@ -118,6 +109,15 @@ def _recover_weights(file_pers_service, load_files, restore_root, restored_dict)
         file_pers_service.recover_file(weights_file, restore_root)
 
     return weights_file
+
+
+def _recover_environment(dict_pers_service, file_pers_service, load_recursive, restore_root, restored_dict):
+    env_id = restored_dict[ENVIRONMENT]
+    if load_recursive:
+        env = Environment.load(env_id, file_pers_service, dict_pers_service, restore_root)
+    else:
+        env = Environment.load_placeholder(env_id)
+    return env
 
 
 UPDATE = 'update'
@@ -166,7 +166,6 @@ def _restore_update(file_pers_service, load_files, restore_root, restored_dict):
 
 DATASET = 'dataset'
 TRAIN_INFO = 'train_info'
-ENVIRONMENT = 'environment'
 
 
 class ProvenanceRecoverInfo(AbstractRecoverInfo):
@@ -258,12 +257,3 @@ def _restore_train_info(dict_pers_service, file_pers_service, restore_root, rest
         train_info = TrainInfo.load(
             train_info_id, file_pers_service, dict_pers_service, restore_root, load_recursive, load_files)
     return train_info
-
-
-def _recover_environment(dict_pers_service, file_pers_service, load_recursive, restore_root, restored_dict):
-    env_id = restored_dict[ENVIRONMENT]
-    if load_recursive:
-        env = Environment.load(env_id, file_pers_service, dict_pers_service, restore_root)
-    else:
-        env = Environment.load_placeholder(env_id)
-    return env

@@ -67,7 +67,7 @@ class RestorableObjectWrapper(AbstractRestorableObjectWrapper):
                  store_id: str = None):
         super().__init__(c_name=c_name, code=code, import_cmd=import_cmd, instance=instance, store_id=store_id)
 
-        self.init_args = init_args if init_args else  {}
+        self.init_args = init_args if init_args else {}
         self.config_args = config_args if config_args else {}
         self.init_ref_type_args = init_ref_type_args if init_ref_type_args else []
 

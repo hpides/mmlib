@@ -2,6 +2,7 @@ import tempfile
 
 from mmlib.equal import model_equal
 from mmlib.save import WeightUpdateSaveService
+from mmlib.track_env import track_current_environment
 from schema.model_info import ModelInfo
 from schema.recover_info import WeightsUpdateRecoverInfo, FullModelRecoverInfo
 from schema.save_info_builder import ModelSaveInfoBuilder
@@ -20,14 +21,16 @@ class TestWeightUpdateSaveService(TestBaselineSaveService):
 
         # save initial model
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(model=initial_model)
+        env = track_current_environment()
+        save_info_builder.add_model_info(model=initial_model, env=env)
         save_info = save_info_builder.build()
         initial_model_id = self.save_service.save_model(save_info)
 
         # save derived model
         derived_model = resnet18(pretrained=True)
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(model=derived_model, base_model_id=initial_model_id)
+        env = track_current_environment()
+        save_info_builder.add_model_info(model=derived_model, base_model_id=initial_model_id, env=env)
         save_info = save_info_builder.build()
         derived_model_id = self.save_service.save_model(save_info)
 
@@ -38,7 +41,8 @@ class TestWeightUpdateSaveService(TestBaselineSaveService):
         # save derived model
         derived_model_2 = restored_model_info.model
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(model=derived_model_2, base_model_id=derived_model_id)
+        env = track_current_environment()
+        save_info_builder.add_model_info(model=derived_model_2, base_model_id=derived_model_id, env=env)
         save_info = save_info_builder.build()
         derived_model_id_2 = self.save_service.save_model(save_info)
 
@@ -49,7 +53,8 @@ class TestWeightUpdateSaveService(TestBaselineSaveService):
         # save derived model
         derived_model_3 = restored_model_info_2.model
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(model=derived_model_3, base_model_id=derived_model_id_2)
+        env = track_current_environment()
+        save_info_builder.add_model_info(model=derived_model_3, base_model_id=derived_model_id_2, env=env)
         save_info = save_info_builder.build()
         derived_model_id_3 = self.save_service.save_model(save_info)
 
@@ -61,14 +66,16 @@ class TestWeightUpdateSaveService(TestBaselineSaveService):
         initial_model = resnet18(pretrained=True)
         # save initial model
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(model=initial_model)
+        env = track_current_environment()
+        save_info_builder.add_model_info(model=initial_model, env=env)
         save_info = save_info_builder.build()
         initial_model_id = self.save_service.save_model(save_info)
 
         # save derived model
         derived_model = resnet18(pretrained=True)
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(model=derived_model, base_model_id=initial_model_id)
+        env = track_current_environment()
+        save_info_builder.add_model_info(model=derived_model, base_model_id=initial_model_id, env=env)
         save_info = save_info_builder.build()
         derived_model_id = self.save_service.save_model(save_info)
 
