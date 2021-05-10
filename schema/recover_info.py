@@ -59,14 +59,16 @@ class AbstractModelCodeRecoverInfo(AbstractRecoverInfo, metaclass=abc.ABCMeta):
 
 
 WEIGHTS = 'weights'
+ENVIRONMENT = 'environment'
 
 
 class FullModelRecoverInfo(AbstractModelCodeRecoverInfo):
 
     def __init__(self, weights_file: FileReference = None, model_code=None, model_class_name: str = None,
-                 store_id: str = None):
+                 environment: Environment = None, store_id: str = None):
         super().__init__(model_code, model_class_name, store_id)
         self.weights_file = weights_file
+        self.environment = environment
 
     @classmethod
     def load(cls, obj_id: str, file_pers_service: FilePersistenceService,
@@ -103,8 +105,10 @@ class FullModelRecoverInfo(AbstractModelCodeRecoverInfo):
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
         super()._persist_class_specific_fields(dict_representation, file_pers_service, dict_pers_service)
         file_pers_service.save_file(self.weights_file)
+        env_id = self.environment.persist(file_pers_service, dict_pers_service)
 
         dict_representation[WEIGHTS] = self.weights_file.reference_id
+        dict_representation[ENVIRONMENT] = env_id
 
     def _representation_type(self) -> str:
         return RECOVER_INFO
@@ -166,7 +170,6 @@ def _restore_update(file_pers_service, load_files, restore_root, restored_dict):
 
 DATASET = 'dataset'
 TRAIN_INFO = 'train_info'
-ENVIRONMENT = 'environment'
 
 
 class ProvenanceRecoverInfo(AbstractRecoverInfo):
