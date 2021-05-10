@@ -149,7 +149,8 @@ class BaselineSaveService(AbstractSaveService):
 
             recover_info = FullModelRecoverInfo(weights_file=FileReference(path=weights_path),
                                                 model_code=FileReference(path=model_save_info.model_code),
-                                                model_class_name=model_save_info.model_class_name)
+                                                model_class_name=model_save_info.model_class_name,
+                                                environment=model_save_info.environment)
 
             weights_hash_info = _get_weights_hash_info(add_weights_hash_info, model_save_info)
 
@@ -223,14 +224,23 @@ class BaselineSaveService(AbstractSaveService):
             return model_info.derived_from
 
     def _execute_checks(self, model: torch.nn.Module, model_info: ModelInfo):
+        self._check_weights(model, model_info)
+        self._check_env(model_info)
+
+    def _check_weights(self, model, model_info):
         if not model_info.weights_hash_info:
             warnings.warn('no weights_hash_info available for this models')
-
         restored_merkle_tree: WeightDictMerkleTree = model_info.weights_hash_info
         model_merkle_tree = WeightDictMerkleTree.from_state_dict(model.state_dict())
-
         # NOTE maybe replace assert by throwing exception
         assert restored_merkle_tree == model_merkle_tree, 'The recovered model differs from the model that was stored'
+
+    def _check_env(self, model_info):
+        # check environment
+        recover_info = model_info.recover_info
+        envs_match = compare_env_to_current(recover_info.environment)
+        assert envs_match, \
+            'The current environment and the environment that was used to when storing the model differ'
 
 
 class WeightUpdateSaveService(BaselineSaveService):
@@ -371,6 +381,9 @@ class WeightUpdateSaveService(BaselineSaveService):
 
         return base_model.load_state_dict(patched_state_dict)
 
+    def _execute_checks(self, model: torch.nn.Module, model_info: ModelInfo):
+        self._check_weights(model, model_info)
+
 
 class ProvenanceSaveService(BaselineSaveService):
 
@@ -461,7 +474,7 @@ class ProvenanceSaveService(BaselineSaveService):
         prov_recover_info = ProvenanceRecoverInfo(
             dataset=dataset,
             train_info=train_info,
-            environment=model_save_info.train_info.environment
+            environment=model_save_info.environment
         )
         derived_from = model_save_info.base_model if model_save_info.base_model else None
         model_info = ModelInfo(store_type=ModelStoreType.PROVENANCE, recover_info=prov_recover_info,
@@ -475,15 +488,6 @@ class ProvenanceSaveService(BaselineSaveService):
             return self.recover_model(model_id=base_model_id)
         else:
             raise NotImplementedError
-
-    def _execute_checks(self, model: torch.nn.Module, model_info: ModelInfo):
-        super()._execute_checks(model, model_info)
-
-        if model_info.store_type == ModelStoreType.PROVENANCE:
-            # check environment
-            recover_info: ProvenanceRecoverInfo = model_info.recover_info
-            envs_match = compare_env_to_current(recover_info.environment)
-            assert envs_match, 'The current environment and the environment that was used to when storing the model differ'
 
 
 def _get_weights_hash_info(add_weights_hash_info, model_save_info):

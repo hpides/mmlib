@@ -76,7 +76,8 @@ class TestProvSaveService(unittest.TestCase):
         ###############################################################################
         # it will be stored as a full model since there is no model it was derived from
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(model=model)
+        env = track_current_environment()
+        save_info_builder.add_model_info(model=model, env=env)
         save_info = save_info_builder.build()
 
         base_model_id = self.provenance_save_service.save_model(save_info)
@@ -144,9 +145,9 @@ class TestProvSaveService(unittest.TestCase):
         # having specified all the provenance information that will be used to train a model, we can store it
         ################################################################################################################
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(base_model_id=base_model_id)
+        save_info_builder.add_model_info(base_model_id=base_model_id, env=prov_env)
         save_info_builder.add_prov_data(
-            raw_data_path=raw_data, env=prov_env, train_kwargs=train_kwargs, train_service_wrapper=ts_wrapper)
+            raw_data_path=raw_data, train_kwargs=train_kwargs, train_service_wrapper=ts_wrapper)
         save_info = save_info_builder.build()
 
         ################################################################################################################
@@ -165,16 +166,15 @@ class TestProvSaveService(unittest.TestCase):
         # Having defined the provenance information above storing a second version is a lot shorter
         ################################################################################################################
         save_info_builder = ModelSaveInfoBuilder()
-        save_info_builder.add_model_info(base_model_id=model_id)
-        save_info_builder.add_prov_data(
-            raw_data_path=raw_data, env=prov_env, train_kwargs=train_kwargs, train_service_wrapper=ts_wrapper)
+        save_info_builder.add_model_info(base_model_id=model_id, env=prov_env)
+        save_info_builder.add_prov_data(raw_data_path=raw_data, train_kwargs=train_kwargs,
+                                        train_service_wrapper=ts_wrapper)
         save_info = save_info_builder.build()
 
         model_id_2 = self.provenance_save_service.save_model(save_info)
 
         imagenet_ts.train(model, **train_kwargs)
         self.provenance_save_service.add_weights_hash_info(model_id_2, model)
-
 
         recovered_model_info = self.provenance_save_service.recover_model(model_id_2)
         self.assertTrue(model_equal(model, recovered_model_info.model, imagenet_input))

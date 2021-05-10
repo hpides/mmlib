@@ -2,7 +2,7 @@ import abc
 import configparser
 import os
 
-from mmlib.constants import MMLIB_CONFIG, CURRENT_DATA_ROOT, VALUES, ID
+from mmlib.constants import MMLIB_CONFIG, CURRENT_DATA_ROOT, VALUES
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from schema.dataset import Dataset
 from schema.environment import Environment
@@ -69,21 +69,6 @@ class FullModelRecoverInfo(AbstractModelCodeRecoverInfo):
         super().__init__(model_code, model_class_name, store_id)
         self.weights_file = weights_file
         self.environment = environment
-
-    @classmethod
-    def load(cls, obj_id: str, file_pers_service: FilePersistenceService,
-             dict_pers_service: DictPersistenceService, restore_root: str, load_recursive: bool = False,
-             load_files: bool = False):
-        restored_dict = dict_pers_service.recover_dict(obj_id, RECOVER_INFO)
-
-        store_id = restored_dict[ID]
-        model_class_name = restored_dict[MODEL_CLASS_NAME]
-
-        model_code = _recover_model_code(file_pers_service, load_files, restore_root, restored_dict)
-        weights_file_path = _recover_weights(file_pers_service, load_files, restore_root, restored_dict)
-
-        return cls(weights_file=weights_file_path, model_code=model_code,
-                   model_class_name=model_class_name, store_id=store_id)
 
     def load_all_fields(self, file_pers_service: FilePersistenceService,
                         dict_pers_service: DictPersistenceService, restore_root: str,
