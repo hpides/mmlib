@@ -17,7 +17,7 @@ from tests.example_files.data.custom_coco import TrainCustomCoco
 from tests.example_files.imagenet_train import ImagenetTrainService, OPTIMIZER, DATALOADER, DATA, ImagenetTrainWrapper
 from tests.example_files.mynets.mobilenet import mobilenet_v2
 from tests.example_files.mynets.resnet18 import resnet18
-from tests.save.test_baseline_save_servcie import MONGO_CONTAINER_NAME
+from tests.save.test_baseline_save_servcie import MONGO_CONTAINER_NAME, TestBaselineSaveService
 from util.dummy_data import imagenet_input
 from util.mongo import MongoService
 
@@ -26,32 +26,16 @@ MODEL_PATH = os.path.join(FILE_PATH, '../example_files/mynets/{}.py')
 CONFIG = os.path.join(FILE_PATH, '../example_files/local-config.ini')
 
 
-class TestProvSaveService(unittest.TestCase):
+class TestProvSaveService(TestBaselineSaveService):
 
     def setUp(self) -> None:
+        super().setUp()
         assert os.path.isfile(CONFIG), \
             'to run these tests define your onw config file named \'local-config\' with respect to the template file'
-
-        self.tmp_path = './filesystem-tmp'
-        self.abs_tmp_path = os.path.abspath(self.tmp_path)
-
-        self.__clean_up()
-        # run mongo DB locally in docker container
-        os.system('docker run --rm --name %s -it -p 27017:27017 -d  mongo:4.4.3 ' % MONGO_CONTAINER_NAME)
-
-        os.mkdir(self.abs_tmp_path)
-
         os.environ[MMLIB_CONFIG] = CONFIG
 
-        self.mongo_service = MongoService('127.0.0.1', 'mmlib')
-        file_pers_service = FileSystemPersistenceService(self.tmp_path)
-        dict_pers_service = MongoDictPersistenceService()
-        self.provenance_save_service = ProvenanceSaveService(file_pers_service, dict_pers_service)
-
-    def __clean_up(self):
-        os.system('docker kill %s' % MONGO_CONTAINER_NAME)
-        if os.path.exists(self.abs_tmp_path):
-            shutil.rmtree(self.abs_tmp_path)
+    def init_save_service(self, dict_pers_service, file_pers_service):
+        self.save_service = ProvenanceSaveService(file_pers_service, dict_pers_service)
 
     def test_save_restore_provenance_model_resnet18(self):
         model = resnet18(pretrained=True)
@@ -77,7 +61,7 @@ class TestProvSaveService(unittest.TestCase):
         save_info_builder.add_model_info(model=model, env=env)
         save_info = save_info_builder.build()
 
-        base_model_id = self.provenance_save_service.save_model(save_info)
+        base_model_id = self.save_service.save_model(save_info)
 
         ################################################################################################################
         # as next we define the provenance data, that can not be automatically inferred
@@ -152,11 +136,11 @@ class TestProvSaveService(unittest.TestCase):
         # in this case it should be equivalent to the initial model trained using the specified train_service using the
         # specified data and train kwargs
         ################################################################################################################
-        model_id = self.provenance_save_service.save_model(save_info)
+        model_id = self.save_service.save_model(save_info)
 
         imagenet_ts.train(model, **train_kwargs)
-        self.provenance_save_service.add_weights_hash_info(model_id, model)
-        recovered_model_info = self.provenance_save_service.recover_model(model_id)
+        self.save_service.add_weights_hash_info(model_id, model)
+        recovered_model_info = self.save_service.recover_model(model_id)
         recovered_model_1 = recovered_model_info.model
 
         ################################################################################################################
@@ -168,11 +152,11 @@ class TestProvSaveService(unittest.TestCase):
                                         train_service_wrapper=ts_wrapper)
         save_info = save_info_builder.build()
 
-        model_id_2 = self.provenance_save_service.save_model(save_info)
+        model_id_2 = self.save_service.save_model(save_info)
 
         imagenet_ts.train(model, **train_kwargs)
-        self.provenance_save_service.add_weights_hash_info(model_id_2, model)
+        self.save_service.add_weights_hash_info(model_id_2, model)
 
-        recovered_model_info = self.provenance_save_service.recover_model(model_id_2)
+        recovered_model_info = self.save_service.recover_model(model_id_2)
         self.assertTrue(model_equal(model, recovered_model_info.model, imagenet_input))
         self.assertFalse(model_equal(recovered_model_1, recovered_model_info.model, imagenet_input))

@@ -403,11 +403,7 @@ class ProvenanceSaveService(BaselineSaveService):
     def recover_model(self, model_id: str, execute_checks: bool = True) -> RestoredModelInfo:
 
         base_model_id = self._get_base_model(model_id)
-        if base_model_id is None:
-            # if there is no base model the current model's store type must be FULL_MODEL
-            store_type = self._get_store_type(model_id)
-            assert store_type == ModelStoreType.FULL_MODEL, \
-                'for all other model types then ModelStoreType.PICKLED_WEIGHTS we need a base model'
+        if self._get_store_type(model_id) == ModelStoreType.FULL_MODEL:
             return super().recover_model(model_id, execute_checks)
         else:
             # if there is a base model we first have to restore the base model to continue training base on it
