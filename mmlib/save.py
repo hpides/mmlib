@@ -108,7 +108,8 @@ class BaselineSaveService(AbstractSaveService):
             restored_model_info = RestoredModelInfo(model=model)
 
             if execute_checks:
-                self._execute_checks(model, model_info)
+                self._check_weights(model, model_info)
+                self._check_env(model_info)
 
         return restored_model_info
 
@@ -223,10 +224,6 @@ class BaselineSaveService(AbstractSaveService):
             model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path)
             return model_info.derived_from
 
-    def _execute_checks(self, model: torch.nn.Module, model_info: ModelInfo):
-        self._check_weights(model, model_info)
-        self._check_env(model_info)
-
     def _check_weights(self, model, model_info):
         if not model_info.weights_hash_info:
             warnings.warn('no weights_hash_info available for this models')
@@ -287,7 +284,7 @@ class WeightUpdateSaveService(BaselineSaveService):
             restored_model_info = RestoredModelInfo(model=recovered_model)
 
             if execute_checks:
-                self._execute_checks(recovered_model, model_info)
+                self._check_weights(recovered_model, model_info)
 
         return restored_model_info
 
@@ -436,7 +433,8 @@ class ProvenanceSaveService(BaselineSaveService):
                 restored_model_info = RestoredModelInfo(model=restored_model)
 
                 if execute_checks:
-                    self._execute_checks(restored_model, model_info)
+                    self._check_weights(restored_model, model_info)
+                    self._check_env(model_info)
 
                 return restored_model_info
 

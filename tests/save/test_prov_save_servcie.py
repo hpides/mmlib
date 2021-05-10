@@ -48,9 +48,6 @@ class TestProvSaveService(unittest.TestCase):
         dict_pers_service = MongoDictPersistenceService()
         self.provenance_save_service = ProvenanceSaveService(file_pers_service, dict_pers_service)
 
-    def tearDown(self) -> None:
-        self.__clean_up()
-
     def __clean_up(self):
         os.system('docker kill %s' % MONGO_CONTAINER_NAME)
         if os.path.exists(self.abs_tmp_path):
