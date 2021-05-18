@@ -44,11 +44,8 @@ class AbstractModelCodeRecoverInfo(AbstractRecoverInfo, metaclass=abc.ABCMeta):
         # size of the dict
         result += dict_pers_service.dict_size(self.store_id, RECOVER_INFO)
 
-        # size of all referenced files/objects
-        restored_dict = dict_pers_service.recover_dict(self.store_id, RECOVER_INFO)
-        result += file_pers_service.file_size(restored_dict[MODEL_CODE])
-
         # size of subclass fields
+        restored_dict = dict_pers_service.recover_dict(self.store_id, RECOVER_INFO)
         result += self._size_class_specific_fields(restored_dict, file_pers_service, dict_pers_service)
 
         return result
@@ -58,16 +55,16 @@ class AbstractModelCodeRecoverInfo(AbstractRecoverInfo, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
-WEIGHTS = 'weights'
+PARAMETERS = 'parameters'
 ENVIRONMENT = 'environment'
 
 
 class FullModelRecoverInfo(AbstractModelCodeRecoverInfo):
 
-    def __init__(self, weights_file: FileReference = None, model_code=None, model_class_name: str = None,
+    def __init__(self, parameters_file: FileReference = None, model_code=None, model_class_name: str = None,
                  environment: Environment = None, store_id: str = None):
         super().__init__(model_code, model_class_name, store_id)
-        self.weights_file = weights_file
+        self.parameters_file = parameters_file
         self.environment = environment
 
     def load_all_fields(self, file_pers_service: FilePersistenceService,
@@ -78,37 +75,37 @@ class FullModelRecoverInfo(AbstractModelCodeRecoverInfo):
         self.model_class_name = restored_dict[MODEL_CLASS_NAME]
 
         self.model_code = _recover_model_code(file_pers_service, load_files, restore_root, restored_dict)
-        self.weights_file = _recover_weights(file_pers_service, load_files, restore_root, restored_dict)
+        self.parameters_file = _recover_parameters(file_pers_service, load_files, restore_root, restored_dict)
         self.environment = _recover_environment(dict_pers_service, file_pers_service, load_recursive, restore_root,
                                                 restored_dict)
 
     def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
         result = 0
 
-        result += file_pers_service.size(restored_dict[WEIGHTS])
+        result += file_pers_service.size(restored_dict[PARAMETERS])
 
         return result
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
         super()._persist_class_specific_fields(dict_representation, file_pers_service, dict_pers_service)
-        file_pers_service.save_file(self.weights_file)
+        file_pers_service.save_file(self.parameters_file)
         env_id = self.environment.persist(file_pers_service, dict_pers_service)
 
-        dict_representation[WEIGHTS] = self.weights_file.reference_id
+        dict_representation[PARAMETERS] = self.parameters_file.reference_id
         dict_representation[ENVIRONMENT] = env_id
 
     def _representation_type(self) -> str:
         return RECOVER_INFO
 
 
-def _recover_weights(file_pers_service, load_files, restore_root, restored_dict):
-    weights_file_id = restored_dict[WEIGHTS]
-    weights_file = FileReference(reference_id=weights_file_id)
+def _recover_parameters(file_pers_service, load_files, restore_root, restored_dict):
+    parameterss_file_id = restored_dict[PARAMETERS]
+    parameters_file = FileReference(reference_id=parameterss_file_id)
 
     if load_files:
-        file_pers_service.recover_file(weights_file, restore_root)
+        file_pers_service.recover_file(parameters_file, restore_root)
 
-    return weights_file
+    return parameters_file
 
 
 def _recover_environment(dict_pers_service, file_pers_service, load_recursive, restore_root, restored_dict):
