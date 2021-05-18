@@ -16,9 +16,6 @@ TRAIN_INFO = 'train_info'
 
 class TrainInfo(SchemaObj):
 
-    def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
-        pass
-
     def __init__(self, ts_wrapper: StateDictRestorableObjectWrapper = None, ts_wrapper_code: FileReference = None,
                  ts_wrapper_class_name: str = None, train_kwargs: dict = None, store_id: str = None):
         super().__init__(store_id)
@@ -54,14 +51,11 @@ class TrainInfo(SchemaObj):
                                            train_service_id, self.train_service_wrapper_class_name,
                                            self.train_service_wrapper_code, load_recursive, load_files)
 
-    def size_in_bytes(self, file_pers_service: FilePersistenceService,
-                      dict_pers_service: DictPersistenceService) -> int:
+    def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
         result = 0
 
-        result += dict_pers_service.dict_size(self.store_id, TRAIN_INFO)
-
         result += self.train_service_wrapper.size_in_bytes(file_pers_service, dict_pers_service)
-        result += self.environment.size_in_bytes(file_pers_service, dict_pers_service)
+        file_pers_service.size(restored_dict[WRAPPER_CODE])
 
         return result
 
