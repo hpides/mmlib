@@ -179,7 +179,7 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
     def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
         result = 0
 
-        result += file_pers_service.size(restored_dict[DATASET])
+        result += self.dataset.size_in_bytes(file_pers_service, dict_pers_service)
         result += self.train_info.size_in_bytes(file_pers_service, dict_pers_service)
         result += self.environment.size_in_bytes(file_pers_service, dict_pers_service)
 
