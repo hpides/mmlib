@@ -63,7 +63,6 @@ class ModelInfo(SchemaObj):
     def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
         result = 0
 
-        # size of all referenced files/objects
         # for now we leave out the size of the base model, we might have to implement this later
         result += self.recover_info.size_in_bytes(file_pers_service, dict_pers_service)
 
