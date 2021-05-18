@@ -16,6 +16,9 @@ TRAIN_INFO = 'train_info'
 
 class TrainInfo(SchemaObj):
 
+    def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
+        pass
+
     def __init__(self, ts_wrapper: StateDictRestorableObjectWrapper = None, ts_wrapper_code: FileReference = None,
                  ts_wrapper_class_name: str = None, train_kwargs: dict = None, store_id: str = None):
         super().__init__(store_id)

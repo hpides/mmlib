@@ -22,48 +22,17 @@ class AbstractRecoverInfo(SchemaObj, metaclass=abc.ABCMeta):
 
 MODEL_CODE = 'model_code'
 MODEL_CLASS_NAME = 'model_class_name'
-
-
-class AbstractModelCodeRecoverInfo(AbstractRecoverInfo, metaclass=abc.ABCMeta):
-
-    def __init__(self, model_code: FileReference, model_class_name: str, store_id: str = None):
-        super().__init__(store_id)
-        self.model_code = model_code
-        self.model_class_name = model_class_name
-
-    def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
-        file_pers_service.save_file(self.model_code)
-
-        dict_representation[MODEL_CODE] = self.model_code.reference_id
-        dict_representation[MODEL_CLASS_NAME] = self.model_class_name
-
-    def size_in_bytes(self, file_pers_service: FilePersistenceService,
-                      dict_pers_service: DictPersistenceService) -> int:
-        result = 0
-
-        # size of the dict
-        result += dict_pers_service.dict_size(self.store_id, RECOVER_INFO)
-
-        # size of subclass fields
-        restored_dict = dict_pers_service.recover_dict(self.store_id, RECOVER_INFO)
-        result += self._size_class_specific_fields(restored_dict, file_pers_service, dict_pers_service)
-
-        return result
-
-    @abc.abstractmethod
-    def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
-        raise NotImplementedError
-
-
 PARAMETERS = 'parameters'
 ENVIRONMENT = 'environment'
 
 
-class FullModelRecoverInfo(AbstractModelCodeRecoverInfo):
+class FullModelRecoverInfo(AbstractRecoverInfo):
 
-    def __init__(self, parameters_file: FileReference = None, model_code=None, model_class_name: str = None,
-                 environment: Environment = None, store_id: str = None):
-        super().__init__(model_code, model_class_name, store_id)
+    def __init__(self, parameters_file: FileReference = None,
+                 model_code=None, model_class_name: str = None, environment: Environment = None, store_id: str = None):
+        super().__init__(store_id)
+        self.model_code = model_code
+        self.model_class_name = model_class_name
         self.parameters_file = parameters_file
         self.environment = environment
 
@@ -83,15 +52,19 @@ class FullModelRecoverInfo(AbstractModelCodeRecoverInfo):
         result = 0
 
         result += file_pers_service.size(restored_dict[PARAMETERS])
+        result += file_pers_service.size(restored_dict[MODEL_CODE])
+        result += self.environment.size_in_bytes(file_pers_service, dict_pers_service)
 
         return result
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
-        super()._persist_class_specific_fields(dict_representation, file_pers_service, dict_pers_service)
+        file_pers_service.save_file(self.model_code)
         file_pers_service.save_file(self.parameters_file)
         env_id = self.environment.persist(file_pers_service, dict_pers_service)
 
         dict_representation[PARAMETERS] = self.parameters_file.reference_id
+        dict_representation[MODEL_CODE] = self.model_code.reference_id
+        dict_representation[MODEL_CLASS_NAME] = self.model_class_name
         dict_representation[ENVIRONMENT] = env_id
 
     def _representation_type(self) -> str:
@@ -139,10 +112,12 @@ class WeightsUpdateRecoverInfo(AbstractRecoverInfo):
         self.update_type = restored_dict[UPDATE_TYPE]
         self.independent = restored_dict[INDEPENDENT]
 
-    def size_in_bytes(self, file_pers_service: FilePersistenceService,
-                      dict_pers_service: DictPersistenceService) -> int:
-        # Note not implemented for now
-        pass
+    def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
+        result = 0
+
+        result += file_pers_service.size(restored_dict[UPDATE])
+
+        return result
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
         file_pers_service.save_file(self.update)
@@ -174,14 +149,6 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
         self.train_info = train_info
         self.environment = environment
 
-    def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
-        result = 0
-
-        result += self.dataset.size_in_bytes(file_pers_service, dict_pers_service)
-        result += self.train_info.size_in_bytes(file_pers_service, dict_pers_service)
-
-        return result
-
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
         dataset_id = self.dataset.persist(file_pers_service, dict_pers_service)
         train_info_id = self.train_info.persist(file_pers_service, dict_pers_service)
@@ -209,10 +176,14 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
         self.environment = _recover_environment(dict_pers_service, file_pers_service, load_recursive, restore_root,
                                                 restored_dict)
 
-    def size_in_bytes(self, file_pers_service: FilePersistenceService,
-                      dict_pers_service: DictPersistenceService) -> int:
-        # TODO
-        pass
+    def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
+        result = 0
+
+        result += file_pers_service.size(restored_dict[DATASET])
+        result += self.train_info.size_in_bytes(file_pers_service, dict_pers_service)
+        result += self.environment.size_in_bytes(file_pers_service, dict_pers_service)
+
+        return result
 
 
 def _data_dst_path():

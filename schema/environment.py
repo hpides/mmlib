@@ -14,6 +14,9 @@ ENVIRONMENT = 'environment'
 
 class Environment(SchemaObj):
 
+    def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
+        pass
+
     def __init__(self, store_id: str = None, python_version: str = None, pytorch_version: str = None,
                  processor_info: str = None, gpu_types: str = None, pytorch_info: str = None,
                  python_platform_info: str = None, pip_freeze: list = None):

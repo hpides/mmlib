@@ -62,6 +62,9 @@ class AbstractRestorableObjectWrapper(SchemaObj, metaclass=ABCMeta):
 
 class RestorableObjectWrapper(AbstractRestorableObjectWrapper):
 
+    def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
+        pass
+
     def __init__(self, c_name: str = None, init_args: dict = None, init_ref_type_args: [str] = None,
                  config_args: dict = None, code: FileReference = None, import_cmd: str = None, instance: object = None,
                  store_id: str = None):
@@ -160,6 +163,9 @@ class StateDictObj(metaclass=abc.ABCMeta):
 
 
 class StateDictRestorableObjectWrapper(AbstractRestorableObjectWrapper):
+
+    def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
+        pass
 
     def __init__(self, c_name: str = None, code: FileReference = None, instance: StateDictObj = None,
                  store_id: str = None):

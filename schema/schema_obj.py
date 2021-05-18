@@ -76,7 +76,6 @@ class SchemaObj(metaclass=abc.ABCMeta):
         :return:
         """
 
-    @abc.abstractmethod
     def size_in_bytes(self, file_pers_service: FilePersistenceService,
                       dict_pers_service: DictPersistenceService) -> int:
         """
@@ -86,9 +85,22 @@ class SchemaObj(metaclass=abc.ABCMeta):
          as dicts.
         :return: The size in bytes.
         """
-        raise NotImplementedError
+        result = 0
+        representation_type = self._representation_type()
+
+        # size of the dict
+        result += dict_pers_service.dict_size(self.store_id, representation_type)
+
+        # size of subclass fields
+        restored_dict = dict_pers_service.recover_dict(self.store_id, representation_type)
+        result += self._size_class_specific_fields(restored_dict, file_pers_service, dict_pers_service)
+
+        return result
 
     @abc.abstractmethod
+    def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
+        raise NotImplementedError
+
     def _representation_type(self) -> str:
         raise NotImplementedError
 
