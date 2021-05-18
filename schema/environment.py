@@ -54,6 +54,6 @@ class Environment(SchemaObj):
     def _representation_type(self) -> str:
         return ENVIRONMENT
 
-    def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
+    def _size_class_specific_fields(self, file_pers_service, dict_pers_service):
         # this class only holds meta information
         return 0

@@ -60,7 +60,7 @@ class ModelInfo(SchemaObj):
         if not self.weights_hash_info:
             self.weights_hash_info = _recover_weights_hash_info(restored_dict)
 
-    def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
+    def _size_class_specific_fields(self, file_pers_service, dict_pers_service):
         result = 0
 
         # for now we leave out the size of the base model, we might have to implement this later

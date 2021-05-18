@@ -12,8 +12,7 @@ DATASET = 'dataset'
 
 class Dataset(SchemaObj):
 
-    def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
-        pass
+
 
     def __init__(self, raw_data: FileReference = None, store_id: str = None):
         super().__init__(store_id)
@@ -39,6 +38,9 @@ class Dataset(SchemaObj):
 
     def _representation_type(self) -> str:
         return DATASET
+
+    def _size_class_specific_fields(self, file_pers_service, dict_pers_service):
+        return file_pers_service.file_size(self.raw_data)
 
 
 def _recover_data(file_pers_service, load_files, restore_root, restored_dict):

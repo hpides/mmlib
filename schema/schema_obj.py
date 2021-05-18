@@ -92,13 +92,13 @@ class SchemaObj(metaclass=abc.ABCMeta):
         result += dict_pers_service.dict_size(self.store_id, representation_type)
 
         # size of subclass fields
-        restored_dict = dict_pers_service.recover_dict(self.store_id, representation_type)
-        result += self._size_class_specific_fields(restored_dict, file_pers_service, dict_pers_service)
+        self.load_all_fields(file_pers_service, dict_pers_service, "", False, False)
+        result += self._size_class_specific_fields(file_pers_service, dict_pers_service)
 
         return result
 
     @abc.abstractmethod
-    def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
+    def _size_class_specific_fields(self, file_pers_service, dict_pers_service):
         raise NotImplementedError
 
     def _representation_type(self) -> str:
