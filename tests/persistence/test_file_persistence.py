@@ -37,3 +37,12 @@ class TestPersistence(unittest.TestCase):
         self.pers_service.recover_file(file_ref, self.tmp_dir)
 
         self.assertTrue(filecmp.cmp(file_path, file_ref.path))
+
+    def test_file_size(self):
+        file_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test-files/test-file.txt')
+        file_ref = FileReference(path=file_path)
+        self.pers_service.save_file(file_ref)
+        self.pers_service.file_size(file_ref)
+        size = file_ref.size
+
+        self.assertEqual(size, 19)

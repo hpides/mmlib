@@ -44,7 +44,7 @@ class SchemaObj(metaclass=abc.ABCMeta):
         :param file_pers_service: An instance of FilePersistenceService that is used to store files.
         :param dict_pers_service: An instance of DictPersistenceService that is used to store metadata as dicts.
         """
-        if self.store_id and dict_pers_service.id_exists(self.store_id, self._representation_type()):
+        if self.store_id and dict_pers_service.id_exists(self.store_id, self._representation_type):
             # if the id already exists, we do not have to persist again
             return self.store_id
 
@@ -57,7 +57,7 @@ class SchemaObj(metaclass=abc.ABCMeta):
 
         self._persist_class_specific_fields(dict_representation, file_pers_service, dict_pers_service)
 
-        dict_pers_service.save_dict(dict_representation, self._representation_type())
+        dict_pers_service.save_dict(dict_representation, self._representation_type)
 
         return self.store_id
 
@@ -76,31 +76,31 @@ class SchemaObj(metaclass=abc.ABCMeta):
         :return:
         """
 
-    def size_in_bytes(self, file_pers_service: FilePersistenceService,
-                      dict_pers_service: DictPersistenceService) -> int:
+    def size_info(self, file_pers_service: FilePersistenceService,
+                  dict_pers_service: DictPersistenceService) -> dict:
         """
-        Calculates and returns the size of the SchemaObj in bytes.
+        Calculates and returns a size info dict of the schema obj. All numbers are in in bytes.
         :param file_pers_service: An instance of FilePersistenceService that is used to store and load files.
         :param dict_pers_service: An instance of DictPersistenceService that is used to store and load metadata
          as dicts.
-        :return: The size in bytes.
+        :return: Dict giving detailed size information in bytes bytes.
         """
-        result = 0
-        representation_type = self._representation_type()
 
-        # size of the dict
-        result += dict_pers_service.dict_size(self.store_id, representation_type)
+        size_dict = {'metadata_size': dict_pers_service.dict_size(self.store_id, self._representation_type)}
 
-        # size of subclass fields
-        self.load_all_fields(file_pers_service, dict_pers_service, "", False, False)
-        result += self._size_class_specific_fields(file_pers_service, dict_pers_service)
+        # size of reference_fields
+        self.load_all_fields(file_pers_service, dict_pers_service, '', False, False)
+        self._add_reference_sizes(size_dict, file_pers_service, dict_pers_service)
 
-        return result
+        # return {self._representation_type: size_dict}
+        return size_dict
 
     @abc.abstractmethod
-    def _size_class_specific_fields(self, file_pers_service, dict_pers_service):
+    def _add_reference_sizes(self, size_dict, file_pers_service, dict_pers_service):
         raise NotImplementedError
 
+    @property
+    @abc.abstractmethod
     def _representation_type(self) -> str:
         raise NotImplementedError
 
