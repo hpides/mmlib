@@ -7,6 +7,8 @@ from schema.dataset import Dataset
 from schema.file_reference import FileReference
 from util.mongo import MongoService
 
+COCO_DATA = '../example_files/data/reduced-custom-coco-data'
+
 MONGO_CONTAINER_NAME = 'mongo-test'
 
 
@@ -36,8 +38,11 @@ class TestDatasetSize(unittest.TestCase):
         if os.path.exists(self.abs_tmp_path):
             shutil.rmtree(self.abs_tmp_path)
 
+        if os.path.exists(COCO_DATA + '.zip'):
+            os.remove(COCO_DATA + '.zip')
+
     def test_dataset_size(self):
-        file = FileReference(path='../example_files/data/reduced-custom-coco-data')
+        file = FileReference(path=COCO_DATA)
         data_set = Dataset(raw_data=file)
         data_set_id = data_set.persist(self.file_pers_service, self.dict_pers_service)
 
