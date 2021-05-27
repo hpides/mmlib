@@ -1,6 +1,6 @@
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from schema.recover_info import FullModelRecoverInfo, AbstractRecoverInfo, WeightsUpdateRecoverInfo, \
-    ProvenanceRecoverInfo
+    ProvenanceRecoverInfo, RECOVER_INFO
 from schema.schema_obj import SchemaObj
 from schema.store_type import ModelStoreType
 from util.weight_dict_merkle_tree import WeightDictMerkleTree
@@ -26,8 +26,6 @@ class ModelInfo(SchemaObj):
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
 
         recover_info_id = self.recover_info.persist(file_pers_service, dict_pers_service)
-        print('recover_info_id')
-        print(recover_info_id)
 
         # add mandatory fields
         dict_representation[STORE_TYPE] = self.store_type.value
@@ -76,6 +74,9 @@ class ModelInfo(SchemaObj):
     @property
     def _representation_type(self) -> str:
         return MODEL_INFO
+
+    def _add_reference_sizes(self, size_dict, file_pers_service, dict_pers_service):
+        size_dict[RECOVER_INFO] = self.recover_info.size_info(file_pers_service, dict_pers_service)
 
 
 def _recover_stored_dict(dict_pers_service, obj_id):

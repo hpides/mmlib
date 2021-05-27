@@ -4,7 +4,7 @@ from schema.schema_obj import METADATA_SIZE
 from tests.size.abstract_test_size import TestSize
 
 
-class TestDatasetSize(TestSize):
+class TestEnvSize(TestSize):
 
     def test_environment_size(self):
         environment = track_current_environment()
