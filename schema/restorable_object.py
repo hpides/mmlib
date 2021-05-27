@@ -319,12 +319,30 @@ def add_params_from_config(init_args, config_args):
         init_args[k] = config[VALUES][v]
 
 
-class OptimizerWrapper(StateFileRestorableObjectWrapper):
+class StateFileRestorableObject(StateDictObj):
 
-    def _save_instance_state(self, path):
-        if self.instance:
-            state_dict = self.instance.state_dict()
-            torch.save(state_dict, path)
+    @abc.abstractmethod
+    def save_instance_state(self, path):
+        """
+        Saves the instance state to a file. The file is saved at the given path.
+        :param path: The path to save the state file to.
+        """
+        raise NotImplementedError
 
-    def _restore_instance_state(self, path):
-        self.instance.load_state_dict(torch.load(path))
+    @abc.abstractmethod
+    def restore_instance_state(self, path):
+        """
+        Restores the instance state from the given file.
+        :param path: The path to the file that holds the information to recover the insatcne state.
+        """
+        raise NotImplementedError
+
+# class OptimizerWrapper(StateFileRestorableObjectWrapper):
+#
+#     def _save_instance_state(self, path):
+#         if self.instance:
+#             state_dict = self.instance.state_dict()
+#             torch.save(state_dict, path)
+#
+#     def _restore_instance_state(self, path):
+#         self.instance.load_state_dict(torch.load(path))
