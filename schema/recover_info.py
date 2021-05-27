@@ -16,6 +16,7 @@ RECOVER_INFO = 'recover_info'
 
 class AbstractRecoverInfo(SchemaObj, metaclass=abc.ABCMeta):
 
+    @property
     def _representation_type(self) -> str:
         return RECOVER_INFO
 
@@ -28,8 +29,8 @@ ENVIRONMENT = 'environment'
 
 class FullModelRecoverInfo(AbstractRecoverInfo):
 
-    def __init__(self, parameters_file: FileReference = None,
-                 model_code=None, model_class_name: str = None, environment: Environment = None, store_id: str = None):
+    def __init__(self, parameters_file: FileReference = None, model_code: FileReference = None,
+                 model_class_name: str = None, environment: Environment = None, store_id: str = None):
         super().__init__(store_id)
         self.model_code = model_code
         self.model_class_name = model_class_name
@@ -67,8 +68,14 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
         dict_representation[MODEL_CLASS_NAME] = self.model_class_name
         dict_representation[ENVIRONMENT] = env_id
 
-    def _representation_type(self) -> str:
-        return RECOVER_INFO
+    def _add_reference_sizes(self, size_dict, file_pers_service, dict_pers_service):
+        size_dict[ENVIRONMENT] = self.environment.size_info(file_pers_service, dict_pers_service)
+
+        file_pers_service.file_size(self.model_code)
+        size_dict[MODEL_CODE] = self.model_code.size
+
+        file_pers_service.file_size(self.parameters_file)
+        size_dict[PARAMETERS] = self.parameters_file.size
 
 
 def _recover_parameters(file_pers_service, load_files, restore_root, restored_dict):

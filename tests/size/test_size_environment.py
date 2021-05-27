@@ -1,13 +1,7 @@
 from mmlib.track_env import track_current_environment
-from schema.dataset import Dataset
 from schema.environment import Environment
-from schema.file_reference import FileReference
 from schema.schema_obj import METADATA_SIZE
 from tests.size.abstract_test_size import TestSize
-
-COCO_DATA = '../example_files/data/reduced-custom-coco-data'
-
-MONGO_CONTAINER_NAME = 'mongo-test'
 
 
 class TestDatasetSize(TestSize):
