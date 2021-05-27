@@ -168,11 +168,11 @@ class StateDictRestorableObjectWrapper(AbstractRestorableObjectWrapper):
     def _size_class_specific_fields(self, file_pers_service, dict_pers_service):
         raise NotImplementedError
 
-    def __init__(self, c_name: str = None, code: FileReference = None, instance: StateDictObj = None,
+    def __init__(self, c_name: str = None, code: FileReference = None, instance: StateDictObj = None, state_objs=None,
                  store_id: str = None):
         super().__init__(c_name=c_name, code=code, instance=instance, store_id=store_id)
         self.instance: StateDictObj = instance
-        self.state_objs = None
+        self.state_objs = state_objs
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
         super()._persist_class_specific_fields(dict_representation, file_pers_service, dict_pers_service)
@@ -194,8 +194,9 @@ class StateDictRestorableObjectWrapper(AbstractRestorableObjectWrapper):
 
         c_name = restored_dict[CLASS_NAME]
         code_file_path = _restore_code(file_pers_service, restore_root, restored_dict, load_files)
+        state_objs = restored_dict[STATE_DICT]
 
-        restorable_obj_wrapper = cls(store_id=obj_id, code=code_file_path, c_name=c_name)
+        restorable_obj_wrapper = cls(store_id=obj_id, code=code_file_path, c_name=c_name, state_objs=state_objs)
 
         return restorable_obj_wrapper
 
@@ -251,7 +252,7 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
                          store_id=store_id)
         self.state_file = state_file
 
-    # TODO check if we need this method
+    # # TODO check if we need this method
     def persist(self, file_pers_service: FilePersistenceService,
                 dict_pers_service: DictPersistenceService) -> str:
 
