@@ -73,6 +73,7 @@ class ModelInfo(SchemaObj):
         add_dict = {WEIGHTS_HASH_INFO: weights_hash_info.to_python_dict()}
         dict_pers_service.add_field(self.store_id, MODEL_INFO, add_dict)
 
+    @property
     def _representation_type(self) -> str:
         return MODEL_INFO
 

@@ -16,6 +16,10 @@ TRAIN_INFO = 'train_info'
 
 class TrainInfo(SchemaObj):
 
+    def _add_reference_sizes(self, size_dict, file_pers_service, dict_pers_service):
+        # TODO
+        pass
+
     def __init__(self, ts_wrapper: StateDictRestorableObjectWrapper = None, ts_wrapper_code: FileReference = None,
                  ts_wrapper_class_name: str = None, train_kwargs: dict = None, store_id: str = None):
         super().__init__(store_id)
@@ -27,9 +31,6 @@ class TrainInfo(SchemaObj):
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
         train_service_id = self.train_service_wrapper.persist(file_pers_service, dict_pers_service)
         file_pers_service.save_file(self.train_service_wrapper_code)
-
-        print('train_service_ID')
-        print(train_service_id)
 
         dict_representation[TRAIN_SERVICE] = train_service_id
         dict_representation[WRAPPER_CODE] = self.train_service_wrapper_code.reference_id
@@ -59,6 +60,7 @@ class TrainInfo(SchemaObj):
 
         return result
 
+    @property
     def _representation_type(self) -> str:
         return TRAIN_INFO
 

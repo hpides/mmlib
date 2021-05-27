@@ -1,4 +1,5 @@
 import abc
+import tempfile
 
 from mmlib.constants import ID
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
@@ -91,8 +92,9 @@ class SchemaObj(metaclass=abc.ABCMeta):
         size_dict = {METADATA_SIZE: dict_pers_service.dict_size(self.store_id, self._representation_type)}
 
         # size of reference_fields
-        self.load_all_fields(file_pers_service, dict_pers_service, '', False, False)
-        self._add_reference_sizes(size_dict, file_pers_service, dict_pers_service)
+        with tempfile.TemporaryDirectory() as tmp_path:
+            self.load_all_fields(file_pers_service, dict_pers_service, tmp_path, False, False)
+            self._add_reference_sizes(size_dict, file_pers_service, dict_pers_service)
 
         # return {self._representation_type: size_dict}
         return size_dict

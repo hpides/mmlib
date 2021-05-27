@@ -49,15 +49,6 @@ class FullModelRecoverInfo(AbstractRecoverInfo):
         self.environment = _recover_environment(dict_pers_service, file_pers_service, load_recursive, restore_root,
                                                 restored_dict)
 
-    def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
-        result = 0
-
-        result += file_pers_service.size(restored_dict[PARAMETERS])
-        result += file_pers_service.size(restored_dict[MODEL_CODE])
-        result += self.environment.size_in_bytes(file_pers_service, dict_pers_service)
-
-        return result
-
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
         file_pers_service.save_file(self.model_code)
         file_pers_service.save_file(self.parameters_file)
@@ -119,13 +110,6 @@ class WeightsUpdateRecoverInfo(AbstractRecoverInfo):
         self.update_type = restored_dict[UPDATE_TYPE]
         self.independent = restored_dict[INDEPENDENT]
 
-    def _size_class_specific_fields(self, restored_dict, file_pers_service, dict_pers_service):
-        result = 0
-
-        result += file_pers_service.size(restored_dict[UPDATE])
-
-        return result
-
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
         file_pers_service.save_file(self.update)
         dict_representation[UPDATE] = self.update.reference_id
@@ -162,11 +146,8 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
         dataset_id = self.dataset.persist(file_pers_service, dict_pers_service)
-        train_info_id = self.train_info.persist(file_pers_service, dict_pers_service)
         env_id = self.environment.persist(file_pers_service, dict_pers_service)
-
-        print('train_info_id')
-        print(train_info_id)
+        train_info_id = self.train_info.persist(file_pers_service, dict_pers_service)
 
         dict_representation[DATASET] = dataset_id
         dict_representation[TRAIN_INFO] = train_info_id
@@ -187,14 +168,10 @@ class ProvenanceRecoverInfo(AbstractRecoverInfo):
         self.environment = _recover_environment(dict_pers_service, file_pers_service, load_recursive, restore_root,
                                                 restored_dict)
 
-    def _size_class_specific_fields(self, file_pers_service, dict_pers_service):
-        result = 0
-
-        result += self.dataset.size_in_bytes(file_pers_service, dict_pers_service)
-        result += self.train_info.size_in_bytes(file_pers_service, dict_pers_service)
-        result += self.environment.size_in_bytes(file_pers_service, dict_pers_service)
-
-        return result
+    def _add_reference_sizes(self, size_dict, file_pers_service, dict_pers_service):
+        size_dict[ENVIRONMENT] = self.environment.size_info(file_pers_service, dict_pers_service)
+        size_dict[TRAIN_INFO] = self.train_info.size_info(file_pers_service, dict_pers_service)
+        size_dict[DATASET] = self.dataset.size_info(file_pers_service, dict_pers_service)
 
 
 def _data_dst_path():
