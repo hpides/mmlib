@@ -1,6 +1,5 @@
 import os
 
-import torch
 from torch.utils.data import DataLoader
 
 from mmlib.constants import CURRENT_DATA_ROOT, MMLIB_CONFIG

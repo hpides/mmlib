@@ -3,8 +3,7 @@ import shutil
 
 import torch
 
-from schema.restorable_object import RestorableObjectWrapper, CODE_FILE, OptimizerWrapper, STATE_FILE, \
-    StateFileRestorableObjectWrapper
+from schema.restorable_object import RestorableObjectWrapper, CODE_FILE, OptimizerWrapper, STATE_FILE
 from schema.schema_obj import METADATA_SIZE
 from tests.example_files.data.custom_coco import TrainCustomCoco
 from tests.example_files.mynets.resnet18 import resnet18

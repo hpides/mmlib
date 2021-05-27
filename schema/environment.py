@@ -54,4 +54,3 @@ class Environment(SchemaObj):
     def _add_reference_sizes(self, size_dict, file_pers_service, dict_pers_service):
         # environment only consists of meta data
         pass
-
