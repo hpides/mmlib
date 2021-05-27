@@ -8,16 +8,18 @@ from schema.dataset import Dataset
 from schema.file_reference import FileReference
 from schema.recover_info import FullModelRecoverInfo, ENVIRONMENT, MODEL_CODE, PARAMETERS, WeightsUpdateRecoverInfo, \
     UPDATE, ProvenanceRecoverInfo, DATASET, TRAIN_INFO
-from schema.restorable_object import OptimizerWrapper
+from schema.restorable_object import StateFileRestorableObjectWrapper
 from schema.schema_obj import METADATA_SIZE
 from schema.train_info import TrainInfo
+from tests.example_files.imagenet_optimizer import ImagenetOptimizer
 from tests.example_files.imagenet_train import ImagenetTrainService, OPTIMIZER, ImagenetTrainWrapper
 from tests.example_files.mynets.resnet18 import resnet18
 from tests.size.abstract_test_size import TestSize
 
 FILE_PATH = os.path.dirname(os.path.realpath(__file__))
-COCO_DATA = '../example_files/data/reduced-custom-coco-data'
-IMG_TRAIN_WRAPPER_CODE = '../example_files/imagenet_train.py'
+COCO_DATA = os.path.join(FILE_PATH, '../example_files/data/reduced-custom-coco-data')
+IMG_TRAIN_WRAPPER_CODE = os.path.join(FILE_PATH, '../example_files/imagenet_train.py')
+OPTIMIZER_CODE = os.path.join(FILE_PATH, '../example_files/imagenet_optimizer.py')
 
 
 class TestRecoverInfoSize(TestSize):
@@ -67,7 +69,7 @@ class TestRecoverInfoSize(TestSize):
         self.assertTrue(size_dict[UPDATE] > 0)
 
     def test_provenance_size(self):
-        file = FileReference(path=os.path.join(FILE_PATH, COCO_DATA))
+        file = FileReference(path=COCO_DATA)
         data_set = Dataset(raw_data=file)
         environment = track_current_environment()
         train_info = self._dummy_train_service()
@@ -94,7 +96,7 @@ class TestRecoverInfoSize(TestSize):
         train_info = TrainInfo(
             ts_wrapper=self._dummy_train_service_wrapper(),
             ts_wrapper_class_name='ImagenetTrainWrapper',
-            ts_wrapper_code=FileReference(os.path.join(FILE_PATH, IMG_TRAIN_WRAPPER_CODE)),
+            ts_wrapper_code=FileReference(IMG_TRAIN_WRAPPER_CODE),
             train_kwargs={}
         )
 
@@ -107,9 +109,9 @@ class TestRecoverInfoSize(TestSize):
 
         # for dummy put optimizer in
         optimizer_kwargs = {'lr': 1e-4, 'momentum': 0.9, 'weight_decay': 1e-4}
-        optimizer = torch.optim.SGD(model.parameters(), **optimizer_kwargs)
-        state_dict[OPTIMIZER] = OptimizerWrapper(
-            import_cmd='from torch.optim import SGD',
+        optimizer = ImagenetOptimizer(model.parameters(), **optimizer_kwargs)
+        state_dict[OPTIMIZER] = StateFileRestorableObjectWrapper(
+            code=FileReference(OPTIMIZER_CODE),
             init_args=optimizer_kwargs,
             init_ref_type_args=['params'],
             instance=optimizer
