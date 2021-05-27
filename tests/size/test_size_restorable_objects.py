@@ -35,7 +35,6 @@ class TestRestorableObjectSize(TestSize):
         place_holder = RestorableObjectWrapper.load_placeholder(row_id)
         size_dict = place_holder.size_info(self.file_pers_service, self.dict_pers_service)
 
-        # raw data number from mac finder info
         self.assertEqual(len(size_dict.keys()), 2)
         self.assertTrue(METADATA_SIZE in size_dict.keys())
         self.assertTrue(CODE_FILE in size_dict.keys())
@@ -58,7 +57,6 @@ class TestRestorableObjectSize(TestSize):
         place_holder = RestorableObjectWrapper.load_placeholder(row_id)
         size_dict = place_holder.size_info(self.file_pers_service, self.dict_pers_service)
 
-        # raw data number from mac finder info
         self.assertEqual(len(size_dict.keys()), 1)
         self.assertTrue(METADATA_SIZE in size_dict.keys())
         self.assertTrue(size_dict[METADATA_SIZE] > 0)
@@ -82,7 +80,6 @@ class TestRestorableObjectSize(TestSize):
         self.assertEqual(len(size_dict.keys()), 3)
         self.assertTrue(METADATA_SIZE in size_dict.keys())
         self.assertTrue(size_dict[METADATA_SIZE] > 0)
-        # state should be bigger than 0
         self.assertTrue(size_dict[STATE_FILE] > 0)
         self.assertTrue(size_dict[CODE_FILE] > 0)
 
