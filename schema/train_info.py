@@ -28,9 +28,6 @@ class TrainInfo(SchemaObj):
         train_service_id = self.train_service_wrapper.persist(file_pers_service, dict_pers_service)
         file_pers_service.save_file(self.train_service_wrapper_code)
 
-        print('train_service_ID')
-        print(train_service_id)
-
         dict_representation[TRAIN_SERVICE] = train_service_id
         dict_representation[WRAPPER_CODE] = self.train_service_wrapper_code.reference_id
         dict_representation[WRAPPER_CLASS_NAME] = self.train_service_wrapper_class_name
@@ -51,19 +48,14 @@ class TrainInfo(SchemaObj):
                                            train_service_id, self.train_service_wrapper_class_name,
                                            self.train_service_wrapper_code, load_recursive, load_files)
 
-    def size_in_bytes(self, file_pers_service: FilePersistenceService,
-                      dict_pers_service: DictPersistenceService) -> int:
-        result = 0
-
-        result += dict_pers_service.dict_size(self.store_id, TRAIN_INFO)
-
-        result += self.train_service_wrapper.size_in_bytes(file_pers_service, dict_pers_service)
-        result += self.environment.size_in_bytes(file_pers_service, dict_pers_service)
-
-        return result
-
+    @property
     def _representation_type(self) -> str:
         return TRAIN_INFO
+
+    def _add_reference_sizes(self, size_dict, file_pers_service, dict_pers_service):
+        size_dict[TRAIN_SERVICE] = self.train_service_wrapper.size_info(file_pers_service, dict_pers_service)
+        file_pers_service.file_size(self.train_service_wrapper_code)
+        size_dict[WRAPPER_CODE] = self.train_service_wrapper_code.size
 
 
 def _recover_train_service_wrapper(dict_pers_service, file_pers_service, restore_root, train_service_id,

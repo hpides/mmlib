@@ -1,6 +1,5 @@
 import os
 
-import torch
 from torch.utils.data import DataLoader
 
 from mmlib.constants import CURRENT_DATA_ROOT, MMLIB_CONFIG
@@ -8,9 +7,11 @@ from mmlib.deterministic import set_deterministic
 from mmlib.equal import model_equal
 from mmlib.save import ProvenanceSaveService
 from mmlib.track_env import track_current_environment
-from schema.restorable_object import OptimizerWrapper, RestorableObjectWrapper
+from schema.file_reference import FileReference
+from schema.restorable_object import RestorableObjectWrapper, StateFileRestorableObjectWrapper
 from schema.save_info_builder import ModelSaveInfoBuilder
 from tests.example_files.data.custom_coco import TrainCustomCoco
+from tests.example_files.imagenet_optimizer import ImagenetOptimizer
 from tests.example_files.imagenet_train import ImagenetTrainService, OPTIMIZER, DATALOADER, DATA, ImagenetTrainWrapper
 from tests.example_files.mynets.mobilenet import mobilenet_v2
 from tests.example_files.mynets.resnet18 import resnet18
@@ -20,6 +21,7 @@ from util.dummy_data import imagenet_input
 FILE_PATH = os.path.dirname(os.path.realpath(__file__))
 MODEL_PATH = os.path.join(FILE_PATH, '../example_files/mynets/{}.py')
 CONFIG = os.path.join(FILE_PATH, '../example_files/local-config.ini')
+OPTIMIZER_CODE = os.path.join(FILE_PATH, '../example_files/imagenet_optimizer.py')
 
 
 class TestProvSaveService(TestBaselineSaveService):
@@ -105,9 +107,9 @@ class TestProvSaveService(TestBaselineSaveService):
         # some more extensive state. In pyTorch it offers also the method .state_dict(). To store and restore we use an
         # Optimizer wrapper object.
         optimizer_kwargs = {'lr': 1e-4, 'momentum': 0.9, 'weight_decay': 1e-4}
-        optimizer = torch.optim.SGD(model.parameters(), **optimizer_kwargs)
-        state_dict[OPTIMIZER] = OptimizerWrapper(
-            import_cmd='from torch.optim import SGD',
+        optimizer = ImagenetOptimizer(model.parameters(), **optimizer_kwargs)
+        state_dict[OPTIMIZER] = StateFileRestorableObjectWrapper(
+            code=FileReference(OPTIMIZER_CODE),
             init_args=optimizer_kwargs,
             init_ref_type_args=['params'],
             instance=optimizer

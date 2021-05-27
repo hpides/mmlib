@@ -38,10 +38,6 @@ class Environment(SchemaObj):
         self.python_platform_info = restored_dict[PYTHON_PLATFORM_INFO]
         self.pip_freeze = restored_dict[PIP_FREEZE]
 
-    def size_in_bytes(self, file_pers_service: FilePersistenceService,
-                      dict_pers_service: DictPersistenceService) -> int:
-        raise NotImplementedError
-
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
         dict_representation[PYTHON_VERSION] = self.python_version
         dict_representation[PYTORCH_VERSION] = self.pytorch_version
@@ -51,5 +47,10 @@ class Environment(SchemaObj):
         dict_representation[PYTHON_PLATFORM_INFO] = self.python_platform_info
         dict_representation[PIP_FREEZE] = self.pip_freeze
 
+    @property
     def _representation_type(self) -> str:
         return ENVIRONMENT
+
+    def _add_reference_sizes(self, size_dict, file_pers_service, dict_pers_service):
+        # environment only consists of meta data
+        pass

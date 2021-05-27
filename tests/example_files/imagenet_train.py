@@ -2,8 +2,8 @@ import torch
 
 from mmlib.deterministic import set_deterministic
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
-from schema.restorable_object import TrainService, OptimizerWrapper, StateDictRestorableObjectWrapper, \
-    RESTORABLE_OBJECT, STATE_DICT, RestorableObjectWrapper
+from schema.restorable_object import TrainService, StateDictRestorableObjectWrapper, \
+    RestorableObjectWrapper, StateFileRestorableObjectWrapper
 from util.init_from_file import create_object
 
 DATA = 'data'
@@ -46,7 +46,7 @@ class ImagenetTrainService(TrainService):
         return dataloader
 
     def _get_optimizer(self, parameters):
-        optimizer_wrapper: OptimizerWrapper = self.state_objs[OPTIMIZER]
+        optimizer_wrapper: StateFileRestorableObjectWrapper = self.state_objs[OPTIMIZER]
 
         if not optimizer_wrapper.instance:
             optimizer_wrapper.restore_instance({'params': parameters})
@@ -60,20 +60,17 @@ class ImagenetTrainWrapper(StateDictRestorableObjectWrapper):
                          dict_pers_service: DictPersistenceService, restore_root: str):
         state_dict = {}
 
-        restored_dict = dict_pers_service.recover_dict(self.store_id, RESTORABLE_OBJECT)
-        state_objs = restored_dict[STATE_DICT]
-
-        state_dict[OPTIMIZER] = OptimizerWrapper.load(
-            state_objs[OPTIMIZER], file_pers_service, dict_pers_service, restore_root, True, True)
+        state_dict[OPTIMIZER] = StateFileRestorableObjectWrapper.load(
+            self.state_objs[OPTIMIZER], file_pers_service, dict_pers_service, restore_root, True, True)
 
         data_wrapper = RestorableObjectWrapper.load(
-            state_objs[DATA], file_pers_service, dict_pers_service, restore_root, True, True)
+            self.state_objs[DATA], file_pers_service, dict_pers_service, restore_root, True, True)
         state_dict[DATA] = data_wrapper
         data_wrapper.restore_instance()
 
         # NOTE: Dataloader instance is loaded in the train routine
         dataloader = RestorableObjectWrapper.load(
-            state_objs[DATALOADER], file_pers_service, dict_pers_service, restore_root, True, True)
+            self.state_objs[DATALOADER], file_pers_service, dict_pers_service, restore_root, True, True)
         state_dict[DATALOADER] = dataloader
         dataloader.restore_instance(ref_type_args={'dataset': data_wrapper.instance})
 

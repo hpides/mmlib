@@ -30,12 +30,13 @@ class Dataset(SchemaObj):
         restored_dict = dict_pers_service.recover_dict(self.store_id, DATASET)
         self.raw_data = _recover_data(file_pers_service, load_files, restore_root, restored_dict)
 
-    def size_in_bytes(self, file_pers_service: FilePersistenceService,
-                      dict_pers_service: DictPersistenceService) -> int:
-        return dict_pers_service.dict_size(self.store_id, DATASET)
-
+    @property
     def _representation_type(self) -> str:
         return DATASET
+
+    def _add_reference_sizes(self, size_dict, file_pers_service, dict_pers_service):
+        file_pers_service.file_size(self.raw_data)
+        size_dict[RAW_DATA] = self.raw_data.size
 
 
 def _recover_data(file_pers_service, load_files, restore_root, restored_dict):

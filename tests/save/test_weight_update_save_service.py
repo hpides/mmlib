@@ -96,7 +96,7 @@ class TestWeightUpdateSaveService(TestBaselineSaveService):
             initial_recover_info: FullModelRecoverInfo = initial_model_info.recover_info
             derived_recover_info: WeightsUpdateRecoverInfo = derived_model_info.recover_info
 
-            initial_weights_file = initial_recover_info.weights_file
+            initial_weights_file = initial_recover_info.parameters_file
             self.file_pers_service.file_size(initial_weights_file)
 
             weights_update_file = derived_recover_info.update
