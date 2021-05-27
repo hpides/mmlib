@@ -3,6 +3,8 @@ import abc
 from mmlib.constants import ID
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
 
+METADATA_SIZE = 'metadata_size'
+
 
 class SchemaObj(metaclass=abc.ABCMeta):
 
@@ -86,7 +88,7 @@ class SchemaObj(metaclass=abc.ABCMeta):
         :return: Dict giving detailed size information in bytes bytes.
         """
 
-        size_dict = {'metadata_size': dict_pers_service.dict_size(self.store_id, self._representation_type)}
+        size_dict = {METADATA_SIZE: dict_pers_service.dict_size(self.store_id, self._representation_type)}
 
         # size of reference_fields
         self.load_all_fields(file_pers_service, dict_pers_service, '', False, False)

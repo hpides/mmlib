@@ -59,6 +59,15 @@ class AbstractRestorableObjectWrapper(SchemaObj, metaclass=ABCMeta):
         if self.import_cmd:
             dict_representation[IMPORT_CMD] = self.import_cmd
 
+    def _add_reference_sizes(self, size_dict, file_pers_service, dict_pers_service):
+        if self.code:
+            file_pers_service.file_size(self.code)
+            size_dict[CODE_FILE] = self.code.size
+
+    @property
+    def _representation_type(self) -> str:
+        return RESTORABLE_OBJECT
+
 
 class RestorableObjectWrapper(AbstractRestorableObjectWrapper):
 
@@ -94,22 +103,6 @@ class RestorableObjectWrapper(AbstractRestorableObjectWrapper):
 
         self.code = _restore_code(file_pers_service, restore_root, restored_dict, load_files)
 
-    def size_in_bytes(self, file_pers_service: FilePersistenceService,
-                      dict_pers_service: DictPersistenceService) -> int:
-        result = 0
-
-        # size of the dict
-        result += dict_pers_service.dict_size(self.store_id, RESTORABLE_OBJECT)
-        restored_dict = dict_pers_service.recover_dict(self.store_id, RESTORABLE_OBJECT)
-
-        # size of all referenced files/objects
-        if CODE_FILE in restored_dict:
-            result += file_pers_service.file_size(restored_dict[CODE_FILE])
-
-        result += file_pers_service.file_size(restored_dict[STATE_FILE])
-
-        return result
-
     def restore_instance(self, ref_type_args: dict = None):
         if self.init_ref_type_args or ref_type_args:
             assert self.init_ref_type_args and ref_type_args, self._generate_non_matching_parameter_message(
@@ -130,9 +123,6 @@ class RestorableObjectWrapper(AbstractRestorableObjectWrapper):
     def _generate_non_matching_parameter_message(self, ref_type_args):
         return 'given parameters not match the expected parameters - expected: {}, given: {}'.format(
             self.init_ref_type_args, ref_type_args)
-
-    def _representation_type(self) -> str:
-        return RESTORABLE_OBJECT
 
 
 def _restore_non_ref_fields(restored_dict):
@@ -210,14 +200,6 @@ class StateDictRestorableObjectWrapper(AbstractRestorableObjectWrapper):
                          dict_pers_service: DictPersistenceService, restore_root: str):
         raise NotImplementedError
 
-    def size_in_bytes(self, file_pers_service: FilePersistenceService,
-                      dict_pers_service: DictPersistenceService) -> int:
-        # Note leave implementation empty for now, as soon as we start evaluating approach implementation needed
-        return 0
-
-    def _representation_type(self) -> str:
-        return RESTORABLE_OBJECT
-
 
 class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
     def __init__(self, c_name: str = None, init_args: dict = None, init_ref_type_args: [str] = None,
@@ -240,7 +222,7 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
 
         self._persist_class_specific_fields(dict_representation, file_pers_service, dict_pers_service)
 
-        dict_pers_service.save_dict(dict_representation, self._representation_type())
+        dict_pers_service.save_dict(dict_representation, self._representation_type)
 
         return self.store_id
 
@@ -286,6 +268,11 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
 
         if self.state_file:
             self._restore_instance_state(self.state_file.path)
+
+    def _add_reference_sizes(self, size_dict, file_pers_service, dict_pers_service):
+        super()._add_reference_sizes(size_dict, file_pers_service, dict_pers_service)
+        file_pers_service.file_size(self.state_file)
+        size_dict[STATE_FILE] = self.state_file.size
 
     @abc.abstractmethod
     def _save_instance_state(self, path):
