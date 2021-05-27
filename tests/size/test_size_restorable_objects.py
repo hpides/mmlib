@@ -4,7 +4,7 @@ import shutil
 from mmlib.constants import CURRENT_DATA_ROOT
 from schema.file_reference import FileReference
 from schema.restorable_object import RestorableObjectWrapper, CODE_FILE, STATE_FILE, StateFileRestorableObjectWrapper, \
-    StateDictRestorableObjectWrapper, STATE_DICT
+    STATE_DICT
 from schema.schema_obj import METADATA_SIZE
 from tests.example_files.data.custom_coco import TrainCustomCoco
 from tests.example_files.imagenet_optimizer import ImagenetOptimizer
