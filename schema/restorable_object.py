@@ -68,6 +68,20 @@ class AbstractRestorableObjectWrapper(SchemaObj, metaclass=ABCMeta):
     def _representation_type(self) -> str:
         return RESTORABLE_OBJECT
 
+    @classmethod
+    def load_specific_placeholder(cls, obj_id: str, dict_pers_service: DictPersistenceService):
+        """
+        Loads the schema object from database/disk.
+        :param obj_id: The identifier for the SchemaObj in the database/disk.
+        :param dict_pers_service: An instance of DictPersistenceService that is used to store metadata as dicts.
+
+        """
+        restored_dict = dict_pers_service.recover_dict(obj_id, RESTORABLE_OBJECT)
+        if STATE_FILE in restored_dict:
+            return StateFileRestorableObjectWrapper(store_id=obj_id)
+        else:
+            return RestorableObjectWrapper(store_id=obj_id)
+
 
 class RestorableObjectWrapper(AbstractRestorableObjectWrapper):
 
@@ -161,6 +175,7 @@ class StateDictRestorableObjectWrapper(AbstractRestorableObjectWrapper):
                  store_id: str = None):
         super().__init__(c_name=c_name, code=code, instance=instance, store_id=store_id)
         self.instance: StateDictObj = instance
+        self.state_objs = None
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
         super()._persist_class_specific_fields(dict_representation, file_pers_service, dict_pers_service)
@@ -194,11 +209,20 @@ class StateDictRestorableObjectWrapper(AbstractRestorableObjectWrapper):
 
         self.class_name = restored_dict[CLASS_NAME]
         self.code = _restore_code(file_pers_service, restore_root, restored_dict, load_files)
+        self.state_objs = restored_dict[STATE_DICT]
 
     @abc.abstractmethod
     def restore_instance(self, file_pers_service: FilePersistenceService,
                          dict_pers_service: DictPersistenceService, restore_root: str):
         raise NotImplementedError
+
+    def _add_reference_sizes(self, size_dict, file_pers_service, dict_pers_service):
+        s_dict = {}
+        for k, v in self.state_objs.items():
+            place_holder = AbstractRestorableObjectWrapper.load_specific_placeholder(v, dict_pers_service)
+            s_dict[k] = place_holder.size_info(file_pers_service, dict_pers_service)
+
+        size_dict[STATE_DICT] = s_dict
 
 
 class StateFileRestorableObject(StateDictObj):
