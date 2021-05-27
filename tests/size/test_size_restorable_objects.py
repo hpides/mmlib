@@ -19,6 +19,40 @@ OPTIMIZER_CODE = os.path.join(FILE_PATH, '../example_files/imagenet_optimizer.py
 MONGO_CONTAINER_NAME = 'mongo-test'
 
 
+def _get_dummy_imagenet_train_service_wrapper():
+    model = resnet18()
+    optimizer_kwargs = {'lr': 1e-4, 'momentum': 0.9, 'weight_decay': 1e-4}
+    optimizer = ImagenetOptimizer(model.parameters(), **optimizer_kwargs)
+    state_file_row = StateFileRestorableObjectWrapper(
+        code=FileReference(OPTIMIZER_CODE),
+        init_args=optimizer_kwargs,
+        init_ref_type_args=['params'],
+        instance=optimizer
+    )
+    data_loader_kwargs = {'batch_size': 5, 'shuffle': True, 'num_workers': 0, 'pin_memory': True}
+    dataloader = TrainCustomCoco(os.path.join(FILE_PATH, COCO_DATA))
+    dataloader_row = RestorableObjectWrapper(
+        import_cmd='from torch.utils.data import DataLoader',
+        init_args=data_loader_kwargs,
+        init_ref_type_args=['dataset'],
+        instance=dataloader
+    )
+    data_wrapper = TrainCustomCoco(COCO_DATA)
+    data_wrapper_row = RestorableObjectWrapper(
+        config_args={'root': CURRENT_DATA_ROOT},
+        instance=data_wrapper
+    )
+    imagenet_ts = ImagenetTrainService()
+    state_dict = {
+        OPTIMIZER: state_file_row,
+        DATALOADER: dataloader_row,
+        DATA: data_wrapper_row
+    }
+    imagenet_ts.state_objs = state_dict
+    ts_wrapper = ImagenetTrainWrapper(instance=imagenet_ts)
+    return ts_wrapper
+
+
 class TestRestorableObjectSize(TestSize):
 
     def __clean_up(self):
@@ -87,40 +121,7 @@ class TestRestorableObjectSize(TestSize):
         self.assertTrue(size_dict[CODE_FILE] > 0)
 
     def test_state_dict_restorable_object_wrapper_size(self):
-        model = resnet18()
-        optimizer_kwargs = {'lr': 1e-4, 'momentum': 0.9, 'weight_decay': 1e-4}
-        optimizer = ImagenetOptimizer(model.parameters(), **optimizer_kwargs)
-        state_file_row = StateFileRestorableObjectWrapper(
-            code=FileReference(OPTIMIZER_CODE),
-            init_args=optimizer_kwargs,
-            init_ref_type_args=['params'],
-            instance=optimizer
-        )
-
-        data_loader_kwargs = {'batch_size': 5, 'shuffle': True, 'num_workers': 0, 'pin_memory': True}
-        dataloader = TrainCustomCoco(os.path.join(FILE_PATH, COCO_DATA))
-        dataloader_row = RestorableObjectWrapper(
-            import_cmd='from torch.utils.data import DataLoader',
-            init_args=data_loader_kwargs,
-            init_ref_type_args=['dataset'],
-            instance=dataloader
-        )
-
-        data_wrapper = TrainCustomCoco(COCO_DATA)
-        data_wrapper_row = RestorableObjectWrapper(
-            config_args={'root': CURRENT_DATA_ROOT},
-            instance=data_wrapper
-        )
-
-        imagenet_ts = ImagenetTrainService()
-        state_dict = {
-            OPTIMIZER: state_file_row,
-            DATALOADER: dataloader_row,
-            DATA: data_wrapper_row
-        }
-        imagenet_ts.state_objs = state_dict
-
-        ts_wrapper = ImagenetTrainWrapper(instance=imagenet_ts)
+        ts_wrapper = _get_dummy_imagenet_train_service_wrapper()
         _id = ts_wrapper.persist(self.file_pers_service, self.dict_pers_service)
 
         place_holder = ImagenetTrainWrapper.load_placeholder(_id)
