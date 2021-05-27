@@ -58,14 +58,6 @@ class ModelInfo(SchemaObj):
         if not self.weights_hash_info:
             self.weights_hash_info = _recover_weights_hash_info(restored_dict)
 
-    def _size_class_specific_fields(self, file_pers_service, dict_pers_service):
-        result = 0
-
-        # for now we leave out the size of the base model, we might have to implement this later
-        result += self.recover_info.size_in_bytes(file_pers_service, dict_pers_service)
-
-        return result
-
     def add_and_persist_weights_hash_info(self, weights_hash_info: WeightDictMerkleTree,
                                           dict_pers_service: DictPersistenceService):
         add_dict = {WEIGHTS_HASH_INFO: weights_hash_info.to_python_dict()}

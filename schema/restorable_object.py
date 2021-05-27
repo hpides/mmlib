@@ -165,9 +165,6 @@ class StateDictObj(metaclass=abc.ABCMeta):
 
 class StateDictRestorableObjectWrapper(AbstractRestorableObjectWrapper):
 
-    def _size_class_specific_fields(self, file_pers_service, dict_pers_service):
-        raise NotImplementedError
-
     def __init__(self, c_name: str = None, code: FileReference = None, instance: StateDictObj = None, state_objs=None,
                  store_id: str = None):
         super().__init__(c_name=c_name, code=code, instance=instance, store_id=store_id)
