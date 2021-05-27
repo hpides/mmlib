@@ -132,6 +132,10 @@ class WeightsUpdateRecoverInfo(AbstractRecoverInfo):
         dict_representation[UPDATE_TYPE] = self.update_type
         dict_representation[INDEPENDENT] = self.independent
 
+    def _add_reference_sizes(self, size_dict, file_pers_service, dict_pers_service):
+        file_pers_service.file_size(self.update)
+        size_dict[UPDATE] = self.update.size
+
 
 def _restore_update(file_pers_service, load_files, restore_root, restored_dict):
     update_id = restored_dict[UPDATE]
