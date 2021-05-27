@@ -1,16 +1,17 @@
 import os
 import shutil
 
-import torch
-
-from schema.restorable_object import RestorableObjectWrapper, CODE_FILE, OptimizerWrapper, STATE_FILE
+from schema.file_reference import FileReference
+from schema.restorable_object import RestorableObjectWrapper, CODE_FILE, STATE_FILE, StateFileRestorableObjectWrapper
 from schema.schema_obj import METADATA_SIZE
 from tests.example_files.data.custom_coco import TrainCustomCoco
+from tests.example_files.imagenet_optimizer import ImagenetOptimizer
 from tests.example_files.mynets.resnet18 import resnet18
 from tests.size.abstract_test_size import TestSize
 
 FILE_PATH = os.path.dirname(os.path.realpath(__file__))
-COCO_DATA = '../example_files/data/reduced-custom-coco-data'
+COCO_DATA = os.path.join(FILE_PATH, '../example_files/data/reduced-custom-coco-data')
+OPTIMIZER_CODE = os.path.join(FILE_PATH, '../example_files/imagenet_optimizer.py')
 
 MONGO_CONTAINER_NAME = 'mongo-test'
 
@@ -23,7 +24,7 @@ class TestRestorableObjectSize(TestSize):
             shutil.rmtree(self.abs_tmp_path)
 
     def test_restorable_object_wrapper_size_code(self):
-        instance = TrainCustomCoco(os.path.join(FILE_PATH, COCO_DATA))
+        instance = TrainCustomCoco(COCO_DATA)
         row = RestorableObjectWrapper(
             config_args={'root': ''},
             instance=instance
@@ -65,9 +66,9 @@ class TestRestorableObjectSize(TestSize):
     def test_state_file_restorable_object_wrapper_size_import(self):
         model = resnet18()
         optimizer_kwargs = {'lr': 1e-4, 'momentum': 0.9, 'weight_decay': 1e-4}
-        optimizer = torch.optim.SGD(model.parameters(), **optimizer_kwargs)
-        row = OptimizerWrapper(
-            import_cmd='from torch.optim import SGD',
+        optimizer = ImagenetOptimizer(model.parameters(), **optimizer_kwargs)
+        row = StateFileRestorableObjectWrapper(
+            code=FileReference(OPTIMIZER_CODE),
             init_args=optimizer_kwargs,
             init_ref_type_args=['params'],
             instance=optimizer
@@ -75,12 +76,13 @@ class TestRestorableObjectSize(TestSize):
 
         row_id = row.persist(self.file_pers_service, self.dict_pers_service)
 
-        place_holder = OptimizerWrapper.load_placeholder(row_id)
+        place_holder = StateFileRestorableObjectWrapper.load_placeholder(row_id)
         size_dict = place_holder.size_info(self.file_pers_service, self.dict_pers_service)
 
-        # raw data number from mac finder info
-        self.assertEqual(len(size_dict.keys()), 2)
+        self.assertEqual(len(size_dict.keys()), 3)
         self.assertTrue(METADATA_SIZE in size_dict.keys())
         self.assertTrue(size_dict[METADATA_SIZE] > 0)
         # state should be bigger than 0
         self.assertTrue(size_dict[STATE_FILE] > 0)
+        self.assertTrue(size_dict[CODE_FILE] > 0)
+
