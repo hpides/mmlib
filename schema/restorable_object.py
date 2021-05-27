@@ -201,15 +201,39 @@ class StateDictRestorableObjectWrapper(AbstractRestorableObjectWrapper):
         raise NotImplementedError
 
 
+class StateFileRestorableObject(StateDictObj):
+
+    @abc.abstractmethod
+    def save_instance_state(self, path):
+        """
+        Saves the instance state to a file. The file is saved at the given path.
+        :param path: The path to save the state file to.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def restore_instance_state(self, path):
+        """
+        Restores the instance state from the given file.
+        :param path: The path to the file that holds the information to recover the insatcne state.
+        """
+        raise NotImplementedError
+
+
 class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
+    def _size_class_specific_fields(self, file_pers_service, dict_pers_service):
+        # TODO
+        pass
+
     def __init__(self, c_name: str = None, init_args: dict = None, init_ref_type_args: [str] = None,
                  config_args: dict = None, code: FileReference = None, import_cmd: str = None,
-                 instance: object = None, store_id: str = None, state_file: FileReference = None):
+                 instance: StateFileRestorableObject = None, store_id: str = None, state_file: FileReference = None):
         super().__init__(c_name=c_name, init_args=init_args, init_ref_type_args=init_ref_type_args,
                          config_args=config_args, code=code, import_cmd=import_cmd, instance=instance,
                          store_id=store_id)
         self.state_file = state_file
 
+    # TODO check if we need this method
     def persist(self, file_pers_service: FilePersistenceService,
                 dict_pers_service: DictPersistenceService) -> str:
 
@@ -233,7 +257,7 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
         if self.instance:
             with tempfile.TemporaryDirectory() as tmp_path:
                 state_file = FileReference(path=os.path.join(tmp_path, 'state'))
-                self._save_instance_state(state_file.path)
+                self.instance.save_instance_state(state_file.path)
                 file_pers_service.save_file(state_file)
 
             dict_representation[STATE_FILE] = state_file.reference_id
@@ -267,27 +291,12 @@ class StateFileRestorableObjectWrapper(RestorableObjectWrapper):
         super(StateFileRestorableObjectWrapper, self).restore_instance(ref_type_args)
 
         if self.state_file:
-            self._restore_instance_state(self.state_file.path)
+            self.instance.restore_instance_state(self.state_file.path)
 
     def _add_reference_sizes(self, size_dict, file_pers_service, dict_pers_service):
         super()._add_reference_sizes(size_dict, file_pers_service, dict_pers_service)
         file_pers_service.file_size(self.state_file)
         size_dict[STATE_FILE] = self.state_file.size
-
-    @abc.abstractmethod
-    def _save_instance_state(self, path):
-        """
-        Saves the state of the internal instance to a file. Only needs to be implemented when there is a internal state
-        that can not be reproduced by passing the right arguments in the constructor.
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def _restore_instance_state(self, path):
-        """
-        Loads the state for the internal instance from a file.
-        """
-        raise NotImplementedError
 
 
 def _recover_state_file(file_pers_service, load_files, restore_root, restored_dict):
@@ -317,32 +326,3 @@ def add_params_from_config(init_args, config_args):
 
     for k, v in config_args.items():
         init_args[k] = config[VALUES][v]
-
-
-class StateFileRestorableObject(StateDictObj):
-
-    @abc.abstractmethod
-    def save_instance_state(self, path):
-        """
-        Saves the instance state to a file. The file is saved at the given path.
-        :param path: The path to save the state file to.
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def restore_instance_state(self, path):
-        """
-        Restores the instance state from the given file.
-        :param path: The path to the file that holds the information to recover the insatcne state.
-        """
-        raise NotImplementedError
-
-# class OptimizerWrapper(StateFileRestorableObjectWrapper):
-#
-#     def _save_instance_state(self, path):
-#         if self.instance:
-#             state_dict = self.instance.state_dict()
-#             torch.save(state_dict, path)
-#
-#     def _restore_instance_state(self, path):
-#         self.instance.load_state_dict(torch.load(path))

@@ -2,8 +2,8 @@ import torch
 
 from mmlib.deterministic import set_deterministic
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
-from schema.restorable_object import TrainService, OptimizerWrapper, StateDictRestorableObjectWrapper, \
-    RESTORABLE_OBJECT, STATE_DICT, RestorableObjectWrapper
+from schema.restorable_object import TrainService, StateDictRestorableObjectWrapper, \
+    RESTORABLE_OBJECT, STATE_DICT, RestorableObjectWrapper, StateFileRestorableObjectWrapper
 from util.init_from_file import create_object
 
 DATA = 'data'
@@ -46,7 +46,7 @@ class ImagenetTrainService(TrainService):
         return dataloader
 
     def _get_optimizer(self, parameters):
-        optimizer_wrapper: OptimizerWrapper = self.state_objs[OPTIMIZER]
+        optimizer_wrapper: StateFileRestorableObjectWrapper = self.state_objs[OPTIMIZER]
 
         if not optimizer_wrapper.instance:
             optimizer_wrapper.restore_instance({'params': parameters})
@@ -63,7 +63,7 @@ class ImagenetTrainWrapper(StateDictRestorableObjectWrapper):
         restored_dict = dict_pers_service.recover_dict(self.store_id, RESTORABLE_OBJECT)
         state_objs = restored_dict[STATE_DICT]
 
-        state_dict[OPTIMIZER] = OptimizerWrapper.load(
+        state_dict[OPTIMIZER] = StateFileRestorableObjectWrapper.load(
             state_objs[OPTIMIZER], file_pers_service, dict_pers_service, restore_root, True, True)
 
         data_wrapper = RestorableObjectWrapper.load(
