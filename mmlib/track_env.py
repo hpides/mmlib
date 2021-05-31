@@ -43,7 +43,6 @@ def get_python_platform_info():
         RELEASE: platform.release(),
         SYSTEM: platform.system(),
         VERSION: platform.version(),
-        UNAME: platform.uname(),
         MAC_VER: platform.mac_ver(),
         LIBC_VER: platform.libc_ver()
     }
