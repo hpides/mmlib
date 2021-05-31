@@ -22,7 +22,6 @@ PYTHON_VERSION_TUPLE = 'python_version_tuple'
 RELEASE = 'release'
 SYSTEM = 'system'
 VERSION = 'version'
-UNAME = 'uname'
 MAC_VER = 'mac_ver'
 LIBC_VER = 'libc_ver'
 
@@ -106,11 +105,11 @@ def compare_env_to_current(to_compare: Environment) -> bool:
     if not current_env.pytorch_info == to_compare.pytorch_info:
         warnings.warn('Environment: The pytorch info differs')
         return False
-    if not current_env.python_platform_info == to_compare.python_platform_info:
-        warnings.warn('Environment: The python platform info differs')
-        return False
     if not current_env.pip_freeze == to_compare.pip_freeze:
         warnings.warn('Environment: The installed python packages differ')
+        return False
+    if not current_env.python_platform_info == to_compare.python_platform_info:
+        warnings.warn('Environment: The python platform info differs')
         return False
 
     return True
