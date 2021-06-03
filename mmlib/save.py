@@ -16,8 +16,13 @@ from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo, Wei
 from schema.restorable_object import RestoredModelInfo
 from schema.store_type import ModelStoreType
 from schema.train_info import TrainInfo
+from util.helper import log_time
 from util.init_from_file import create_object, create_type
 from util.weight_dict_merkle_tree import WeightDictMerkleTree, THIS, OTHER
+
+
+START = 'START'
+STOP = 'STOP'
 
 PICKLED_MODEL_WEIGHTS = 'pickled_model_weights'
 
@@ -89,6 +94,8 @@ class BaselineSaveService(AbstractSaveService):
         super().__init__(logging)
         self._file_pers_service = file_pers_service
         self._dict_pers_service = dict_pers_service
+        self._file_pers_service.logging = logging
+        self._dict_pers_service.logging = logging
 
     def save_model(self, model_save_info: ModelSaveInfo) -> str:
         self._check_consistency(model_save_info)
@@ -140,9 +147,12 @@ class BaselineSaveService(AbstractSaveService):
         assert model_save_info.model_class_name, 'model class name is not set'
 
     def _save_full_model(self, model_save_info: ModelSaveInfo, add_weights_hash_info=True) -> str:
+        log_time(self.logging, START, '_save_full_model', 'all')
 
         with tempfile.TemporaryDirectory() as tmp_path:
+            log_time(self.logging, START, '_save_full_model', 'pickle_weights')
             weights_path = self._pickle_weights(model_save_info.model, tmp_path)
+            log_time(self.logging, STOP, '_save_full_model', 'pickle_weights')
 
             base_model = model_save_info.base_model if model_save_info.base_model else None
 
@@ -161,12 +171,18 @@ class BaselineSaveService(AbstractSaveService):
                                                 model_class_name=model_save_info.model_class_name,
                                                 environment=model_save_info.environment)
 
+            log_time(self.logging, START, '_get_weights_hash_info', 'all')
             weights_hash_info = _get_weights_hash_info(add_weights_hash_info, model_save_info)
+            log_time(self.logging, STOP, '_get_weights_hash_info', 'all')
 
             model_info = ModelInfo(store_type=ModelStoreType.FULL_MODEL, recover_info=recover_info,
                                    derived_from_id=base_model, weights_hash_info=weights_hash_info)
 
+            log_time(self.logging, START, 'persist_model_info', 'all')
             model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
+            log_time(self.logging, STOP, 'persist_model_info', 'all')
+
+            log_time(self.logging, STOP, '_save_full_model', 'all')
 
             return model_info_id
 
