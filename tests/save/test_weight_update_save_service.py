@@ -14,7 +14,7 @@ from util.dummy_data import imagenet_input
 class TestWeightUpdateSaveService(TestBaselineSaveService):
 
     def init_save_service(self, dict_pers_service, file_pers_service):
-        self.save_service = WeightUpdateSaveService(file_pers_service, dict_pers_service)
+        self.save_service = WeightUpdateSaveService(file_pers_service, dict_pers_service, improved_version=False)
 
     def test_save_restore_many_derived_models(self):
         initial_model = resnet18()
