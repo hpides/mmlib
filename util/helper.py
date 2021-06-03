@@ -79,7 +79,7 @@ def source_file(obj: object) -> str:
     return inspect.getsourcefile(obj.__class__)
 
 
-def log_time(logging, start_stop, method, event_key):
+def log_time(logging, approach, start_stop, method, event_key):
     if logging:
         t = time.time_ns()
-        print('{};mmlib;{};{};time.time_ns-{}'.format(start_stop, method, event_key, t))
+        print('{};mmlib;{};{};{};time.time_ns-{}'.format(start_stop, approach, method, event_key, t))
