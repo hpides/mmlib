@@ -1,5 +1,6 @@
 import abc
 import os
+import time
 from shutil import copyfile
 
 from bson import ObjectId
@@ -8,8 +9,15 @@ from schema.file_reference import FileReference
 from util.helper import find_file
 from util.mongo import MongoService
 
+STOP = 'STOP'
+
+START = 'START'
+
 
 class PersistenceService(metaclass=abc.ABCMeta):
+
+    def __init__(self, logging=False):
+        self.logging = logging
 
     @abc.abstractmethod
     def generate_id(self) -> str:
@@ -20,6 +28,9 @@ class PersistenceService(metaclass=abc.ABCMeta):
 
 
 class DictPersistenceService(PersistenceService, metaclass=abc.ABCMeta):
+
+    def __init__(self, logging=False):
+        super().__init__(logging)
 
     @abc.abstractmethod
     def save_dict(self, insert_dict: dict, represent_type: str) -> str:
@@ -77,6 +88,9 @@ class DictPersistenceService(PersistenceService, metaclass=abc.ABCMeta):
 
 class FilePersistenceService(PersistenceService, metaclass=abc.ABCMeta):
 
+    def __init__(self, logging=False):
+        super().__init__(logging)
+
     @abc.abstractmethod
     def save_file(self, file: FileReference):
         """
@@ -108,19 +122,23 @@ MMLIB = 'mmlib'
 
 class FileSystemPersistenceService(FilePersistenceService):
 
-    def __init__(self, base_path):
+    def __init__(self, base_path, logging=False):
+        super().__init__(logging)
         assert os.path.isdir(base_path), 'base_path ({}) does not seem to exist'.format(base_path)
         self._base_path = os.path.abspath(base_path)
 
     def save_file(self, file: FileReference):
+        self.log_time(START, 'save_file')
         path, file_name = os.path.split(file.path)
         file_id = str(ObjectId())
         dst_path = self._get_store_path(file_id)
         os.mkdir(dst_path)
         copyfile(file.path, os.path.join(dst_path, file_name))
         file.reference_id = FILE + file_id
+        self.log_time(STOP, 'save_file')
 
     def recover_file(self, file: FileReference, dst_path):
+        self.log_time(START, 'recover_file')
         internal_file_id = self._to_internal_file_id(file.reference_id)
         store_path = self._get_store_path(internal_file_id)
         file_path = find_file(store_path)
@@ -129,6 +147,7 @@ class FileSystemPersistenceService(FilePersistenceService):
         assert not os.path.isfile(dst), 'file at {} exists already'.format(dst)
         copyfile(file_path, dst)
         file.path = dst
+        self.log_time(STOP, 'recover_file')
 
     def file_size(self, file: FileReference):
         internal_file_id = self._to_internal_file_id(file.reference_id)
@@ -149,24 +168,34 @@ class FileSystemPersistenceService(FilePersistenceService):
         store_path = os.path.join(self._base_path, file_id)
         return store_path
 
+    def log_time(self, start_stop, method):
+        if self.logging:
+            t = time.time_ns()
+            print('{};mmlib_file_pers;{};time.time_ns-{}'.format(start_stop, method, t))
+
 
 DICT = 'dict-'
 
 
 class MongoDictPersistenceService(DictPersistenceService):
 
-    def __init__(self, host='127.0.0.1'):
+    def __init__(self, logging=False, host='127.0.0.1'):
+        super().__init__(logging)
         self._mongo_service = MongoService(host, MMLIB)
 
     def generate_id(self) -> str:
         return str(ObjectId())
 
     def save_dict(self, insert_dict: dict, represent_type: str) -> str:
+        self.log_time(START, 'save_dict', represent_type)
         mongo_id = self._mongo_service.save_dict(insert_dict, collection=represent_type)
+        self.log_time(STOP, 'save_dict', represent_type)
         return str(mongo_id)
 
     def recover_dict(self, dict_id: str, represent_type: str) -> dict:
+        self.log_time(START, 'recover_dict', represent_type)
         mongo_dict_id = self._to_mongo_dict_id(dict_id)
+        self.log_time(STOP, 'recover_dict', represent_type)
         return self._mongo_service.get_dict(mongo_dict_id, collection=represent_type)
 
     def all_ids_for_type(self, represent_type: str) -> [str]:
@@ -185,8 +214,15 @@ class MongoDictPersistenceService(DictPersistenceService):
         return self._mongo_service.id_exists(dict_id, represent_type)
 
     def add_field(self, dict_id: str, represent_type: str, add_dict: dict):
+        self.log_time(START, 'add_field', represent_type)
         dict_id = self._to_mongo_dict_id(dict_id)
         self._mongo_service.add_attribute(dict_id, add_dict, represent_type)
+        self.log_time(START, 'add_field', represent_type)
 
     def _to_mongo_dict_id(self, dict_id):
         return ObjectId(dict_id.replace(DICT, ''))
+
+    def log_time(self, start_stop, method, collection):
+        if self.logging:
+            t = time.time_ns()
+            print('{};mmlib_dict_pers;{};{};time.time_ns-{}'.format(start_stop, method, collection, t))

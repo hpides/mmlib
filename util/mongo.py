@@ -4,14 +4,19 @@ from pymongo import MongoClient
 
 from mmlib.constants import ID
 
+STOP = 'STOP'
+
+START = 'START'
+
 _ID = '_id'
 SET = "$set"
 
 
 class MongoService(object):
-    def __init__(self, host, db_name):
+    def __init__(self, host, db_name, logging=False):
         self._mongo_client = MongoClient(host)
         self._db_name = db_name
+        self.logging = logging
         # close connection for now, for new requests there will be a reconnect
         self._mongo_client.close()
 
