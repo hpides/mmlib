@@ -275,13 +275,14 @@ class BaselineSaveService(AbstractSaveService):
 class WeightUpdateSaveService(BaselineSaveService):
 
     def __init__(self, file_pers_service: FilePersistenceService, dict_pers_service: DictPersistenceService,
-                 logging=False):
+                 improved_version=True, logging=False):
         """
         :param file_pers_service: An instance of FilePersistenceService that is used to store files.
         :param dict_pers_service: An instance of DictPersistenceService that is used to store metadata as dicts.
         :param logging: Flag that indicates if logging is turned in for this service.
         """
         super().__init__(file_pers_service, dict_pers_service, logging)
+        self.improved_version = improved_version
 
     def save_model(self, model_save_info: ModelSaveInfo) -> str:
 
@@ -368,7 +369,7 @@ class WeightUpdateSaveService(BaselineSaveService):
         base_model_info = ModelInfo.load(base_model_id, self._file_pers_service, self._dict_pers_service, tmp_path)
         current_model_weights = model_save_info.model.state_dict()
 
-        if base_model_info.weights_hash_info:
+        if self.improved_version and base_model_info.weights_hash_info:
             diff_weights, diff_nodes = base_model_info.weights_hash_info.diff(weights_hash_info)
             assert len(diff_nodes[THIS]) == 0 and len(diff_nodes[OTHER]) == 0, \
                 'models with different architecture not supported for now'
@@ -382,6 +383,7 @@ class WeightUpdateSaveService(BaselineSaveService):
             model_weights = super()._pickle_state_dict(weights_patch, tmp_path)
             return model_weights, WEIGHTS_PATCH, False
         else:
+            print('recover base models')
             # if there is no weights hash info given we have to fall back and load the base models
             base_model_info = self.recover_model(base_model_id)
             base_model_weights = base_model_info.model.state_dict()
