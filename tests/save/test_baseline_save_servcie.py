@@ -41,7 +41,7 @@ class TestBaselineSaveService(unittest.TestCase):
         self.init_save_service(self.dict_pers_service, self.file_pers_service)
 
     def init_save_service(self, dict_pers_service, file_pers_service):
-        self.save_service = BaselineSaveService(file_pers_service, dict_pers_service)
+        self.save_service = BaselineSaveService(file_pers_service, dict_pers_service, logging=True)
 
     def tearDown(self) -> None:
         self.__clean_up()
