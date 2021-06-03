@@ -1,6 +1,7 @@
 import inspect
 import os
 import shutil
+import time
 from zipfile import ZipFile
 
 import torch
@@ -76,3 +77,9 @@ def class_name(obj: object) -> str:
 
 def source_file(obj: object) -> str:
     return inspect.getsourcefile(obj.__class__)
+
+
+def log_time(logging, start_stop, method, event_key):
+    if logging:
+        t = time.time_ns()
+        print('{};mmlib;{};{};time.time_ns-{}'.format(start_stop, method, event_key, t))

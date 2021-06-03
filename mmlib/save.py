@@ -16,8 +16,12 @@ from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo, Wei
 from schema.restorable_object import RestoredModelInfo
 from schema.store_type import ModelStoreType
 from schema.train_info import TrainInfo
+from util.helper import log_time
 from util.init_from_file import create_object, create_type
 from util.weight_dict_merkle_tree import WeightDictMerkleTree, THIS, OTHER
+
+START = 'START'
+STOP = 'STOP'
 
 PICKLED_MODEL_WEIGHTS = 'pickled_model_weights'
 
@@ -30,6 +34,12 @@ MODEL_WEIGHTS = 'model_weights'
 
 # Future work, se if it would make sense to use protocol here
 class AbstractSaveService(metaclass=abc.ABCMeta):
+
+    def __init__(self, logging=False):
+        """
+        :param logging: Flag that indicates if logging is turned in for this service.
+        """
+        self.logging = logging
 
     @abc.abstractmethod
     def save_model(self, model_save_info: ModelSaveInfo) -> str:
@@ -73,14 +83,18 @@ class BaselineSaveService(AbstractSaveService):
     """A Service that offers functionality to store PyTorch models by making use of a persistence service.
          The metadata is stored in JSON like dictionaries, files and weights are stored as files."""
 
-    def __init__(self, file_pers_service: FilePersistenceService,
-                 dict_pers_service: DictPersistenceService):
+    def __init__(self, file_pers_service: FilePersistenceService, dict_pers_service: DictPersistenceService,
+                 logging=False):
         """
         :param file_pers_service: An instance of FilePersistenceService that is used to store files.
         :param dict_pers_service: An instance of DictPersistenceService that is used to store metadata as dicts.
+        :param logging: Flag that indicates if logging is turned in for this service.
         """
+        super().__init__(logging)
         self._file_pers_service = file_pers_service
         self._dict_pers_service = dict_pers_service
+        self._file_pers_service.logging = logging
+        self._dict_pers_service.logging = logging
 
     def save_model(self, model_save_info: ModelSaveInfo) -> str:
         self._check_consistency(model_save_info)
@@ -93,11 +107,14 @@ class BaselineSaveService(AbstractSaveService):
 
     def recover_model(self, model_id: str, execute_checks: bool = True) -> RestoredModelInfo:
         # in this baseline approach we always store the full model (pickled weights + code)
-
+        log_time(self.logging, START, 'recover_model', 'all')
         with tempfile.TemporaryDirectory() as tmp_path:
+            log_time(self.logging, START, 'recover_model', 'load_model_info_rec_files')
             model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path,
                                         load_recursive=True, load_files=True)
+            log_time(self.logging, STOP, 'recover_model', 'load_model_info_rec_files')
 
+            log_time(self.logging, START, 'recover_model', 'recover_from_info')
             # recover model form info
             recover_info: FullModelRecoverInfo = model_info.recover_info
 
@@ -108,9 +125,15 @@ class BaselineSaveService(AbstractSaveService):
             restored_model_info = RestoredModelInfo(model=model)
 
             if execute_checks:
+                log_time(self.logging, START, 'recover_model', '_check_weights')
                 self._check_weights(model, model_info)
+                log_time(self.logging, STOP, 'recover_model', '_check_weights')
+                log_time(self.logging, START, 'recover_model', '_check_env')
                 self._check_env(model_info)
+                log_time(self.logging, STOP, 'recover_model', '_check_env')
 
+        log_time(self.logging, STOP, 'recover_model', 'recover_from_info')
+        log_time(self.logging, STOP, 'recover_model', 'all')
         return restored_model_info
 
     def model_save_size(self, model_id: str) -> int:
@@ -132,9 +155,12 @@ class BaselineSaveService(AbstractSaveService):
         assert model_save_info.model_class_name, 'model class name is not set'
 
     def _save_full_model(self, model_save_info: ModelSaveInfo, add_weights_hash_info=True) -> str:
+        log_time(self.logging, START, '_save_full_model', 'all')
 
         with tempfile.TemporaryDirectory() as tmp_path:
+            log_time(self.logging, START, '_save_full_model', 'pickle_weights')
             weights_path = self._pickle_weights(model_save_info.model, tmp_path)
+            log_time(self.logging, STOP, '_save_full_model', 'pickle_weights')
 
             base_model = model_save_info.base_model if model_save_info.base_model else None
 
@@ -153,12 +179,18 @@ class BaselineSaveService(AbstractSaveService):
                                                 model_class_name=model_save_info.model_class_name,
                                                 environment=model_save_info.environment)
 
+            log_time(self.logging, START, '_get_weights_hash_info', 'all')
             weights_hash_info = _get_weights_hash_info(add_weights_hash_info, model_save_info)
+            log_time(self.logging, STOP, '_get_weights_hash_info', 'all')
 
             model_info = ModelInfo(store_type=ModelStoreType.FULL_MODEL, recover_info=recover_info,
                                    derived_from_id=base_model, weights_hash_info=weights_hash_info)
 
+            log_time(self.logging, START, 'persist_model_info', 'all')
             model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
+            log_time(self.logging, STOP, 'persist_model_info', 'all')
+
+            log_time(self.logging, STOP, '_save_full_model', 'all')
 
             return model_info_id
 
@@ -242,13 +274,14 @@ class BaselineSaveService(AbstractSaveService):
 
 class WeightUpdateSaveService(BaselineSaveService):
 
-    def __init__(self, file_pers_service: FilePersistenceService,
-                 dict_pers_service: DictPersistenceService):
+    def __init__(self, file_pers_service: FilePersistenceService, dict_pers_service: DictPersistenceService,
+                 logging=False):
         """
         :param file_pers_service: An instance of FilePersistenceService that is used to store files.
         :param dict_pers_service: An instance of DictPersistenceService that is used to store metadata as dicts.
+        :param logging: Flag that indicates if logging is turned in for this service.
         """
-        super().__init__(file_pers_service, dict_pers_service)
+        super().__init__(file_pers_service, dict_pers_service, logging)
 
     def save_model(self, model_save_info: ModelSaveInfo) -> str:
 
@@ -384,13 +417,14 @@ class WeightUpdateSaveService(BaselineSaveService):
 
 class ProvenanceSaveService(BaselineSaveService):
 
-    def __init__(self, file_pers_service: FilePersistenceService,
-                 dict_pers_service: DictPersistenceService):
+    def __init__(self, file_pers_service: FilePersistenceService, dict_pers_service: DictPersistenceService,
+                 logging=False):
         """
         :param file_pers_service: An instance of FilePersistenceService that is used to store files.
         :param dict_pers_service: An instance of DictPersistenceService that is used to store metadata as dicts.
+        :param logging: Flag that indicates if logging is turned in for this service.
         """
-        super().__init__(file_pers_service, dict_pers_service)
+        super().__init__(file_pers_service, dict_pers_service, logging)
 
     def save_model(self, model_save_info: ModelSaveInfo) -> str:
         if model_save_info.base_model is None or not isinstance(model_save_info, ProvModelSaveInfo):
