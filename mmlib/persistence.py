@@ -8,7 +8,7 @@ from shutil import copyfile
 from bson import ObjectId
 
 from schema.file_reference import FileReference
-from util.helper import find_file, log_stop, START_STOP
+from util.helper import find_file, log_stop, START_STOP, TIME
 from util.mongo import MongoService
 
 MMLIB_FILE_PERS = 'mmlib_file_pers'
@@ -16,7 +16,6 @@ MMLIB_FILE_PERS = 'mmlib_file_pers'
 MMLIB_DICT_PERS = 'mmlib_dict_pers'
 
 START = 'start'
-
 
 
 class PersistenceService(metaclass=abc.ABCMeta):
@@ -182,6 +181,7 @@ class FileSystemPersistenceService(FilePersistenceService):
                 '_id': str(_id),
                 'service': MMLIB_FILE_PERS,
                 'method': method,
+                TIME: t
             }
 
             print(json.dumps(log_dict))
@@ -190,6 +190,7 @@ class FileSystemPersistenceService(FilePersistenceService):
 
     def log_stop(self, log_dict):
         log_stop(self.logging, log_dict)
+
 
 DICT = 'dict-'
 
@@ -249,6 +250,7 @@ class MongoDictPersistenceService(DictPersistenceService):
                 'service': MMLIB_DICT_PERS,
                 'method': method,
                 'collection': collection,
+                TIME: t
             }
 
             print(json.dumps(log_dict))

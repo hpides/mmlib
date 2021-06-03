@@ -1,16 +1,21 @@
 import abc
+import json
 import tempfile
+import time
+import uuid
 
 from mmlib.constants import ID
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
+from util.helper import log_stop, START_STOP, START, TIME
 
 METADATA_SIZE = 'metadata_size'
 
 
 class SchemaObj(metaclass=abc.ABCMeta):
 
-    def __init__(self, store_id: str = None):
+    def __init__(self, store_id: str = None, logging=True):
         self.store_id = store_id
+        self.logging = logging
 
     @classmethod
     def load_placeholder(cls, obj_id: str):
@@ -34,7 +39,6 @@ class SchemaObj(metaclass=abc.ABCMeta):
         if set to False (default) only the references are restored
         :param load_files: If True all referenced files are loaded, if False only id is loaded.
         """
-
         instance = cls.load_placeholder(obj_id)
         instance.load_all_fields(file_pers_service, dict_pers_service, restore_root, load_recursive, load_files)
 
@@ -47,6 +51,7 @@ class SchemaObj(metaclass=abc.ABCMeta):
         :param file_pers_service: An instance of FilePersistenceService that is used to store files.
         :param dict_pers_service: An instance of DictPersistenceService that is used to store metadata as dicts.
         """
+        log = self.log_start('persist')
         if self.store_id and dict_pers_service.id_exists(self.store_id, self._representation_type):
             # if the id already exists, we do not have to persist again
             return self.store_id
@@ -62,6 +67,7 @@ class SchemaObj(metaclass=abc.ABCMeta):
 
         dict_pers_service.save_dict(dict_representation, self._representation_type)
 
+        self.log_stop(log)
         return self.store_id
 
     @abc.abstractmethod
@@ -98,6 +104,25 @@ class SchemaObj(metaclass=abc.ABCMeta):
 
         # return {self._representation_type: size_dict}
         return size_dict
+
+    def log_start(self, method):
+        if self.logging:
+            t = time.time_ns()
+            _id = uuid.uuid4()
+            log_dict = {
+                START_STOP: START,
+                '_id': str(_id),
+                'schema_obj': self._representation_type,
+                'method': method,
+                TIME: t
+            }
+
+            print(json.dumps(log_dict))
+
+            return log_dict
+
+    def log_stop(self, log_dict):
+        log_stop(self.logging, log_dict)
 
     @abc.abstractmethod
     def _add_reference_sizes(self, size_dict, file_pers_service, dict_pers_service):
