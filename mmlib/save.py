@@ -20,7 +20,6 @@ from util.helper import log_time
 from util.init_from_file import create_object, create_type
 from util.weight_dict_merkle_tree import WeightDictMerkleTree, THIS, OTHER
 
-
 START = 'START'
 STOP = 'STOP'
 
@@ -108,11 +107,14 @@ class BaselineSaveService(AbstractSaveService):
 
     def recover_model(self, model_id: str, execute_checks: bool = True) -> RestoredModelInfo:
         # in this baseline approach we always store the full model (pickled weights + code)
-
+        log_time(self.logging, START, 'recover_model', 'all')
         with tempfile.TemporaryDirectory() as tmp_path:
+            log_time(self.logging, START, 'recover_model', 'load_model_info_rec_files')
             model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path,
                                         load_recursive=True, load_files=True)
+            log_time(self.logging, STOP, 'recover_model', 'load_model_info_rec_files')
 
+            log_time(self.logging, START, 'recover_model', 'recover_from_info')
             # recover model form info
             recover_info: FullModelRecoverInfo = model_info.recover_info
 
@@ -123,9 +125,15 @@ class BaselineSaveService(AbstractSaveService):
             restored_model_info = RestoredModelInfo(model=model)
 
             if execute_checks:
+                log_time(self.logging, START, 'recover_model', '_check_weights')
                 self._check_weights(model, model_info)
+                log_time(self.logging, STOP, 'recover_model', '_check_weights')
+                log_time(self.logging, START, 'recover_model', '_check_env')
                 self._check_env(model_info)
+                log_time(self.logging, STOP, 'recover_model', '_check_env')
 
+        log_time(self.logging, STOP, 'recover_model', 'recover_from_info')
+        log_time(self.logging, STOP, 'recover_model', 'all')
         return restored_model_info
 
     def model_save_size(self, model_id: str) -> int:
