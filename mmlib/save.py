@@ -69,11 +69,11 @@ class AbstractSaveService(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def model_save_size(self, model_id: str) -> int:
+    def model_save_size(self, model_id: str) -> dict:
         """
-        Calculates and returns the amount of bytes that are used for storing the model.
+        Gives detailed information about the storage consumption of a model.
         :param model_id: The id to identify the model.
-        :return: The amount of bytes used to store the model.
+        :return: Detailed information about the storage consumption of a model -- size in bytes.
         """
         raise NotImplementedError
 
@@ -142,11 +142,11 @@ class BaselineSaveService(AbstractSaveService):
         log_stop(self.logging, log_all)
         return restored_model_info
 
-    def model_save_size(self, model_id: str) -> int:
-        with tempfile.TemporaryDirectory() as tmp_path:
-            model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path)
+    def model_save_size(self, model_id: str) -> dict:
+        place_holder = ModelInfo.load_placeholder(model_id)
+        size_dict = place_holder.size_info(self._file_pers_service, self._dict_pers_service)
 
-        return model_info.size_in_bytes(self._file_pers_service, self._dict_pers_service)
+        return size_dict
 
     def all_model_ids(self) -> [str]:
         return self._dict_pers_service.all_ids_for_type(MODEL_INFO)
@@ -514,9 +514,6 @@ class ProvenanceSaveService(BaselineSaveService):
 
         log_stop(self.logging, log_all)
         return result
-
-    def model_save_size(self, model_id: str) -> int:
-        pass
 
     def _save_provenance_model(self, model_save_info):
         log_all = log_start(self.logging, PROVENANCE, '_save_provenance_model', 'all')
