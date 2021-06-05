@@ -1,11 +1,21 @@
 import inspect
+import json
 import os
 import shutil
 import time
+import uuid
 from zipfile import ZipFile
 
 import torch
 from colorama import Fore, Style
+
+TIME = 'time'
+
+STOP = 'stop'
+
+START_STOP = 'start-stop'
+
+START = 'start'
 
 
 def print_info(message):
@@ -79,7 +89,31 @@ def source_file(obj: object) -> str:
     return inspect.getsourcefile(obj.__class__)
 
 
-def log_time(logging, start_stop, method, event_key):
+def log_start(logging, approach, method, event_key):
     if logging:
         t = time.time_ns()
-        print('{};mmlib;{};{};time.time_ns-{}'.format(start_stop, method, event_key, t))
+        _id = uuid.uuid4()
+        log_dict = {
+            START_STOP: START,
+            '_id': str(_id),
+            'approach': approach,
+            'method': method,
+            'event': event_key,
+            TIME: t
+        }
+
+        print(json.dumps(log_dict))
+
+        return log_dict
+
+
+def log_stop(logging, log_dict):
+    if logging:
+        assert log_dict[START_STOP] == START
+
+        t = time.time_ns()
+
+        log_dict[START_STOP] = STOP
+        log_dict[TIME] = t
+
+        print(json.dumps(log_dict))

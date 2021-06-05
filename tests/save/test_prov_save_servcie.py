@@ -33,7 +33,7 @@ class TestProvSaveService(TestBaselineSaveService):
         os.environ[MMLIB_CONFIG] = CONFIG
 
     def init_save_service(self, dict_pers_service, file_pers_service):
-        self.save_service = ProvenanceSaveService(file_pers_service, dict_pers_service)
+        self.save_service = ProvenanceSaveService(file_pers_service, dict_pers_service, logging=True)
 
     def test_save_restore_provenance_model_resnet18(self):
         model = resnet18(pretrained=True)

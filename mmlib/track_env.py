@@ -73,8 +73,8 @@ def get_pytorch_env():
 
 
 def track_current_environment() -> Environment:
+    print('get_pytorch_env -- takes relatively long...')
     pytorch_info = get_pytorch_env()
-
     python_platform_info = get_python_platform_info()
     python_version = pytorch_info.python_version
     pytorch_version = pytorch_info.torch_version

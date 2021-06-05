@@ -16,9 +16,15 @@ from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo, Wei
 from schema.restorable_object import RestoredModelInfo
 from schema.store_type import ModelStoreType
 from schema.train_info import TrainInfo
-from util.helper import log_time
+from util.helper import log_start, log_stop
 from util.init_from_file import create_object, create_type
 from util.weight_dict_merkle_tree import WeightDictMerkleTree, THIS, OTHER
+
+PROVENANCE = 'provenance'
+
+PARAM_UPDATE = 'param_update'
+
+BASELINE = 'baseline'
 
 START = 'START'
 STOP = 'STOP'
@@ -107,14 +113,14 @@ class BaselineSaveService(AbstractSaveService):
 
     def recover_model(self, model_id: str, execute_checks: bool = True) -> RestoredModelInfo:
         # in this baseline approach we always store the full model (pickled weights + code)
-        log_time(self.logging, START, 'recover_model', 'all')
+        log_all = log_start(self.logging, BASELINE, 'recover_model', 'all')
         with tempfile.TemporaryDirectory() as tmp_path:
-            log_time(self.logging, START, 'recover_model', 'load_model_info_rec_files')
+            log_load = log_start(self.logging, BASELINE, 'recover_model', 'load_model_info_rec_files')
             model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path,
                                         load_recursive=True, load_files=True)
-            log_time(self.logging, STOP, 'recover_model', 'load_model_info_rec_files')
+            log_stop(self.logging, log_load)
 
-            log_time(self.logging, START, 'recover_model', 'recover_from_info')
+            log_recover = log_start(self.logging, BASELINE, 'recover_model', 'recover_from_info')
             # recover model form info
             recover_info: FullModelRecoverInfo = model_info.recover_info
 
@@ -125,15 +131,15 @@ class BaselineSaveService(AbstractSaveService):
             restored_model_info = RestoredModelInfo(model=model)
 
             if execute_checks:
-                log_time(self.logging, START, 'recover_model', '_check_weights')
+                log_check_weights = log_start(self.logging, BASELINE, 'recover_model', '_check_weights')
                 self._check_weights(model, model_info)
-                log_time(self.logging, STOP, 'recover_model', '_check_weights')
-                log_time(self.logging, START, 'recover_model', '_check_env')
+                log_stop(self.logging, log_check_weights)
+                log_check_env = log_start(self.logging, BASELINE, 'recover_model', '_check_env')
                 self._check_env(model_info)
-                log_time(self.logging, STOP, 'recover_model', '_check_env')
+                log_stop(self.logging, log_check_env)
 
-        log_time(self.logging, STOP, 'recover_model', 'recover_from_info')
-        log_time(self.logging, STOP, 'recover_model', 'all')
+        log_stop(self.logging, log_recover)
+        log_stop(self.logging, log_all)
         return restored_model_info
 
     def model_save_size(self, model_id: str) -> int:
@@ -155,12 +161,12 @@ class BaselineSaveService(AbstractSaveService):
         assert model_save_info.model_class_name, 'model class name is not set'
 
     def _save_full_model(self, model_save_info: ModelSaveInfo, add_weights_hash_info=True) -> str:
-        log_time(self.logging, START, '_save_full_model', 'all')
+        log_all = log_start(self.logging, BASELINE, '_save_full_model', 'all')
 
         with tempfile.TemporaryDirectory() as tmp_path:
-            log_time(self.logging, START, '_save_full_model', 'pickle_weights')
+            log_pickle = log_start(self.logging, BASELINE, '_save_full_model', 'pickle_weights')
             weights_path = self._pickle_weights(model_save_info.model, tmp_path)
-            log_time(self.logging, STOP, '_save_full_model', 'pickle_weights')
+            log_stop(self.logging, log_pickle)
 
             base_model = model_save_info.base_model if model_save_info.base_model else None
 
@@ -179,18 +185,18 @@ class BaselineSaveService(AbstractSaveService):
                                                 model_class_name=model_save_info.model_class_name,
                                                 environment=model_save_info.environment)
 
-            log_time(self.logging, START, '_get_weights_hash_info', 'all')
+            log_weight_hash = log_start(self.logging, BASELINE, '_save_full_model', '_get_weights_hash_info')
             weights_hash_info = _get_weights_hash_info(add_weights_hash_info, model_save_info)
-            log_time(self.logging, STOP, '_get_weights_hash_info', 'all')
+            log_stop(self.logging, log_weight_hash)
 
             model_info = ModelInfo(store_type=ModelStoreType.FULL_MODEL, recover_info=recover_info,
                                    derived_from_id=base_model, weights_hash_info=weights_hash_info)
 
-            log_time(self.logging, START, 'persist_model_info', 'all')
+            log_persist = log_start(self.logging, BASELINE, '_save_full_model', 'persist_model_info')
             model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
-            log_time(self.logging, STOP, 'persist_model_info', 'all')
+            log_stop(self.logging, log_persist)
 
-            log_time(self.logging, STOP, '_save_full_model', 'all')
+            log_stop(self.logging, log_all)
 
             return model_info_id
 
@@ -288,20 +294,28 @@ class WeightUpdateSaveService(BaselineSaveService):
 
         # as a first step we have to find out if we have to store a full model first or if we can store only the update
         # if there is no base model given, we can not compute any updates -> we have to sore the full model
+        log_all = log_start(self.logging, PARAM_UPDATE, 'save_model', 'all')
         if not self._base_model_given(model_save_info):
-            return super().save_model(model_save_info)
+            model_id = super().save_model(model_save_info)
         else:
             # if there is a base model, we can store the update and for a restore refer to the base model
-            return self._save_updated_model(model_save_info)
+            model_id = self._save_updated_model(model_save_info)
+
+        log_stop(self.logging, log_all)
+        return model_id
 
     def recover_model(self, model_id: str, execute_checks: bool = True) -> RestoredModelInfo:
 
+        log_all = log_start(self.logging, PARAM_UPDATE, 'recover_model', 'all')
         store_type = self._get_store_type(model_id)
 
         if store_type == ModelStoreType.FULL_MODEL:
-            return super().recover_model(model_id)
+            model = super().recover_model(model_id)
         else:
-            return self._recover_from_weight_update(model_id, execute_checks)
+            model = self._recover_from_weight_update(model_id, execute_checks)
+
+        log_stop(self.logging, log_all)
+        return model
 
     def _recover_from_weight_update(self, model_id, execute_checks):
         with tempfile.TemporaryDirectory() as tmp_path:
@@ -318,7 +332,10 @@ class WeightUpdateSaveService(BaselineSaveService):
             restored_model_info = RestoredModelInfo(model=recovered_model)
 
             if execute_checks:
+                log_check_weights = log_start(
+                    self.logging, PARAM_UPDATE, '_recover_from_weight_update', '_check_weights')
                 self._check_weights(recovered_model, model_info)
+                log_stop(self.logging, log_check_weights)
 
         return restored_model_info
 
@@ -343,14 +360,20 @@ class WeightUpdateSaveService(BaselineSaveService):
         return base_model
 
     def _save_updated_model(self, model_save_info, add_weights_hash_info=True):
+        log_all = log_start(self.logging, BASELINE, '_save_updated_model', 'all')
+
         base_model_id = model_save_info.base_model
         assert base_model_id, 'no base model given'
 
         with tempfile.TemporaryDirectory() as tmp_path:
+            log_weights_hash = log_start(self.logging, PARAM_UPDATE, '_save_updated_model', 'get_weights_hash_info')
             weights_hash_info = _get_weights_hash_info(add_weights_hash_info, model_save_info)
+            log_stop(self.logging, log_weights_hash)
 
+            log_gen_update = log_start(self.logging, PARAM_UPDATE, '_save_updated_model', 'generate_weights_update')
             weights_update, update_type, independent = \
                 self._generate_weights_update(model_save_info, base_model_id, weights_hash_info, tmp_path)
+            log_stop(self.logging, log_gen_update)
 
             recover_info = WeightsUpdateRecoverInfo(update=FileReference(path=weights_update), update_type=update_type,
                                                     independent=independent)
@@ -358,8 +381,11 @@ class WeightUpdateSaveService(BaselineSaveService):
             model_info = ModelInfo(store_type=ModelStoreType.WEIGHT_UPDATES, recover_info=recover_info,
                                    derived_from_id=base_model_id, weights_hash_info=weights_hash_info)
 
+            log_persist = log_start(self.logging, PARAM_UPDATE, '_save_updated_model', 'persist')
             model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
+            log_stop(self.logging, log_persist)
 
+            log_stop(self.logging, log_all)
             return model_info_id
 
     def _base_model_given(self, model_save_info):
@@ -429,24 +455,33 @@ class ProvenanceSaveService(BaselineSaveService):
         super().__init__(file_pers_service, dict_pers_service, logging)
 
     def save_model(self, model_save_info: ModelSaveInfo) -> str:
+        log_all = log_start(self.logging, PROVENANCE, '_save_model', 'all')
         if model_save_info.base_model is None or not isinstance(model_save_info, ProvModelSaveInfo):
             # if the base model is none or model save info does not provide provenance save info we have to store the
             # model as a full model
-            return super().save_model(model_save_info)
+            model_id = super().save_model(model_save_info)
         else:
-            return self._save_provenance_model(model_save_info)
+            model_id = self._save_provenance_model(model_save_info)
+
+        log_stop(self.logging, log_all)
+        return model_id
 
     def recover_model(self, model_id: str, execute_checks: bool = True) -> RestoredModelInfo:
+        log_all = log_start(self.logging, PROVENANCE, 'recover_model', 'all')
 
         base_model_id = self._get_base_model(model_id)
         if self._get_store_type(model_id) == ModelStoreType.FULL_MODEL:
-            return super().recover_model(model_id, execute_checks)
+            result = super().recover_model(model_id, execute_checks)
         else:
             # if there is a base model we first have to restore the base model to continue training base on it
+            log_rec_base = log_start(self.logging, PROVENANCE, 'recover_model', 'recover_base_model')
+
             base_model_store_type = self._get_store_type(base_model_id)
             base_model_info = self._recover_base_model(base_model_id, base_model_store_type)
             base_model = base_model_info.model
+            log_stop(self.logging, log_rec_base)
 
+            log_load_info = log_start(self.logging, PROVENANCE, 'recover_model', 'load_model_info')
             with tempfile.TemporaryDirectory() as tmp_path:
                 # TODO maybe can be replaced when using FileRef Object
                 restore_dir = os.path.join(tmp_path, RESTORE_PATH)
@@ -455,30 +490,46 @@ class ProvenanceSaveService(BaselineSaveService):
                 model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, restore_dir,
                                             load_recursive=True, load_files=True)
                 recover_info: ProvenanceRecoverInfo = model_info.recover_info
+                log_stop(self.logging, log_load_info)
 
+                log_train = log_start(self.logging, PROVENANCE, 'recover_model', 'train')
                 train_service = recover_info.train_info.train_service_wrapper.instance
                 train_kwargs = recover_info.train_info.train_kwargs
                 train_service.train(base_model, **train_kwargs)
+                log_stop(self.logging, log_train)
 
                 # because we trained it here the base_model is the updated version
                 restored_model = base_model
                 restored_model_info = RestoredModelInfo(model=restored_model)
 
                 if execute_checks:
+                    log_check_weights = log_start(self.logging, PROVENANCE, 'recover_model', '_check_weights')
                     self._check_weights(restored_model, model_info)
+                    log_stop(self.logging, log_check_weights)
+                    log_check_env = log_start(self.logging, PROVENANCE, 'recover_model', '_check_env')
                     self._check_env(model_info)
+                    log_stop(self.logging, log_check_env)
 
-                return restored_model_info
+                result = restored_model_info
+
+        log_stop(self.logging, log_all)
+        return result
 
     def model_save_size(self, model_id: str) -> int:
         pass
 
     def _save_provenance_model(self, model_save_info):
+        log_all = log_start(self.logging, PROVENANCE, '_save_provenance_model', 'all')
 
+        log_build_prov = log_start(self.logging, PROVENANCE, '_save_provenance_model', '_build_prov_model_info')
         model_info = self._build_prov_model_info(model_save_info)
+        log_stop(self.logging, log_build_prov)
 
+        log_persist = log_start(self.logging, PROVENANCE, '_save_provenance_model', 'persist')
         model_info_id = model_info.persist(self._file_pers_service, self._dict_pers_service)
+        log_stop(self.logging, log_persist)
 
+        log_stop(self.logging, log_all)
         return model_info_id
 
     def add_weights_hash_info(self, model_id: str, model: torch.nn.Module):
