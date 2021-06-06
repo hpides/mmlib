@@ -318,6 +318,7 @@ class WeightUpdateSaveService(BaselineSaveService):
         return model
 
     def _recover_from_weight_update(self, model_id, execute_checks):
+        log_update = log_start(self.logging, PARAM_UPDATE, 'recover_model', '_recover_from_weight_update')
         with tempfile.TemporaryDirectory() as tmp_path:
             model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path,
                                         load_recursive=True, load_files=True)
@@ -337,6 +338,7 @@ class WeightUpdateSaveService(BaselineSaveService):
                 self._check_weights(recovered_model, model_info)
                 log_stop(self.logging, log_check_weights)
 
+        log_stop(self.logging, log_update)
         return restored_model_info
 
     def _restore_independent_update(self, model_info, tmp_path):
@@ -360,7 +362,7 @@ class WeightUpdateSaveService(BaselineSaveService):
         return base_model
 
     def _save_updated_model(self, model_save_info, add_weights_hash_info=True):
-        log_all = log_start(self.logging, BASELINE, '_save_updated_model', 'all')
+        log_all = log_start(self.logging, PARAM_UPDATE, '_save_updated_model', 'all')
 
         base_model_id = model_save_info.base_model
         assert base_model_id, 'no base model given'
