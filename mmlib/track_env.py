@@ -6,7 +6,7 @@ import warnings
 import torch
 from torch.utils.collect_env import get_pretty_env_info
 
-from schema.environment import Environment
+from mmlib.schema.environment import Environment
 
 ARCHITECTURE = 'architecture'
 MACHINE = 'machine'

@@ -3,13 +3,13 @@ import os
 from mmlib.equal import model_equal
 from mmlib.persistence import FileSystemPersistenceService, MongoDictPersistenceService
 from mmlib.save import BaselineSaveService
-from schema.save_info_builder import ModelSaveInfoBuilder
+from mmlib.schema import ModelSaveInfoBuilder
+from mmlib.util.dummy_data import imagenet_input
 from tests.example_files.mynets.mobilenet import mobilenet_v2
-from util.dummy_data import imagenet_input
 
 CONTAINER_NAME = 'mongo-test'
 
-TARGET_FILE_SYSTEM_DIR = './filesystem-tmp'
+TARGET_FILE_SYSTEM_DIR = 'filesystem-tmp'
 
 if __name__ == '__main__':
     # initialize a service to store files

@@ -6,7 +6,7 @@ import uuid
 
 from mmlib.constants import ID
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
-from util.helper import log_stop, START_STOP, START, TIME
+from mmlib.util.helper import log_stop, START_STOP, START, TIME
 
 METADATA_SIZE = 'metadata_size'
 

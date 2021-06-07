@@ -1,7 +1,7 @@
 import os
 import zipfile
 
-from util.helper import zip_dir
+from mmlib.util.helper import zip_dir
 
 
 def zip_path(save_path: str) -> str:

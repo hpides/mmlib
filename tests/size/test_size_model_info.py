@@ -3,15 +3,15 @@ import tempfile
 
 import torch
 
+from mmlib.schema.file_reference import FileReference
+from mmlib.schema.model_info import ModelInfo
+from mmlib.schema.recover_info import FullModelRecoverInfo, RECOVER_INFO
+from mmlib.schema.schema_obj import METADATA_SIZE
+from mmlib.schema.store_type import ModelStoreType
 from mmlib.track_env import track_current_environment
-from schema.file_reference import FileReference
-from schema.model_info import ModelInfo
-from schema.recover_info import FullModelRecoverInfo, RECOVER_INFO
-from schema.schema_obj import METADATA_SIZE
-from schema.store_type import ModelStoreType
+from mmlib.util.weight_dict_merkle_tree import WeightDictMerkleTree
 from tests.example_files.mynets.resnet18 import resnet18
 from tests.size.abstract_test_size import TestSize
-from util.weight_dict_merkle_tree import WeightDictMerkleTree
 
 FILE_PATH = os.path.dirname(os.path.realpath(__file__))
 

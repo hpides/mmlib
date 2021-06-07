@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from colorama import Fore, Style
 
-from util.helper import print_info, get_device
+from mmlib.util.helper import print_info, get_device
 
 
 class ProbeInfo(Enum):

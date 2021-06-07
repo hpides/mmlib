@@ -1,8 +1,8 @@
 import torch
 
-from schema.environment import Environment
-from schema.restorable_object import StateDictRestorableObjectWrapper
-from util.helper import class_name, source_file
+from mmlib.schema.environment import Environment
+from mmlib.schema.restorable_object import StateDictRestorableObjectWrapper
+from mmlib.util.helper import class_name, source_file
 
 
 class TrainSaveInfo:

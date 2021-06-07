@@ -143,10 +143,10 @@ cython_debug/
 # build lib
 build/
 dist/
-/examples/summary
+/mmlib/examples/summary
 /tests/filesystem-tmp/
 /tests/saveservice-tmp/
 /tests/tmp-data/
 /tests/example_files/data/reduced-custom-coco-data.zip
-/examples/filesystem-tmp/
+/mmlib/examples/filesystem-tmp/
 /tests/example_files/local-config.ini

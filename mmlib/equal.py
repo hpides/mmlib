@@ -2,7 +2,7 @@ from typing import Callable
 
 import torch
 
-from util.helper import get_device
+from mmlib.util.helper import get_device
 
 
 def blackbox_model_equal(m1: torch.nn.Module, m2: torch.nn.Module, produce_input: Callable[[], torch.tensor],

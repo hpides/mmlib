@@ -4,7 +4,7 @@ import shutil
 import unittest
 
 from mmlib.persistence import FileSystemPersistenceService
-from schema.file_reference import FileReference
+from mmlib.schema.file_reference import FileReference
 
 
 class TestPersistence(unittest.TestCase):

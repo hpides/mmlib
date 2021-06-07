@@ -1,6 +1,6 @@
+from mmlib.schema.environment import Environment
+from mmlib.schema.schema_obj import METADATA_SIZE
 from mmlib.track_env import track_current_environment
-from schema.environment import Environment
-from schema.schema_obj import METADATA_SIZE
 from tests.size.abstract_test_size import TestSize
 
 

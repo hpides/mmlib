@@ -28,7 +28,7 @@
 
 ## Examples
 
-- For examples on how to use mmlib checkout the [examples](./examples) directory.
+- For examples on how to use mmlib checkout the [examples](mmlib/examples) directory.
 
 
 

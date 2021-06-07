@@ -3,7 +3,7 @@ import shutil
 import unittest
 
 from mmlib.persistence import FileSystemPersistenceService, MongoDictPersistenceService
-from util.mongo import MongoService
+from mmlib.util.mongo import MongoService
 
 COCO_DATA = '../example_files/data/reduced-custom-coco-data'
 

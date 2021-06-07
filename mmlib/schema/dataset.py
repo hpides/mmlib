@@ -1,9 +1,9 @@
 import os
 
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
-from schema.file_reference import FileReference
-from schema.schema_obj import SchemaObj
-from util.zip import zip_path, unzip
+from mmlib.schema.file_reference import FileReference
+from mmlib.schema.schema_obj import SchemaObj
+from mmlib.util.zip import zip_path, unzip
 
 RAW_DATA = 'raw_data'
 

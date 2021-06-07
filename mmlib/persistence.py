@@ -7,9 +7,9 @@ from shutil import copyfile
 
 from bson import ObjectId
 
-from schema.file_reference import FileReference
-from util.helper import find_file, log_stop, START_STOP, TIME
-from util.mongo import MongoService
+from mmlib.schema.file_reference import FileReference
+from mmlib.util.helper import find_file, log_stop, START_STOP, TIME
+from mmlib.util.mongo import MongoService
 
 MMLIB_FILE_PERS = 'mmlib_file_pers'
 

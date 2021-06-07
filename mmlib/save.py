@@ -8,17 +8,17 @@ import torch
 from mmlib.equal import tensor_equal
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from mmlib.save_info import ModelSaveInfo, ProvModelSaveInfo
+from mmlib.schema.dataset import Dataset
+from mmlib.schema.file_reference import FileReference
+from mmlib.schema.model_info import ModelInfo, MODEL_INFO
+from mmlib.schema.recover_info import FullModelRecoverInfo, WeightsUpdateRecoverInfo, ProvenanceRecoverInfo
+from mmlib.schema.restorable_object import RestoredModelInfo
+from mmlib.schema.store_type import ModelStoreType
+from mmlib.schema.train_info import TrainInfo
 from mmlib.track_env import compare_env_to_current
-from schema.dataset import Dataset
-from schema.file_reference import FileReference
-from schema.model_info import ModelInfo, MODEL_INFO
-from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo, WeightsUpdateRecoverInfo
-from schema.restorable_object import RestoredModelInfo
-from schema.store_type import ModelStoreType
-from schema.train_info import TrainInfo
-from util.helper import log_start, log_stop
-from util.init_from_file import create_object, create_type
-from util.weight_dict_merkle_tree import WeightDictMerkleTree, THIS, OTHER
+from mmlib.util.helper import log_start, log_stop
+from mmlib.util.init_from_file import create_object, create_type
+from mmlib.util.weight_dict_merkle_tree import WeightDictMerkleTree, THIS, OTHER
 
 PROVENANCE = 'provenance'
 

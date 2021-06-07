@@ -3,8 +3,8 @@ import unittest
 import torch
 from torchvision.models import mobilenet_v2
 
+from mmlib.util.weight_dict_merkle_tree import WeightDictMerkleTree, LEFT, LAYER_KEY, THIS, OTHER
 from tests.example_files.mynets.resnet152 import resnet152
-from util.weight_dict_merkle_tree import WeightDictMerkleTree, LEFT, LAYER_KEY, THIS, OTHER
 
 LAYER_1 = 'layer1'
 LAYER_2 = 'layer2'

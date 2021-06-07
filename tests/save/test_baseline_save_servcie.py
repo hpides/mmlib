@@ -5,13 +5,13 @@ import unittest
 from mmlib.equal import model_equal
 from mmlib.persistence import FileSystemPersistenceService, MongoDictPersistenceService
 from mmlib.save import BaselineSaveService
+from mmlib.schema.save_info_builder import ModelSaveInfoBuilder
 from mmlib.track_env import track_current_environment
-from schema.save_info_builder import ModelSaveInfoBuilder
+from mmlib.util.dummy_data import imagenet_input
+from mmlib.util.mongo import MongoService
 from tests.example_files.mynets.googlenet import googlenet
 from tests.example_files.mynets.mobilenet import mobilenet_v2
 from tests.example_files.mynets.resnet18 import resnet18
-from util.dummy_data import imagenet_input
-from util.mongo import MongoService
 
 FILE_PATH = os.path.dirname(os.path.realpath(__file__))
 NETWORK_CODE_TEMPLATE = os.path.join(FILE_PATH, '../example_files/mynets/{}.py')

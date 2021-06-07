@@ -1,8 +1,8 @@
 import torch
 
 from mmlib.save_info import ModelSaveInfo, TrainSaveInfo, ProvModelSaveInfo
-from schema.environment import Environment
-from schema.restorable_object import StateDictRestorableObjectWrapper
+from mmlib.schema.environment import Environment
+from mmlib.schema.restorable_object import StateDictRestorableObjectWrapper
 
 
 class ModelSaveInfoBuilder:

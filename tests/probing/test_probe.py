@@ -7,7 +7,7 @@ from torchvision import models
 
 from mmlib.deterministic import set_deterministic
 from mmlib.probe import ProbeSummary, probe_inference, probe_training
-from util.dummy_data import imagenet_input, imagenet_target
+from mmlib.util.dummy_data import imagenet_input, imagenet_target
 
 TMP_SUMMARY_PATH = './tmp-summary'
 

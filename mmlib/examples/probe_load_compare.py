@@ -1,6 +1,6 @@
 import argparse
 
-from examples.probe_store import _generate_probe_training_summary
+from mmlib.examples.probe_store import _generate_probe_training_summary
 from mmlib.probe import ProbeSummary, ProbeInfo
 
 

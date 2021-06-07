@@ -1,5 +1,5 @@
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
-from schema.schema_obj import SchemaObj
+from mmlib.schema.schema_obj import SchemaObj
 
 PYTHON_VERSION = 'python_version'
 PYTORCH_VERSION = 'pytorch_version'
