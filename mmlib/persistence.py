@@ -160,7 +160,7 @@ class FileSystemPersistenceService(FilePersistenceService):
         file.size = os.path.getsize(file_path)
 
     def generate_id(self) -> str:
-        return str(ObjectId())
+        return str(uuid.uuid4())
 
     def is_file_ref(self, field: str) -> bool:
         return field.startswith(FILE)
