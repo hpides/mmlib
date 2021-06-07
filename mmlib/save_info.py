@@ -1,6 +1,6 @@
 import torch
 
-from mmlib.schema import Environment
+from mmlib.schema.environment import Environment
 from mmlib.schema.restorable_object import StateDictRestorableObjectWrapper
 from mmlib.util.helper import class_name, source_file
 

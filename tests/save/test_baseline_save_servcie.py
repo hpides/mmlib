@@ -5,8 +5,8 @@ import unittest
 from mmlib.equal import model_equal
 from mmlib.persistence import FileSystemPersistenceService, MongoDictPersistenceService
 from mmlib.save import BaselineSaveService
+from mmlib.schema.save_info_builder import ModelSaveInfoBuilder
 from mmlib.track_env import track_current_environment
-from mmlib.schema import ModelSaveInfoBuilder
 from tests.example_files.mynets.googlenet import googlenet
 from tests.example_files.mynets.mobilenet import mobilenet_v2
 from tests.example_files.mynets.resnet18 import resnet18

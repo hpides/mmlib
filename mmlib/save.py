@@ -8,13 +8,13 @@ import torch
 from mmlib.equal import tensor_equal
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from mmlib.save_info import ModelSaveInfo, ProvModelSaveInfo
+from mmlib.schema.dataset import Dataset
+from mmlib.schema.file_reference import FileReference
+from mmlib.schema.model_info import ModelInfo, MODEL_INFO
+from mmlib.schema.recover_info import FullModelRecoverInfo, WeightsUpdateRecoverInfo, ProvenanceRecoverInfo
+from mmlib.schema.store_type import ModelStoreType
 from mmlib.track_env import compare_env_to_current
-from mmlib.schema import Dataset
-from mmlib.schema import FileReference
-from mmlib.schema import ModelInfo, MODEL_INFO
-from mmlib.schema import FullModelRecoverInfo, ProvenanceRecoverInfo, WeightsUpdateRecoverInfo
 from mmlib.schema.restorable_object import RestoredModelInfo
-from mmlib.schema import ModelStoreType
 from mmlib.schema.train_info import TrainInfo
 from mmlib.util.helper import log_start, log_stop
 from mmlib.util.init_from_file import create_object, create_type

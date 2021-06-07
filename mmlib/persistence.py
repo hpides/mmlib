@@ -7,7 +7,7 @@ from shutil import copyfile
 
 from bson import ObjectId
 
-from mmlib.schema import FileReference
+from mmlib.schema.file_reference import FileReference
 from mmlib.util.helper import find_file, log_stop, START_STOP, TIME
 from mmlib.util.mongo import MongoService
 
