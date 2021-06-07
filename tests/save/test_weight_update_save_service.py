@@ -2,13 +2,13 @@ import tempfile
 
 from mmlib.equal import model_equal
 from mmlib.save import WeightUpdateSaveService
+from mmlib.schema.model_info import ModelInfo
+from mmlib.schema.recover_info import FullModelRecoverInfo, WeightsUpdateRecoverInfo
+from mmlib.schema.save_info_builder import ModelSaveInfoBuilder
 from mmlib.track_env import track_current_environment
-from mmlib.schema import ModelInfo
-from mmlib.schema import WeightsUpdateRecoverInfo, FullModelRecoverInfo
-from mmlib.schema import ModelSaveInfoBuilder
+from mmlib.util.dummy_data import imagenet_input
 from tests.example_files.mynets.resnet18 import resnet18
 from tests.save.test_baseline_save_servcie import TestBaselineSaveService
-from mmlib.util.dummy_data import imagenet_input
 
 
 class TestWeightUpdateSaveService(TestBaselineSaveService):
