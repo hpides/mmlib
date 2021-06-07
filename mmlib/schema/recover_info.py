@@ -4,11 +4,11 @@ import os
 
 from mmlib.constants import MMLIB_CONFIG, CURRENT_DATA_ROOT, VALUES
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
-from schema.dataset import Dataset
-from schema.environment import Environment
-from schema.file_reference import FileReference
-from schema.schema_obj import SchemaObj
-from schema.train_info import TrainInfo
+from mmlib.schema.dataset import Dataset
+from mmlib.schema.environment import Environment
+from mmlib.schema.file_reference import FileReference
+from mmlib.schema.schema_obj import SchemaObj
+from mmlib.schema.train_info import TrainInfo
 from util.helper import copy_all_data, clean
 
 RECOVER_INFO = 'recover_info'

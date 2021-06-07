@@ -9,13 +9,13 @@ from mmlib.equal import tensor_equal
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from mmlib.save_info import ModelSaveInfo, ProvModelSaveInfo
 from mmlib.track_env import compare_env_to_current
-from schema.dataset import Dataset
-from schema.file_reference import FileReference
-from schema.model_info import ModelInfo, MODEL_INFO
-from schema.recover_info import FullModelRecoverInfo, ProvenanceRecoverInfo, WeightsUpdateRecoverInfo
-from schema.restorable_object import RestoredModelInfo
-from schema.store_type import ModelStoreType
-from schema.train_info import TrainInfo
+from mmlib.schema import Dataset
+from mmlib.schema import FileReference
+from mmlib.schema import ModelInfo, MODEL_INFO
+from mmlib.schema import FullModelRecoverInfo, ProvenanceRecoverInfo, WeightsUpdateRecoverInfo
+from mmlib.schema.restorable_object import RestoredModelInfo
+from mmlib.schema import ModelStoreType
+from mmlib.schema.train_info import TrainInfo
 from util.helper import log_start, log_stop
 from util.init_from_file import create_object, create_type
 from util.weight_dict_merkle_tree import WeightDictMerkleTree, THIS, OTHER

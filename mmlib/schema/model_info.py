@@ -1,8 +1,8 @@
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
-from schema.recover_info import FullModelRecoverInfo, AbstractRecoverInfo, WeightsUpdateRecoverInfo, \
+from mmlib.schema.recover_info import FullModelRecoverInfo, AbstractRecoverInfo, WeightsUpdateRecoverInfo, \
     ProvenanceRecoverInfo, RECOVER_INFO
-from schema.schema_obj import SchemaObj
-from schema.store_type import ModelStoreType
+from mmlib.schema.schema_obj import SchemaObj
+from mmlib.schema.store_type import ModelStoreType
 from util.weight_dict_merkle_tree import WeightDictMerkleTree
 
 STORE_TYPE = 'store_type'

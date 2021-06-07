@@ -9,8 +9,8 @@ from mmlib.equal import model_equal
 from mmlib.persistence import FileSystemPersistenceService, MongoDictPersistenceService
 from mmlib.save import ProvenanceSaveService
 from mmlib.track_env import track_current_environment
-from schema.restorable_object import RestorableObjectWrapper, OptimizerWrapper
-from schema.save_info_builder import ModelSaveInfoBuilder
+from mmlib.schema.restorable_object import RestorableObjectWrapper, OptimizerWrapper
+from mmlib.schema import ModelSaveInfoBuilder
 from tests.example_files.data.custom_coco import TrainCustomCoco
 from tests.example_files.imagenet_train import ImagenetTrainService, DATALOADER, OPTIMIZER, ImagenetTrainWrapper, DATA
 from tests.example_files.mynets.resnet18 import resnet18

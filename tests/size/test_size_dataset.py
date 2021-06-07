@@ -1,9 +1,9 @@
 import os
 import shutil
 
-from schema.dataset import Dataset, RAW_DATA
-from schema.file_reference import FileReference
-from schema.schema_obj import METADATA_SIZE
+from mmlib.schema import Dataset, RAW_DATA
+from mmlib.schema import FileReference
+from mmlib.schema import METADATA_SIZE
 from tests.size.abstract_test_size import TestSize
 
 FILE_PATH = os.path.dirname(os.path.realpath(__file__))

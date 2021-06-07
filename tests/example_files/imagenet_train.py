@@ -2,7 +2,7 @@ import torch
 
 from mmlib.deterministic import set_deterministic
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
-from schema.restorable_object import TrainService, StateDictRestorableObjectWrapper, \
+from mmlib.schema.restorable_object import TrainService, StateDictRestorableObjectWrapper, \
     RestorableObjectWrapper, StateFileRestorableObjectWrapper
 from util.init_from_file import create_object
 

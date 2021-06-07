@@ -1,7 +1,7 @@
 import torch
 from torch.optim import SGD
 
-from schema.restorable_object import StateFileRestorableObject
+from mmlib.schema.restorable_object import StateFileRestorableObject
 
 
 class ImagenetOptimizer(SGD, StateFileRestorableObject):

@@ -3,7 +3,7 @@ import os
 from mmlib.equal import model_equal
 from mmlib.persistence import FileSystemPersistenceService, MongoDictPersistenceService
 from mmlib.save import BaselineSaveService
-from schema.save_info_builder import ModelSaveInfoBuilder
+from mmlib.schema import ModelSaveInfoBuilder
 from tests.example_files.mynets.mobilenet import mobilenet_v2
 from util.dummy_data import imagenet_input
 

@@ -2,10 +2,10 @@ import os
 import shutil
 
 from mmlib.constants import CURRENT_DATA_ROOT
-from schema.file_reference import FileReference
-from schema.restorable_object import RestorableObjectWrapper, CODE_FILE, STATE_FILE, StateFileRestorableObjectWrapper, \
+from mmlib.schema import FileReference
+from mmlib.schema.restorable_object import RestorableObjectWrapper, CODE_FILE, STATE_FILE, StateFileRestorableObjectWrapper, \
     STATE_DICT
-from schema.schema_obj import METADATA_SIZE
+from mmlib.schema import METADATA_SIZE
 from tests.example_files.data.custom_coco import TrainCustomCoco
 from tests.example_files.imagenet_optimizer import ImagenetOptimizer
 from tests.example_files.imagenet_train import ImagenetTrainService, DATA, DATALOADER, OPTIMIZER, ImagenetTrainWrapper

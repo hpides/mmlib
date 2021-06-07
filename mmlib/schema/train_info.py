@@ -1,9 +1,9 @@
 import os
 
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
-from schema.file_reference import FileReference
-from schema.restorable_object import StateDictRestorableObjectWrapper
-from schema.schema_obj import SchemaObj
+from mmlib.schema.file_reference import FileReference
+from mmlib.schema.restorable_object import StateDictRestorableObjectWrapper
+from mmlib.schema.schema_obj import SchemaObj
 from util.init_from_file import create_type
 
 TRAIN_SERVICE = 'train_service'

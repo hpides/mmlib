@@ -7,9 +7,9 @@ from mmlib.deterministic import set_deterministic
 from mmlib.equal import model_equal
 from mmlib.save import ProvenanceSaveService
 from mmlib.track_env import track_current_environment
-from schema.file_reference import FileReference
-from schema.restorable_object import RestorableObjectWrapper, StateFileRestorableObjectWrapper
-from schema.save_info_builder import ModelSaveInfoBuilder
+from mmlib.schema import FileReference
+from mmlib.schema.restorable_object import RestorableObjectWrapper, StateFileRestorableObjectWrapper
+from mmlib.schema import ModelSaveInfoBuilder
 from tests.example_files.data.custom_coco import TrainCustomCoco
 from tests.example_files.imagenet_optimizer import ImagenetOptimizer
 from tests.example_files.imagenet_train import ImagenetTrainService, OPTIMIZER, DATALOADER, DATA, ImagenetTrainWrapper

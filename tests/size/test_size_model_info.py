@@ -4,11 +4,11 @@ import tempfile
 import torch
 
 from mmlib.track_env import track_current_environment
-from schema.file_reference import FileReference
-from schema.model_info import ModelInfo
-from schema.recover_info import FullModelRecoverInfo, RECOVER_INFO
-from schema.schema_obj import METADATA_SIZE
-from schema.store_type import ModelStoreType
+from mmlib.schema import FileReference
+from mmlib.schema import ModelInfo
+from mmlib.schema import FullModelRecoverInfo, RECOVER_INFO
+from mmlib.schema import METADATA_SIZE
+from mmlib.schema import ModelStoreType
 from tests.example_files.mynets.resnet18 import resnet18
 from tests.size.abstract_test_size import TestSize
 from util.weight_dict_merkle_tree import WeightDictMerkleTree
