@@ -3,14 +3,14 @@ import tempfile
 
 import torch
 
-from mmlib.track_env import track_current_environment
-from mmlib.schema import Dataset
-from mmlib.schema import FileReference
-from mmlib.schema import FullModelRecoverInfo, ENVIRONMENT, MODEL_CODE, PARAMETERS, WeightsUpdateRecoverInfo, \
-    UPDATE, ProvenanceRecoverInfo, DATASET, TRAIN_INFO
+from mmlib.schema.dataset import Dataset, DATASET
+from mmlib.schema.file_reference import FileReference
+from mmlib.schema.recover_info import FullModelRecoverInfo, ENVIRONMENT, MODEL_CODE, PARAMETERS, \
+    WeightsUpdateRecoverInfo, UPDATE, ProvenanceRecoverInfo, TRAIN_INFO
 from mmlib.schema.restorable_object import StateFileRestorableObjectWrapper
-from mmlib.schema import METADATA_SIZE
+from mmlib.schema.schema_obj import METADATA_SIZE
 from mmlib.schema.train_info import TrainInfo
+from mmlib.track_env import track_current_environment
 from tests.example_files.imagenet_optimizer import ImagenetOptimizer
 from tests.example_files.imagenet_train import ImagenetTrainService, OPTIMIZER, ImagenetTrainWrapper
 from tests.example_files.mynets.resnet18 import resnet18

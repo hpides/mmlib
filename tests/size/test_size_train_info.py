@@ -1,7 +1,7 @@
 import os
 
-from mmlib.schema import FileReference
-from mmlib.schema import METADATA_SIZE
+from mmlib.schema.file_reference import FileReference
+from mmlib.schema.schema_obj import METADATA_SIZE
 from mmlib.schema.train_info import TrainInfo, WRAPPER_CODE, TRAIN_SERVICE
 from tests.size.abstract_test_size import TestSize
 from tests.size.test_size_restorable_objects import _get_dummy_imagenet_train_service_wrapper
