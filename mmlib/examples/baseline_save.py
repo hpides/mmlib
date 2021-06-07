@@ -4,8 +4,8 @@ from mmlib.equal import model_equal
 from mmlib.persistence import FileSystemPersistenceService, MongoDictPersistenceService
 from mmlib.save import BaselineSaveService
 from mmlib.schema import ModelSaveInfoBuilder
-from tests.example_files.mynets.mobilenet import mobilenet_v2
 from mmlib.util.dummy_data import imagenet_input
+from tests.example_files.mynets.mobilenet import mobilenet_v2
 
 CONTAINER_NAME = 'mongo-test'
 

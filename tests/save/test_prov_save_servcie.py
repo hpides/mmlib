@@ -7,16 +7,16 @@ from mmlib.deterministic import set_deterministic
 from mmlib.equal import model_equal
 from mmlib.save import ProvenanceSaveService
 from mmlib.schema.file_reference import FileReference
+from mmlib.schema.restorable_object import RestorableObjectWrapper, StateFileRestorableObjectWrapper
 from mmlib.schema.save_info_builder import ModelSaveInfoBuilder
 from mmlib.track_env import track_current_environment
-from mmlib.schema.restorable_object import RestorableObjectWrapper, StateFileRestorableObjectWrapper
+from mmlib.util.dummy_data import imagenet_input
 from tests.example_files.data.custom_coco import TrainCustomCoco
 from tests.example_files.imagenet_optimizer import ImagenetOptimizer
 from tests.example_files.imagenet_train import ImagenetTrainService, OPTIMIZER, DATALOADER, DATA, ImagenetTrainWrapper
 from tests.example_files.mynets.mobilenet import mobilenet_v2
 from tests.example_files.mynets.resnet18 import resnet18
 from tests.save.test_baseline_save_servcie import TestBaselineSaveService
-from mmlib.util.dummy_data import imagenet_input
 
 FILE_PATH = os.path.dirname(os.path.realpath(__file__))
 MODEL_PATH = os.path.join(FILE_PATH, '../example_files/mynets/{}.py')

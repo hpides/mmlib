@@ -8,13 +8,13 @@ from mmlib.deterministic import set_deterministic
 from mmlib.equal import model_equal
 from mmlib.persistence import FileSystemPersistenceService, MongoDictPersistenceService
 from mmlib.save import ProvenanceSaveService
-from mmlib.track_env import track_current_environment
-from mmlib.schema.restorable_object import RestorableObjectWrapper, OptimizerWrapper
 from mmlib.schema import ModelSaveInfoBuilder
+from mmlib.schema.restorable_object import RestorableObjectWrapper, OptimizerWrapper
+from mmlib.track_env import track_current_environment
+from mmlib.util.dummy_data import imagenet_input
 from tests.example_files.data.custom_coco import TrainCustomCoco
 from tests.example_files.imagenet_train import ImagenetTrainService, DATALOADER, OPTIMIZER, ImagenetTrainWrapper, DATA
 from tests.example_files.mynets.resnet18 import resnet18
-from mmlib.util.dummy_data import imagenet_input
 
 CONTAINER_NAME = 'mongo-test'
 TARGET_FILE_SYSTEM_DIR = 'filesystem-tmp'

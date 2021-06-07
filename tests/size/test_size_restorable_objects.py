@@ -3,7 +3,8 @@ import shutil
 
 from mmlib.constants import CURRENT_DATA_ROOT
 from mmlib.schema.file_reference import FileReference
-from mmlib.schema.restorable_object import RestorableObjectWrapper, CODE_FILE, STATE_FILE, StateFileRestorableObjectWrapper, \
+from mmlib.schema.restorable_object import RestorableObjectWrapper, CODE_FILE, STATE_FILE, \
+    StateFileRestorableObjectWrapper, \
     STATE_DICT
 from mmlib.schema.schema_obj import METADATA_SIZE
 from tests.example_files.data.custom_coco import TrainCustomCoco
