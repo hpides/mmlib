@@ -35,7 +35,7 @@ WEIGHTS_PATCH = "weights_patch"
 
 RESTORE_PATH = 'restore_path'
 
-MODEL_WEIGHTS = 'model_weights'
+MODEL_WEIGHTS = 'model_weights.pt'
 
 
 # Future work, se if it would make sense to use protocol here
@@ -165,7 +165,7 @@ class BaselineSaveService(AbstractSaveService):
 
         with tempfile.TemporaryDirectory() as tmp_path:
             log_pickle = log_start(self.logging, BASELINE, '_save_full_model', 'pickle_weights')
-            weights_path = self._pickle_weights(model_save_info.model, tmp_path)
+            weights_path = self. _pickle_weights(model_save_info.model, tmp_path)
             log_stop(self.logging, log_pickle)
 
             base_model = model_save_info.base_model if model_save_info.base_model else None
