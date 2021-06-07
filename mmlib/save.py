@@ -378,8 +378,7 @@ class WeightUpdateSaveService(BaselineSaveService):
                 self._generate_weights_update(model_save_info, base_model_id, weights_hash_info, tmp_path)
             log_stop(self.logging, log_gen_update)
 
-            recover_info = WeightsUpdateRecoverInfo(update=FileReference(path=weights_update), update_type=update_type,
-                                                    independent=independent)
+            recover_info = WeightsUpdateRecoverInfo(update=FileReference(path=weights_update), update_type=update_type)
 
             model_info = ModelInfo(store_type=ModelStoreType.WEIGHT_UPDATES, recover_info=recover_info,
                                    derived_from_id=base_model_id, weights_hash_info=weights_hash_info)
