@@ -113,7 +113,7 @@ class BaselineSaveService(AbstractSaveService):
 
     def recover_model(self, model_id: str, execute_checks: bool = True) -> RestoredModelInfo:
         # in this baseline approach we always store the full model (pickled weights + code)
-        log_all = log_start(self.logging, BASELINE, 'recover_model', 'all')
+        log_all = log_start(self.logging, BASELINE, 'recover_model-{}'.format(model_id), 'all')
         with tempfile.TemporaryDirectory() as tmp_path:
             log_load = log_start(self.logging, BASELINE, 'recover_model', 'load_model_info_rec_files')
             model_info = ModelInfo.load(model_id, self._file_pers_service, self._dict_pers_service, tmp_path,
@@ -306,7 +306,7 @@ class WeightUpdateSaveService(BaselineSaveService):
 
     def recover_model(self, model_id: str, execute_checks: bool = True) -> RestoredModelInfo:
 
-        log_all = log_start(self.logging, PARAM_UPDATE, 'recover_model', 'all')
+        log_all = log_start(self.logging, PARAM_UPDATE, 'recover_model-{}'.format(model_id), 'all')
         store_type = self._get_store_type(model_id)
 
         if store_type == ModelStoreType.FULL_MODEL:
@@ -423,7 +423,7 @@ class WeightUpdateSaveService(BaselineSaveService):
                 model_weights = super()._pickle_state_dict(weights_patch, tmp_path)
                 return model_weights, WEIGHTS_PATCH, False
             else:
-                model_weights = self._pickle_weights(current_model_weights, tmp_path)
+                model_weights = self._pickle_weights(model_save_info.model, tmp_path)
                 return model_weights, PICKLED_MODEL_WEIGHTS, True
 
     def _state_dict_patch(self, base_model_weights, current_model_weights):
@@ -469,7 +469,7 @@ class ProvenanceSaveService(BaselineSaveService):
         return model_id
 
     def recover_model(self, model_id: str, execute_checks: bool = True) -> RestoredModelInfo:
-        log_all = log_start(self.logging, PROVENANCE, 'recover_model', 'all')
+        log_all = log_start(self.logging, PROVENANCE, 'recover_model-{}'.format(model_id), 'all')
 
         base_model_id = self._get_base_model(model_id)
         if self._get_store_type(model_id) == ModelStoreType.FULL_MODEL:
@@ -479,7 +479,7 @@ class ProvenanceSaveService(BaselineSaveService):
             log_rec_base = log_start(self.logging, PROVENANCE, 'recover_model', 'recover_base_model')
 
             base_model_store_type = self._get_store_type(base_model_id)
-            base_model_info = self._recover_base_model(base_model_id, base_model_store_type)
+            base_model_info = self._recover_base_model(base_model_id, base_model_store_type, execute_checks)
             base_model = base_model_info.model
             log_stop(self.logging, log_rec_base)
 
@@ -561,11 +561,11 @@ class ProvenanceSaveService(BaselineSaveService):
                                derived_from_id=derived_from)
         return model_info
 
-    def _recover_base_model(self, base_model_id, base_model_store_type):
+    def _recover_base_model(self, base_model_id, base_model_store_type, execute_checks=True):
         if base_model_store_type == ModelStoreType.FULL_MODEL:
-            return super().recover_model(model_id=base_model_id)
+            return super().recover_model(model_id=base_model_id, execute_checks=execute_checks)
         elif base_model_store_type == ModelStoreType.PROVENANCE:
-            return self.recover_model(model_id=base_model_id)
+            return self.recover_model(model_id=base_model_id, execute_checks=execute_checks)
         else:
             raise NotImplementedError
 

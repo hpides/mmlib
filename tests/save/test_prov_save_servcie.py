@@ -138,7 +138,7 @@ class TestProvSaveService(TestBaselineSaveService):
 
         imagenet_ts.train(model, **train_kwargs)
         self.save_service.add_weights_hash_info(model_id, model)
-        recovered_model_info = self.save_service.recover_model(model_id)
+        recovered_model_info = self.save_service.recover_model(model_id, execute_checks=True)
         recovered_model_1 = recovered_model_info.model
 
         ################################################################################################################
@@ -155,6 +155,6 @@ class TestProvSaveService(TestBaselineSaveService):
         imagenet_ts.train(model, **train_kwargs)
         self.save_service.add_weights_hash_info(model_id_2, model)
 
-        recovered_model_info = self.save_service.recover_model(model_id_2)
+        recovered_model_info = self.save_service.recover_model(model_id_2, execute_checks=True)
         self.assertTrue(model_equal(model, recovered_model_info.model, imagenet_input))
         self.assertFalse(model_equal(recovered_model_1, recovered_model_info.model, imagenet_input))
