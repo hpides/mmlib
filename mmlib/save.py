@@ -165,7 +165,7 @@ class BaselineSaveService(AbstractSaveService):
 
         with tempfile.TemporaryDirectory() as tmp_path:
             log_pickle = log_start(self.logging, BASELINE, '_save_full_model', 'pickle_weights')
-            weights_path = self. _pickle_weights(model_save_info.model, tmp_path)
+            weights_path = self._pickle_weights(model_save_info.model, tmp_path)
             log_stop(self.logging, log_pickle)
 
             base_model = model_save_info.base_model if model_save_info.base_model else None
@@ -344,21 +344,25 @@ class WeightUpdateSaveService(BaselineSaveService):
         return restored_model_info
 
     def _recover_from_full_weights(self, model_info, tmp_path):
+        log = log_start(self.logging, PARAM_UPDATE, '_recover_from_full_weights', 'all')
         model_code, model_class_name = self._restore_code_and_class_name(model_info, tmp_path)
         recover_info: WeightsUpdateRecoverInfo = model_info.recover_info
 
         model = create_object(model_code.path, model_class_name)
         s_dict = self._recover_pickled_weights(recover_info.update.path)
         model.load_state_dict(s_dict)
+        log_stop(self.logging, log)
 
         return model
 
     def _recover_from_parameter_patch(self, model_info):
+        log = log_start(self.logging, PARAM_UPDATE, '_recover_from_parameter_patch', 'all')
         recover_info: WeightsUpdateRecoverInfo = model_info.recover_info
         base_model_info = self.recover_model(model_info.derived_from)
         base_model = base_model_info.model
         weights_patch = torch.load(recover_info.update.path)
         self._apply_weight_patch(base_model, weights_patch)
+        log_stop(self.logging, log)
 
         return base_model
 
