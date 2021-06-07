@@ -9,7 +9,7 @@ from mmlib.schema.environment import Environment
 from mmlib.schema.file_reference import FileReference
 from mmlib.schema.schema_obj import SchemaObj
 from mmlib.schema.train_info import TrainInfo
-from util.helper import copy_all_data, clean
+from mmlib.util.helper import copy_all_data, clean
 
 RECOVER_INFO = 'recover_info'
 

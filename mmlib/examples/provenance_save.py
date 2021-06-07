@@ -14,7 +14,7 @@ from mmlib.schema import ModelSaveInfoBuilder
 from tests.example_files.data.custom_coco import TrainCustomCoco
 from tests.example_files.imagenet_train import ImagenetTrainService, DATALOADER, OPTIMIZER, ImagenetTrainWrapper, DATA
 from tests.example_files.mynets.resnet18 import resnet18
-from util.dummy_data import imagenet_input
+from mmlib.util.dummy_data import imagenet_input
 
 CONTAINER_NAME = 'mongo-test'
 TARGET_FILE_SYSTEM_DIR = 'filesystem-tmp'

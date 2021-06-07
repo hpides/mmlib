@@ -3,7 +3,7 @@ from mmlib.schema.recover_info import FullModelRecoverInfo, AbstractRecoverInfo,
     ProvenanceRecoverInfo, RECOVER_INFO
 from mmlib.schema.schema_obj import SchemaObj
 from mmlib.schema.store_type import ModelStoreType
-from util.weight_dict_merkle_tree import WeightDictMerkleTree
+from mmlib.util.weight_dict_merkle_tree import WeightDictMerkleTree
 
 STORE_TYPE = 'store_type'
 RECOVER_INFO_ID = 'recover_info_id'

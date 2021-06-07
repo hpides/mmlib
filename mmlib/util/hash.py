@@ -3,7 +3,7 @@ import hashlib
 import torch
 
 from mmlib.deterministic import set_deterministic
-from util.helper import get_device
+from mmlib.util.helper import get_device
 
 
 def inference_hash(model: torch.nn.Module, dummy_input_shape: [int]):

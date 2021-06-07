@@ -16,9 +16,9 @@ from mmlib.schema import FullModelRecoverInfo, ProvenanceRecoverInfo, WeightsUpd
 from mmlib.schema.restorable_object import RestoredModelInfo
 from mmlib.schema import ModelStoreType
 from mmlib.schema.train_info import TrainInfo
-from util.helper import log_start, log_stop
-from util.init_from_file import create_object, create_type
-from util.weight_dict_merkle_tree import WeightDictMerkleTree, THIS, OTHER
+from mmlib.util.helper import log_start, log_stop
+from mmlib.util.init_from_file import create_object, create_type
+from mmlib.util.weight_dict_merkle_tree import WeightDictMerkleTree, THIS, OTHER
 
 PROVENANCE = 'provenance'
 

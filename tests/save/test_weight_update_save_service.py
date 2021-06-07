@@ -8,7 +8,7 @@ from mmlib.schema import WeightsUpdateRecoverInfo, FullModelRecoverInfo
 from mmlib.schema import ModelSaveInfoBuilder
 from tests.example_files.mynets.resnet18 import resnet18
 from tests.save.test_baseline_save_servcie import TestBaselineSaveService
-from util.dummy_data import imagenet_input
+from mmlib.util.dummy_data import imagenet_input
 
 
 class TestWeightUpdateSaveService(TestBaselineSaveService):

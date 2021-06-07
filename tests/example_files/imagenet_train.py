@@ -4,7 +4,7 @@ from mmlib.deterministic import set_deterministic
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from mmlib.schema.restorable_object import TrainService, StateDictRestorableObjectWrapper, \
     RestorableObjectWrapper, StateFileRestorableObjectWrapper
-from util.init_from_file import create_object
+from mmlib.util.init_from_file import create_object
 
 DATA = 'data'
 DATALOADER = 'dataloader'

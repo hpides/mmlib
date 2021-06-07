@@ -16,7 +16,7 @@ from tests.example_files.imagenet_train import ImagenetTrainService, OPTIMIZER, 
 from tests.example_files.mynets.mobilenet import mobilenet_v2
 from tests.example_files.mynets.resnet18 import resnet18
 from tests.save.test_baseline_save_servcie import TestBaselineSaveService
-from util.dummy_data import imagenet_input
+from mmlib.util.dummy_data import imagenet_input
 
 FILE_PATH = os.path.dirname(os.path.realpath(__file__))
 MODEL_PATH = os.path.join(FILE_PATH, '../example_files/mynets/{}.py')

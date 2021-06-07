@@ -11,8 +11,8 @@ from mmlib.constants import MMLIB_CONFIG, VALUES, ID
 from mmlib.persistence import FilePersistenceService, DictPersistenceService
 from mmlib.schema.file_reference import FileReference
 from mmlib.schema.schema_obj import SchemaObj
-from util.helper import class_name, source_file
-from util.init_from_file import create_object_with_parameters
+from mmlib.util.helper import class_name, source_file
+from mmlib.util.init_from_file import create_object_with_parameters
 
 STATE_DICT = 'state_dict'
 

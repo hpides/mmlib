@@ -8,8 +8,8 @@ from shutil import copyfile
 from bson import ObjectId
 
 from mmlib.schema import FileReference
-from util.helper import find_file, log_stop, START_STOP, TIME
-from util.mongo import MongoService
+from mmlib.util.helper import find_file, log_stop, START_STOP, TIME
+from mmlib.util.mongo import MongoService
 
 MMLIB_FILE_PERS = 'mmlib_file_pers'
 

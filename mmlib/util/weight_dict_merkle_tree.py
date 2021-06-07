@@ -1,6 +1,6 @@
 import math
 
-from util.hash import hash_string, tensor_hash
+from mmlib.util.hash import hash_string, tensor_hash
 
 OTHER = 'other'
 

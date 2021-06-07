@@ -5,7 +5,7 @@ from mmlib.persistence import FileSystemPersistenceService, MongoDictPersistence
 from mmlib.save import BaselineSaveService
 from mmlib.schema import ModelSaveInfoBuilder
 from tests.example_files.mynets.mobilenet import mobilenet_v2
-from util.dummy_data import imagenet_input
+from mmlib.util.dummy_data import imagenet_input
 
 CONTAINER_NAME = 'mongo-test'
 
