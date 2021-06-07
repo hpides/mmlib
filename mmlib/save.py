@@ -29,9 +29,9 @@ BASELINE = 'baseline'
 START = 'START'
 STOP = 'STOP'
 
-PICKLED_MODEL_WEIGHTS = 'pickled_model_weights'
+PICKLED_MODEL_PARAMETERS = 'pickled_model_parameters'
 
-WEIGHTS_PATCH = "weights_patch"
+PARAMETERS_PATCH = "parameters_patch"
 
 RESTORE_PATH = 'restore_path'
 
@@ -165,7 +165,7 @@ class BaselineSaveService(AbstractSaveService):
 
         with tempfile.TemporaryDirectory() as tmp_path:
             log_pickle = log_start(self.logging, BASELINE, '_save_full_model', 'pickle_weights')
-            weights_path = self. _pickle_weights(model_save_info.model, tmp_path)
+            weights_path = self._pickle_weights(model_save_info.model, tmp_path)
             log_stop(self.logging, log_pickle)
 
             base_model = model_save_info.base_model if model_save_info.base_model else None
@@ -325,10 +325,12 @@ class WeightUpdateSaveService(BaselineSaveService):
 
             recover_info: WeightsUpdateRecoverInfo = model_info.recover_info
 
-            if recover_info.independent:
-                recovered_model = self._restore_independent_update(model_info, tmp_path)
+            if recover_info.update_type == PICKLED_MODEL_PARAMETERS:
+                recovered_model = self._recover_from_full_weights(model_info, tmp_path)
+            elif recover_info.update_type == PARAMETERS_PATCH:
+                recovered_model = self._recover_from_parameter_patch(model_info)
             else:
-                recovered_model = self._restore_dependent_update(model_info)
+                raise NotImplementedError
 
             restored_model_info = RestoredModelInfo(model=recovered_model)
 
@@ -341,23 +343,26 @@ class WeightUpdateSaveService(BaselineSaveService):
         log_stop(self.logging, log_update)
         return restored_model_info
 
-    def _restore_independent_update(self, model_info, tmp_path):
+    def _recover_from_full_weights(self, model_info, tmp_path):
+        log = log_start(self.logging, PARAM_UPDATE, '_recover_from_full_weights', 'all')
         model_code, model_class_name = self._restore_code_and_class_name(model_info, tmp_path)
         recover_info: WeightsUpdateRecoverInfo = model_info.recover_info
 
         model = create_object(model_code.path, model_class_name)
-        if recover_info.update_type:  # here we should actually check the type
-            s_dict = self._recover_pickled_weights(recover_info.update.path)
-            model.load_state_dict(s_dict)
+        s_dict = self._recover_pickled_weights(recover_info.update.path)
+        model.load_state_dict(s_dict)
+        log_stop(self.logging, log)
 
         return model
 
-    def _restore_dependent_update(self, model_info):
+    def _recover_from_parameter_patch(self, model_info):
+        log = log_start(self.logging, PARAM_UPDATE, '_recover_from_parameter_patch', 'all')
         recover_info: WeightsUpdateRecoverInfo = model_info.recover_info
         base_model_info = self.recover_model(model_info.derived_from)
         base_model = base_model_info.model
         weights_patch = torch.load(recover_info.update.path)
         self._apply_weight_patch(base_model, weights_patch)
+        log_stop(self.logging, log)
 
         return base_model
 
@@ -373,12 +378,11 @@ class WeightUpdateSaveService(BaselineSaveService):
             log_stop(self.logging, log_weights_hash)
 
             log_gen_update = log_start(self.logging, PARAM_UPDATE, '_save_updated_model', 'generate_weights_update')
-            weights_update, update_type, independent = \
+            weights_update, update_type = \
                 self._generate_weights_update(model_save_info, base_model_id, weights_hash_info, tmp_path)
             log_stop(self.logging, log_gen_update)
 
-            recover_info = WeightsUpdateRecoverInfo(update=FileReference(path=weights_update), update_type=update_type,
-                                                    independent=independent)
+            recover_info = WeightsUpdateRecoverInfo(update=FileReference(path=weights_update), update_type=update_type)
 
             model_info = ModelInfo(store_type=ModelStoreType.WEIGHT_UPDATES, recover_info=recover_info,
                                    derived_from_id=base_model_id, weights_hash_info=weights_hash_info)
@@ -409,7 +413,7 @@ class WeightUpdateSaveService(BaselineSaveService):
                     del weights_patch[key]
 
             model_weights = super()._pickle_state_dict(weights_patch, tmp_path)
-            return model_weights, WEIGHTS_PATCH, False
+            return model_weights, PARAMETERS_PATCH
         else:
             print('recover base models')
             # if there is no weights hash info given we have to fall back and load the base models
@@ -421,10 +425,10 @@ class WeightUpdateSaveService(BaselineSaveService):
             if len(weights_patch.keys()) < len(base_model_weights.keys()):
                 # if the patch actually saves something
                 model_weights = super()._pickle_state_dict(weights_patch, tmp_path)
-                return model_weights, WEIGHTS_PATCH, False
+                return model_weights, PARAMETERS_PATCH
             else:
                 model_weights = self._pickle_weights(model_save_info.model, tmp_path)
-                return model_weights, PICKLED_MODEL_WEIGHTS, True
+                return model_weights, PICKLED_MODEL_PARAMETERS
 
     def _state_dict_patch(self, base_model_weights, current_model_weights):
         assert base_model_weights.keys() == current_model_weights.keys(), 'given state dicts are not compatible'

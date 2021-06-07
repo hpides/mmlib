@@ -90,17 +90,14 @@ def _recover_environment(dict_pers_service, file_pers_service, load_recursive, r
 
 UPDATE = 'update'
 UPDATE_TYPE = 'update_type'
-INDEPENDENT = 'independent'
 
 
 class WeightsUpdateRecoverInfo(AbstractRecoverInfo):
 
-    def __init__(self, update: FileReference = None, update_type: str = None, independent: bool = None,
-                 store_id: str = None):
+    def __init__(self, update: FileReference = None, update_type: str = None, store_id: str = None):
         super().__init__(store_id)
         self.update = update
         self.update_type = update_type
-        self.independent = independent
 
     def load_all_fields(self, file_pers_service: FilePersistenceService, dict_pers_service: DictPersistenceService,
                         restore_root: str, load_recursive: bool = True, load_files: bool = True):
@@ -108,13 +105,11 @@ class WeightsUpdateRecoverInfo(AbstractRecoverInfo):
 
         self.update = _restore_update(file_pers_service, load_files, restore_root, restored_dict)
         self.update_type = restored_dict[UPDATE_TYPE]
-        self.independent = restored_dict[INDEPENDENT]
 
     def _persist_class_specific_fields(self, dict_representation, file_pers_service, dict_pers_service):
         file_pers_service.save_file(self.update)
         dict_representation[UPDATE] = self.update.reference_id
         dict_representation[UPDATE_TYPE] = self.update_type
-        dict_representation[INDEPENDENT] = self.independent
 
     def _add_reference_sizes(self, size_dict, file_pers_service, dict_pers_service):
         file_pers_service.file_size(self.update)
