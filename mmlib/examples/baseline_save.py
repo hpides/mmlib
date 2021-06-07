@@ -9,7 +9,7 @@ from util.dummy_data import imagenet_input
 
 CONTAINER_NAME = 'mongo-test'
 
-TARGET_FILE_SYSTEM_DIR = './filesystem-tmp'
+TARGET_FILE_SYSTEM_DIR = 'filesystem-tmp'
 
 if __name__ == '__main__':
     # initialize a service to store files

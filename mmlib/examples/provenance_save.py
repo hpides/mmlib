@@ -17,7 +17,7 @@ from tests.example_files.mynets.resnet18 import resnet18
 from util.dummy_data import imagenet_input
 
 CONTAINER_NAME = 'mongo-test'
-TARGET_FILE_SYSTEM_DIR = './filesystem-tmp'
+TARGET_FILE_SYSTEM_DIR = 'filesystem-tmp'
 
 
 def initi_train_service():
