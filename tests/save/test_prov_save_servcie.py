@@ -1,5 +1,6 @@
 import os
 
+import torch
 from torch.utils.data import DataLoader
 
 from mmlib.constants import CURRENT_DATA_ROOT, MMLIB_CONFIG
@@ -14,8 +15,10 @@ from mmlib.util.dummy_data import imagenet_input
 from tests.example_files.data.custom_coco import TrainCustomCoco
 from tests.example_files.imagenet_optimizer import ImagenetOptimizer
 from tests.example_files.imagenet_train import ImagenetTrainService, OPTIMIZER, DATALOADER, DATA, ImagenetTrainWrapper
+from tests.example_files.mynets.googlenet import googlenet
 from tests.example_files.mynets.mobilenet import mobilenet_v2
 from tests.example_files.mynets.resnet18 import resnet18
+from tests.example_files.mynets.resnet50 import resnet50
 from tests.save.test_baseline_save_servcie import TestBaselineSaveService
 
 FILE_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -39,15 +42,20 @@ class TestProvSaveService(TestBaselineSaveService):
         model = resnet18(pretrained=True)
         self._test_save_restore_provenance_specific_model(model)
 
+    # put test in comments, takes very long
+    # def test_save_restore_provenance_model_resnet50(self):
+    #     model = resnet50(pretrained=True)
+    #     self._test_save_restore_provenance_specific_model(model)
+
     def test_save_restore_provenance_model_mobilenet(self):
         model = mobilenet_v2(pretrained=True)
         self._test_save_restore_provenance_specific_model(model)
 
     # googlenet has some problems when restored form state_dict with aux loss
     # NOTE think about not using googlenet for experiments
-    # def test_save_restore_provenance_model_googlenet(self):
-    #     model_name = googlenet.__name__
-    #     self._test_save_restore_provenance_specific_model(model_name)
+    def test_save_restore_provenance_model_googlenet(self):
+        model = googlenet(pretrained=True)
+        self._test_save_restore_provenance_specific_model(model)
 
     def _test_save_restore_provenance_specific_model(self, model):
         ###############################################################################

@@ -1,5 +1,4 @@
 import warnings
-from collections import namedtuple
 
 import torch
 import torch.nn as nn
@@ -8,20 +7,12 @@ from torch import Tensor
 from torch.hub import load_state_dict_from_url
 from torch.jit.annotations import Optional, Tuple
 
-__all__ = ['GoogLeNet', 'googlenet', "GoogLeNetOutputs", "_GoogLeNetOutputs"]
+__all__ = ['GoogLeNet', 'googlenet']
 
 model_urls = {
     # GoogLeNet ported from TensorFlow
     'googlenet': 'https://download.pytorch.org/models/googlenet-1378be20.pth',
 }
-
-GoogLeNetOutputs = namedtuple('GoogLeNetOutputs', ['logits', 'aux_logits2', 'aux_logits1'])
-GoogLeNetOutputs.__annotations__ = {'logits': Tensor, 'aux_logits2': Optional[Tensor],
-                                    'aux_logits1': Optional[Tensor]}
-
-# Script annotations failed with _GoogleNetOutputs = namedtuple ...
-# _GoogLeNetOutputs set here for backwards compat
-_GoogLeNetOutputs = GoogLeNetOutputs
 
 
 def googlenet(pretrained=False, progress=True, **kwargs):
@@ -31,40 +22,33 @@ def googlenet(pretrained=False, progress=True, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
-        aux_logits (bool): If True, adds two auxiliary branches that can improve training.
-            Default: *False* when pretrained is True otherwise *True*
         transform_input (bool): If True, preprocesses the input according to the method with which it
             was trained on ImageNet. Default: *False*
     """
 
+    model = GoogLeNet(**kwargs)
+
     if pretrained:
         if 'transform_input' not in kwargs:
             kwargs['transform_input'] = True
-        if 'aux_logits' not in kwargs:
-            kwargs['aux_logits'] = False
-        if kwargs['aux_logits']:
-            warnings.warn('auxiliary heads in the pretrained googlenet model are NOT pretrained, '
-                          'so make sure to train them')
-        original_aux_logits = kwargs['aux_logits']
-        kwargs['aux_logits'] = True
         kwargs['init_weights'] = False
-        model = GoogLeNet(**kwargs)
         state_dict = load_state_dict_from_url(model_urls['googlenet'],
                                               progress=progress)
-        model.load_state_dict(state_dict)
-        if not original_aux_logits:
-            model.aux_logits = False
-            model.aux1 = None
-            model.aux2 = None
-        return model
+        # remove all aux weights
+        keys = list(state_dict.keys())
+        for k in keys:
+            if 'aux' in k:
+                del state_dict[k]
 
-    return GoogLeNet(**kwargs)
+        model.load_state_dict(state_dict)
+
+    return model
 
 
 class GoogLeNet(nn.Module):
-    __constants__ = ['aux_logits', 'transform_input']
+    __constants__ = ['transform_input']
 
-    def __init__(self, num_classes=1000, aux_logits=True, transform_input=False, init_weights=None,
+    def __init__(self, num_classes=1000, transform_input=False, init_weights=None,
                  blocks=None):
         super(GoogLeNet, self).__init__()
         if blocks is None:
@@ -77,9 +61,7 @@ class GoogLeNet(nn.Module):
         assert len(blocks) == 3
         conv_block = blocks[0]
         inception_block = blocks[1]
-        inception_aux_block = blocks[2]
 
-        self.aux_logits = aux_logits
         self.transform_input = transform_input
 
         self.conv1 = conv_block(3, 64, kernel_size=7, stride=2, padding=3)
@@ -101,13 +83,6 @@ class GoogLeNet(nn.Module):
 
         self.inception5a = inception_block(832, 256, 160, 320, 32, 128, 128)
         self.inception5b = inception_block(832, 384, 192, 384, 48, 128, 128)
-
-        if aux_logits:
-            self.aux1 = inception_aux_block(512, num_classes)
-            self.aux2 = inception_aux_block(528, num_classes)
-        else:
-            self.aux1 = None
-            self.aux2 = None
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.dropout = nn.Dropout(0.2)
@@ -159,22 +134,12 @@ class GoogLeNet(nn.Module):
         x = self.maxpool3(x)
         # N x 480 x 14 x 14
         x = self.inception4a(x)
-        # N x 512 x 14 x 14
-        aux1 = torch.jit.annotate(Optional[Tensor], None)
-        if self.aux1 is not None:
-            if self.training:
-                aux1 = self.aux1(x)
 
         x = self.inception4b(x)
         # N x 512 x 14 x 14
         x = self.inception4c(x)
         # N x 512 x 14 x 14
         x = self.inception4d(x)
-        # N x 528 x 14 x 14
-        aux2 = torch.jit.annotate(Optional[Tensor], None)
-        if self.aux2 is not None:
-            if self.training:
-                aux2 = self.aux2(x)
 
         x = self.inception4e(x)
         # N x 832 x 14 x 14
@@ -192,26 +157,13 @@ class GoogLeNet(nn.Module):
         x = self.dropout(x)
         x = self.fc(x)
         # N x 1000 (num_classes)
-        return x, aux2, aux1
-
-    @torch.jit.unused
-    def eager_outputs(self, x: Tensor, aux2: Tensor, aux1: Optional[Tensor]) -> GoogLeNetOutputs:
-        if self.training and self.aux_logits:
-            return _GoogLeNetOutputs(x, aux2, aux1)
-        else:
-            return x  # type: ignore[return-value]
+        return x
 
     def forward(self, x):
         # type: (Tensor) -> GoogLeNetOutputs
         x = self._transform_input(x)
-        x, aux1, aux2 = self._forward(x)
-        aux_defined = self.training and self.aux_logits
-        if torch.jit.is_scripting():
-            if not aux_defined:
-                warnings.warn("Scripted GoogleNet always returns GoogleNetOutputs Tuple")
-            return GoogLeNetOutputs(x, aux2, aux1)
-        else:
-            return self.eager_outputs(x, aux2, aux1)
+        x = self._forward(x)
+        return x
 
 
 class Inception(nn.Module):
@@ -266,9 +218,7 @@ class InceptionAux(nn.Module):
         self.fc2 = nn.Linear(1024, num_classes)
 
     def forward(self, x):
-        # aux1: N x 512 x 14 x 14, aux2: N x 528 x 14 x 14
         x = F.adaptive_avg_pool2d(x, (4, 4))
-        # aux1: N x 512 x 4 x 4, aux2: N x 528 x 4 x 4
         x = self.conv(x)
         # N x 128 x 4 x 4
         x = torch.flatten(x, 1)
