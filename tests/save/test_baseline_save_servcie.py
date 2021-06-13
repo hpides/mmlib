@@ -60,7 +60,7 @@ class TestBaselineSaveService(unittest.TestCase):
         self._test_save_restore_model(model)
 
     def test_save_restore_model_googlenet(self):
-        model = googlenet(aux_logits=True)
+        model = googlenet()
         self._test_save_restore_model(model)
 
     def _test_save_restore_model(self, model):
@@ -82,7 +82,7 @@ class TestBaselineSaveService(unittest.TestCase):
         self._test_save_restore_model_and_validation_info(model)
 
     def test_save_restore_model_googlenet_val_info(self):
-        model = googlenet(aux_logits=True)
+        model = googlenet()
         self._test_save_restore_model_and_validation_info(model)
 
     def _test_save_restore_model_and_validation_info(self, model):

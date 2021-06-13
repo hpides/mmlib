@@ -134,7 +134,7 @@ class FileSystemPersistenceService(FilePersistenceService):
     def save_file(self, file: FileReference):
         log = self.log_start('save_file')
         path, file_name = os.path.split(file.path)
-        file_id = str(ObjectId())
+        file_id = self.generate_id()
         dst_path = self._get_store_path(file_id)
         os.mkdir(dst_path)
         copyfile(file.path, os.path.join(dst_path, file_name))
