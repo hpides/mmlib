@@ -17,8 +17,6 @@ class MongoService(object):
         self._mongo_client = MongoClient(host)
         self._db_name = db_name
         self.logging = logging
-        # close connection for now, for new requests there will be a reconnect
-        self._mongo_client.close()
 
     def save_dict(self, insert_dict: dict, collection: str, id: str = None) -> ObjectId:
         """
