@@ -408,14 +408,11 @@ class WeightUpdateSaveService(BaselineSaveService):
             assert len(diff_nodes[THIS]) == 0 and len(diff_nodes[OTHER]) == 0, \
                 'models with different architecture not supported for now'
 
-            update_save_potential = len(diff_weights) < len(current_model_weights.keys())
-
-            if update_save_potential:
-                weights_patch = current_model_weights.copy()
-                # delete all keys that are the same, meaning not in the diff list
-                for key in current_model_weights.keys():
-                    if key not in diff_weights:
-                        del weights_patch[key]
+            weights_patch = current_model_weights.copy()
+            # delete all keys that are the same, meaning not in the diff list
+            for key in current_model_weights.keys():
+                if key not in diff_weights:
+                    del weights_patch[key]
         else:
             print('recover base models')
             # if there is no weights hash info given we have to fall back and load the base models
@@ -425,15 +422,8 @@ class WeightUpdateSaveService(BaselineSaveService):
 
             weights_patch = self._state_dict_patch(base_model_weights, current_model_weights)
 
-            update_save_potential = len(weights_patch.keys()) < len(base_model_weights.keys())
-
-        if update_save_potential:
-            # if the patch actually saves something
-            model_weights = super()._pickle_state_dict(weights_patch, tmp_path)
-            return model_weights, PARAMETERS_PATCH
-        else:
-            model_weights = self._pickle_weights(model_save_info.model, tmp_path)
-            return model_weights, PICKLED_MODEL_PARAMETERS
+        model_weights = super()._pickle_state_dict(weights_patch, tmp_path)
+        return model_weights, PARAMETERS_PATCH
 
     def _state_dict_patch(self, base_model_weights, current_model_weights):
         assert base_model_weights.keys() == current_model_weights.keys(), 'given state dicts are not compatible'
