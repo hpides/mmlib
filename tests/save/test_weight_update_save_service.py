@@ -104,4 +104,4 @@ class TestWeightUpdateSaveService(TestBaselineSaveService):
             self.file_pers_service.file_size(weights_update_file)
 
             self.assertTrue(initial_weights_file.size > weights_update_file.size)
-            self.assertTrue(weights_update_file.size, 10000)
+            self.assertTrue(weights_update_file.size < 10000)
