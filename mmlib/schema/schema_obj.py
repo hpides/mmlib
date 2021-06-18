@@ -54,6 +54,7 @@ class SchemaObj(metaclass=abc.ABCMeta):
         log = self.log_start('persist')
         if self.store_id and dict_pers_service.id_exists(self.store_id, self._representation_type):
             # if the id already exists, we do not have to persist again
+            self.log_stop(log)
             return self.store_id
 
         if not self.store_id:
