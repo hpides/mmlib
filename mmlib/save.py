@@ -268,7 +268,7 @@ class BaselineSaveService(AbstractSaveService):
 
     def _check_weights(self, model, model_info):
         log_check_weights = log_start(
-            self.logging, PARAM_UPDATE, '_check_weights', '_all')
+            self.logging, BASELINE, '_check_weights', '_all')
         if not model_info.weights_hash_info:
             warnings.warn('no weights_hash_info available for this models')
         restored_merkle_tree: WeightDictMerkleTree = model_info.weights_hash_info
@@ -280,7 +280,7 @@ class BaselineSaveService(AbstractSaveService):
     def _check_env(self, model_info):
         # check environment
         log_check_env = log_start(
-            self.logging, PARAM_UPDATE, '_check_env', '_all')
+            self.logging, BASELINE, '_check_env', '_all')
         recover_info = model_info.recover_info
         envs_match = compare_env_to_current(recover_info.environment)
         assert envs_match, \
