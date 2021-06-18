@@ -103,11 +103,15 @@ class BaselineSaveService(AbstractSaveService):
         self._dict_pers_service.logging = logging
 
     def save_model(self, model_save_info: ModelSaveInfo) -> str:
+        log_all = log_start(self.logging, BASELINE, 'call_save_full_model', 'all')
+
         self._check_consistency(model_save_info)
 
         # usually we would consider at this bit how we best store the given model
         # but since this is the baseline service we just store the full model every time.
         model_id = self._save_full_model(model_save_info)
+
+        log_stop(self.logging, log_all)
 
         return model_id
 
@@ -263,19 +267,25 @@ class BaselineSaveService(AbstractSaveService):
             return model_info.derived_from
 
     def _check_weights(self, model, model_info):
+        log_check_weights = log_start(
+            self.logging, PARAM_UPDATE, '_check_weights', '_all')
         if not model_info.weights_hash_info:
             warnings.warn('no weights_hash_info available for this models')
         restored_merkle_tree: WeightDictMerkleTree = model_info.weights_hash_info
         model_merkle_tree = WeightDictMerkleTree.from_state_dict(model.state_dict())
         # NOTE maybe replace assert by throwing exception
         assert restored_merkle_tree == model_merkle_tree, 'The recovered model differs from the model that was stored'
+        log_stop(self.logging, log_check_weights)
 
     def _check_env(self, model_info):
         # check environment
+        log_check_env = log_start(
+            self.logging, PARAM_UPDATE, '_check_env', '_all')
         recover_info = model_info.recover_info
         envs_match = compare_env_to_current(recover_info.environment)
         assert envs_match, \
             'The current environment and the environment that was used to when storing the model differ'
+        log_stop(self.logging, log_check_env)
 
 
 class WeightUpdateSaveService(BaselineSaveService):
