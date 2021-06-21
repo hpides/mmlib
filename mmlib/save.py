@@ -135,12 +135,8 @@ class BaselineSaveService(AbstractSaveService):
             restored_model_info = RestoredModelInfo(model=model)
 
             if execute_checks:
-                log_check_weights = log_start(self.logging, BASELINE, 'recover_model', '_check_weights')
                 self._check_weights(model, model_info)
-                log_stop(self.logging, log_check_weights)
-                log_check_env = log_start(self.logging, BASELINE, 'recover_model', '_check_env')
                 self._check_env(model_info)
-                log_stop(self.logging, log_check_env)
 
         log_stop(self.logging, log_recover)
         log_stop(self.logging, log_all)
@@ -514,12 +510,8 @@ class ProvenanceSaveService(BaselineSaveService):
                 restored_model_info = RestoredModelInfo(model=restored_model)
 
                 if execute_checks:
-                    log_check_weights = log_start(self.logging, PROVENANCE, 'recover_model', '_check_weights')
                     self._check_weights(restored_model, model_info)
-                    log_stop(self.logging, log_check_weights)
-                    log_check_env = log_start(self.logging, PROVENANCE, 'recover_model', '_check_env')
                     self._check_env(model_info)
-                    log_stop(self.logging, log_check_env)
 
                 result = restored_model_info
 
