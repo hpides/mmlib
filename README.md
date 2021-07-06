@@ -1,7 +1,22 @@
 # mmlib
 
-- A library for model management and related tasks.
+mmlib is a library that implements different approaches to save and recover models. It was developed as part of my
+master thesis ([link to thesis repo](https://github.com/slin96/master-thesis)).
 
+The approach names in the thesis match the following implementations:
+- baseline approach 
+    - implemented by the `BaselineSaveService`
+- parameter update approach 
+    - implemented by `WeightUpdateSaveService` (set `improved_version=False`)
+- improved parameter update approach 
+    - implemented by `WeightUpdateSaveService` (set `improved_version=True`)
+- provenance approach
+    - implemented by `ProvenanceSaveService`
+    
+Next to the approaches to save and recover models we also implemented a **probing tool**
+- the corresponding code is in `probe.py`
+- examples are provided under [examples](examples)
+    
 ## Installation
 
 ### Option 1: Docker
@@ -10,7 +25,7 @@
 - **Build Library**
     - clone this repo
     - run the script `generate-archives-docker.sh`
-        - it runs a docker container and builds the *mmlib* in it.
+        - it runs a docker container and builds the *mmlib* in it
         - the created `dist` directory is copied back to repository root
         - it contains the `.whl` file that can be used to install the library with pip (see below)
 - **Install**
@@ -18,7 +33,7 @@
 
 ### Option 2: Local Build
 
-- **Requirements**: Python 3.8
+- **Requirements**: Python 3.8 and Python `venv`
 - **Build Library**
     - run the script `generate-archives.sh`
         - it creates a virtual environment, activates it, and installs all requirements
@@ -28,7 +43,7 @@
 
 ## Examples
 
-- For examples on how to use mmlib checkout the [examples](mmlib/examples) directory.
+- For examples on how to use mmlib checkout the [examples](examples) directory.
 
 
 
