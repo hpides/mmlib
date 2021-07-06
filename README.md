@@ -3,13 +3,13 @@
 mmlib is a library that implements different approaches to save and recover models. It was developed as part of my
 master thesis ([link to thesis repo](https://github.com/slin96/master-thesis)).
 
-The approach names in the thesis match the following implementations
+The approach names in the thesis match the following implementations:
 - baseline approach 
     - implemented by the `BaselineSaveService`
 - parameter update approach 
     - implemented by `WeightUpdateSaveService` (set `improved_version=False`)
 - improved parameter update approach 
-    - implemented by `WeightUpdateSaveService` (set `improved_version=False`)
+    - implemented by `WeightUpdateSaveService` (set `improved_version=True`)
 - provenance approach
     - implemented by `ProvenanceSaveService`
     
@@ -21,7 +21,7 @@ The approach names in the thesis match the following implementations
 - **Build Library**
     - clone this repo
     - run the script `generate-archives-docker.sh`
-        - it runs a docker container and builds the *mmlib* in it.
+        - it runs a docker container and builds the *mmlib* in it
         - the created `dist` directory is copied back to repository root
         - it contains the `.whl` file that can be used to install the library with pip (see below)
 - **Install**
