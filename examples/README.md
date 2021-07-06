@@ -3,7 +3,11 @@
 This directory contains examples of how to use the functionality offered by the *mmlib*.
 
 ## Approaches to save and recover models
-- to m
+- to execute all examples we use a MongoDB, in all examples the MongoDB is started using docker
+- if you don't have docker installed you have to either install it or slightly adjust the examples
+- in `baseline_save.py` we provide an example of how to save and recover a model using the baseline approach
+- for all other approaches we do not give explict examples and refer to our [test for the appraoches](../tests/save)
+
 
 ## Probing Tool
 

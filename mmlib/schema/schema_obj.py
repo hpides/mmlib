@@ -13,7 +13,7 @@ METADATA_SIZE = 'metadata_size'
 
 class SchemaObj(metaclass=abc.ABCMeta):
 
-    def __init__(self, store_id: str = None, logging=True):
+    def __init__(self, store_id: str = None, logging=False):
         self.store_id = store_id
         self.logging = logging
 

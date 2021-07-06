@@ -3,7 +3,8 @@ import os
 from mmlib.equal import model_equal
 from mmlib.persistence import FileSystemPersistenceService, MongoDictPersistenceService
 from mmlib.save import BaselineSaveService
-from mmlib.schema import ModelSaveInfoBuilder
+from mmlib.schema.save_info_builder import ModelSaveInfoBuilder
+from mmlib.track_env import track_current_environment
 from mmlib.util.dummy_data import imagenet_input
 from tests.example_files.mynets.mobilenet import mobilenet_v2
 
@@ -24,8 +25,9 @@ if __name__ == '__main__':
     # initialize instance of mobilenet_v2
     model = mobilenet_v2(pretrained=True)
     # create the info to save the model
+    env = track_current_environment()
     save_info_builder = ModelSaveInfoBuilder()
-    save_info_builder.add_model_info(model=model)
+    save_info_builder.add_model_info(model=model, env=env)
     save_info = save_info_builder.build()
     # given the save info we can store the model, and get a model id back
     model_id = save_service.save_model(save_info)
