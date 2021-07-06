@@ -5,8 +5,8 @@ from torchvision import models
 
 from mmlib.deterministic import set_deterministic
 from mmlib.equal import state_dict_equal, model_equal
-from mmlib.util import state_dict_hash, tensor_hash
 from mmlib.util.dummy_data import imagenet_input
+from mmlib.util.hash import state_dict_hash, tensor_hash
 
 
 class TestStateDictEqual(unittest.TestCase):
@@ -58,12 +58,6 @@ class TestModelEqual(unittest.TestCase):
 
         self.assertTrue(model_equal(mod1, mod2, imagenet_input))
 
-    def test_resnet50_pretrained(self):
-        mod1 = models.resnet50(pretrained=True)
-        mod2 = models.resnet50(pretrained=True)
-
-        self.assertTrue(model_equal(mod1, mod2, imagenet_input))
-
     def test_googlenet_pretrained(self):
         mod1 = models.googlenet(pretrained=True)
         mod2 = models.googlenet(pretrained=True)
@@ -76,9 +70,9 @@ class TestModelEqual(unittest.TestCase):
 
         self.assertTrue(model_equal(mod1, mod2, imagenet_input))
 
-    def test_resnet18_resnet152_pretrained(self):
+    def test_resnet18_mobilenet_pretrained(self):
         mod1 = models.resnet18(pretrained=True)
-        mod2 = models.resnet152(pretrained=True)
+        mod2 = models.mobilenet_v2(pretrained=True)
 
         self.assertFalse(model_equal(mod1, mod2, imagenet_input))
 
