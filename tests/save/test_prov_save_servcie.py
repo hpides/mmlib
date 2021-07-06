@@ -32,7 +32,11 @@ class TestProvSaveService(TestBaselineSaveService):
     def setUp(self) -> None:
         super().setUp()
         assert os.path.isfile(CONFIG), \
-            'to run these tests define your onw config file named \'local-config\' with respect to the template file'
+            'to run these tests define your onw config file named \'local-config\'' \
+            'to do so copy the file under tests/example_files/config.ini, and place it in the same directory' \
+            'rename it to local-config.ini, create an empty directory and put the path to it in the newly created' \
+            'config file, to define the current_data_root' \
+
         os.environ[MMLIB_CONFIG] = CONFIG
 
     def init_save_service(self, dict_pers_service, file_pers_service):
