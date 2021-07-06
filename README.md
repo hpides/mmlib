@@ -13,6 +13,10 @@ The approach names in the thesis match the following implementations:
 - provenance approach
     - implemented by `ProvenanceSaveService`
     
+Next to the approaches to save and recover models we also implemented a **probing tool**
+- the corresponding code is in `probe.py`
+- examples are provided under [examples](examples)
+    
 ## Installation
 
 ### Option 1: Docker
