@@ -18,7 +18,7 @@ Next to the approaches to save and recover models we also implemented a **probin
 
 ## Examples
 
-- For examples on how to use mmlib and the probing tool checkout the [examples](examples) directory.
+- For examples on how to use MMlib and the probing tool checkout the [examples](examples) directory.
     
 ## Installation
 
