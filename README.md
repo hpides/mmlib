@@ -1,6 +1,6 @@
-# mmlib
+# MMlib
 
-mmlib is a library that implements different approaches to save and recover models. It was developed as part of my
+MMlib is a library that implements different approaches to save and recover models. It was developed as part of my
 master thesis ([link to thesis repo](https://github.com/slin96/master-thesis)).
 
 The approach names in the thesis match the following implementations:
@@ -15,7 +15,10 @@ The approach names in the thesis match the following implementations:
     
 Next to the approaches to save and recover models we also implemented a **probing tool**
 - the corresponding code is in `probe.py`
-- examples are provided under [examples](examples)
+
+## Examples
+
+- For examples on how to use MMlib and the probing tool checkout the [examples](examples) directory.
     
 ## Installation
 
@@ -40,10 +43,6 @@ Next to the approaches to save and recover models we also implemented a **probin
         - afterward it builds the library, and a `dist` directory containing the `.whl` file is created
 - **Install**
     - to install mmlib run: `pip install <PATH>/dist/mmlib-0.0.1-py3-none-any.whl`
-
-## Examples
-
-- For examples on how to use mmlib checkout the [examples](examples) directory.
 
 
 
