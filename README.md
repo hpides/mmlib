@@ -1,9 +1,8 @@
 # MMlib
 
-MMlib is a library that implements different approaches to save and recover models. It was developed as part of my
-master thesis ([link to thesis repo](https://github.com/slin96/master-thesis)).
+MMlib is a library that implements different approaches to save and recover models.
 
-The approach names in the thesis match the following implementations:
+Approach names:
 - baseline approach 
     - implemented by the `BaselineSaveService`
 - parameter update approach 
