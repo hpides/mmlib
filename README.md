@@ -52,13 +52,13 @@ Next to the approaches to save and recover models we also implemented a **probin
 If you use MMlib or insights from the paper, please cite us.
 
 ```bibtex
-@inproceedings{strassenburg\_2022\_mmlib,
+@inproceedings{strassenburg_2022_mmlib,
   author    = {Nils Strassenburg and Ilin Tolovski and Tilmann Rabl},
   title     = {Efficiently Managing Deep Learning Models in a Distributed Environment},
   booktitle = {Proceedings of the 25th International Conference on Extending Database Technology (EDBT 2022) Edinburgh, UK, March 29 - April 1},
-  pages     = {234--246}
-  publisher = {OpenProceedings.org}
-  year      = {2022}
-  doi       = {10.48786/edbt.2022.12},
+  pages     = {234--246},
+  publisher = {OpenProceedings.org},
+  year      = {2022},
+  doi       = {10.48786/edbt.2022.12}
 }
 ```
