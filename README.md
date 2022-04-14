@@ -48,7 +48,7 @@ Next to the approaches to save and recover models we also implemented a **probin
     - to install mmlib run: `pip install <PATH>/dist/mmlib-0.0.1-py3-none-any.whl`
 
 
-### Cite Our Work
+## Cite Our Work
 If you use MMlib or insights from the paper, please cite us.
 
 ```bibtex
